@@ -1,0 +1,20 @@
+---
+# GitOps deployment configuration
+
+# Cluster name (must match talos-cluster role)
+cluster_name: "homelab-cluster"
+
+# Talos configuration directory (relative to repo root, same as talos-cluster role)
+talos_config_dir: "{{ playbook_dir }}/../../talos-{{ cluster_name }}"
+
+# Path to kubeconfig
+kubeconfig_path: "{{ talos_config_dir }}/rendered/kubeconfig"
+
+# Path to ArgoCD installation script
+argocd_install_script: "{{ playbook_dir }}/../../gitops/argocd_install.sh"
+
+# Path to app-of-apps manifest
+app_of_apps_manifest: "{{ playbook_dir }}/../../gitops/app-of-apps.yaml"
+
+# Wait timeouts (in seconds)
+wait_timeout_argocd: 300

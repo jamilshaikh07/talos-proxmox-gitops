@@ -41,6 +41,15 @@
     dest: "{{ talos_config_dir }}/allowcontrolplanes.yaml"
     mode: '0644'
 
+- name: Create installer image version patch
+  ansible.builtin.copy:
+    content: |
+      machine:
+        install:
+          image: ghcr.io/siderolabs/installer:v{{ talos_version }}
+    dest: "{{ talos_config_dir }}/installer-version.yaml"
+    mode: '0644'
+
 - name: Create control plane hostname patch
   ansible.builtin.copy:
     content: |
@@ -78,6 +87,7 @@
       --kubernetes-version v{{ kubernetes_version }}
       --config-patch @cni.yaml
       --config-patch @allowcontrolplanes.yaml
+      --config-patch @installer-version.yaml
       --config-patch-control-plane @controlplane-hostname.yaml
       --output rendered-cp
     chdir: "{{ talos_config_dir }}"
@@ -93,6 +103,7 @@
       --kubernetes-version v{{ kubernetes_version }}
       --config-patch @cni.yaml
       --config-patch @allowcontrolplanes.yaml
+      --config-patch @installer-version.yaml
       --config-patch-worker @{{ item.hostname }}-hostname.yaml
       --output rendered-{{ item.hostname }}
     chdir: "{{ talos_config_dir }}"

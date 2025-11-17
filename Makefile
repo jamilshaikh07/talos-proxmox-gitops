@@ -140,21 +140,12 @@ ansible-cleanup: ## Cleanup Talos VMs (on failure)
 # ============================================================================
 
 .PHONY: layer3
-layer3: argocd-deploy ## Deploy Layer 3 GitOps
+layer3: ansible-gitops ## Deploy Layer 3 GitOps
 
-.PHONY: argocd-install
-argocd-install: ## Install ArgoCD
-	@echo "$(GREEN)📦 Installing ArgoCD...$(NC)"
-	cd $(GITOPS_DIR) && ./argocd_install.sh
-	@echo "$(GREEN)✅ ArgoCD installed!$(NC)"
-
-.PHONY: argocd-deploy
-argocd-deploy: ## Deploy ArgoCD + apps
-	@echo "$(GREEN)🚀 Deploying GitOps applications...$(NC)"
-	@if ! kubectl get namespace argocd &>/dev/null; then \
-		$(MAKE) argocd-install; \
-	fi
-	kubectl apply -f $(GITOPS_DIR)/app-of-apps.yaml
+.PHONY: ansible-gitops
+ansible-gitops: ## Deploy ArgoCD + app-of-apps using Ansible
+	@echo "$(GREEN)🚀 Deploying GitOps (ArgoCD + Applications)...$(NC)"
+	cd $(ANSIBLE_DIR) && ansible-playbook playbooks/layer3-gitops.yml
 	@echo "$(GREEN)✅ Layer 3 Complete!$(NC)"
 
 .PHONY: argocd-password

@@ -6,6 +6,7 @@
     cmd: kubectl get nodes -o wide
   environment:
     KUBECONFIG: "{{ talos_config_dir }}/rendered/kubeconfig"
+    PATH: "/home/linuxbrew/.linuxbrew/bin:{{ ansible_env.PATH }}"
   register: nodes_info
   changed_when: false
 
@@ -14,6 +15,7 @@
     cmd: kubectl get pods -n kube-system
   environment:
     KUBECONFIG: "{{ talos_config_dir }}/rendered/kubeconfig"
+    PATH: "/home/linuxbrew/.linuxbrew/bin:{{ ansible_env.PATH }}"
   register: pods_info
   changed_when: false
 

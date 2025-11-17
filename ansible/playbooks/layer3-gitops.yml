@@ -1,0 +1,12 @@
+---
+- name: Layer 3 - GitOps Deployment (ArgoCD + Applications)
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  vars_files:
+    - ../roles/gitops-deploy/defaults/main.yml
+
+  tasks:
+    - name: Deploy GitOps stack
+      ansible.builtin.include_role:
+        name: gitops-deploy

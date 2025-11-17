@@ -211,31 +211,10 @@ jobs:
           kubectl get nodes
           kubectl get pods -A
 
-      - name: Install ArgoCD
-        working-directory: gitops
+      - name: Deploy GitOps (ArgoCD + Applications)
+        working-directory: ${{ env.ANSIBLE_DIR }}
         run: |
-          if kubectl get namespace argocd &>/dev/null; then
-            echo "ArgoCD namespace already exists, skipping installation"
-          else
-            echo "Installing ArgoCD..."
-            ./argocd_install.sh
-
-            # Wait for ArgoCD to be ready
-            echo "Waiting for ArgoCD to be ready..."
-            kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=argocd-server -n argocd --timeout=300s
-          fi
-
-      - name: Deploy App-of-Apps
-        working-directory: gitops
-        run: |
-          kubectl apply -f app-of-apps.yaml
-          echo "✅ App-of-Apps deployed"
-
-      - name: Wait for applications to sync
-        run: |
-          echo "Waiting for applications to sync..."
-          sleep 60
-          kubectl get applications -n argocd
+          ansible-playbook playbooks/layer3-gitops.yml
 
       - name: Display GitOps Status
         run: |

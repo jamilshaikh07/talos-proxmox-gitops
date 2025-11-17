@@ -263,40 +263,15 @@ layer3_gitops() {
     log_layer "Starting Layer 3: GitOps (ArgoCD + Applications)"
     confirm_layer "Layer 3: ArgoCD and GitOps Applications"
 
-    # Setup kubeconfig
-    if [ ! -f "${KUBECONFIG_PATH}" ]; then
-        log_error "Kubeconfig not found at ${KUBECONFIG_PATH}"
+    cd "${ANSIBLE_DIR}"
+
+    log "Running Ansible GitOps deployment..."
+    if ! ansible-playbook playbooks/layer3-gitops.yml; then
+        log_error "Layer 3 failed - GitOps deployment unsuccessful"
         exit 1
     fi
 
-    export KUBECONFIG="${KUBECONFIG_PATH}"
-
-    log "Verifying cluster access..."
-    kubectl get nodes
-
-    cd "${GITOPS_DIR}"
-
-    # Install ArgoCD
-    if kubectl get namespace argocd &>/dev/null; then
-        log_warning "ArgoCD namespace already exists, skipping installation"
-    else
-        log "Installing ArgoCD..."
-        ./argocd_install.sh
-
-        log "Waiting for ArgoCD to be ready..."
-        kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=argocd-server -n argocd --timeout=300s
-    fi
-
-    log "Deploying App-of-Apps..."
-    kubectl apply -f app-of-apps.yaml
-
-    log "Waiting for applications to sync..."
-    sleep 60
-
     log "✅ Layer 3 Complete: GitOps applications deployed"
-    echo ""
-    echo "Deployed Applications:"
-    kubectl get applications -n argocd -o custom-columns=NAME:.metadata.name,SYNC:.status.sync.status,HEALTH:.status.health.status 2>/dev/null || true
     echo ""
     echo "ArgoCD Access:"
     echo "  kubectl port-forward svc/argocd-server -n argocd 8080:443"

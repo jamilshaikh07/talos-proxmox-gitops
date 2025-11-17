@@ -1,0 +1,110 @@
+---
+# Deploy GitOps (ArgoCD + App-of-Apps)
+
+- name: Check if ArgoCD namespace already exists
+  ansible.builtin.command:
+    cmd: kubectl get namespace argocd
+  environment:
+    KUBECONFIG: "{{ kubeconfig_path }}"
+    PATH: "/home/linuxbrew/.linuxbrew/bin:{{ ansible_env.PATH }}"
+  register: argocd_ns_check
+  changed_when: false
+  failed_when: false
+
+- name: Display ArgoCD installation status
+  ansible.builtin.debug:
+    msg: "{{ '✓ ArgoCD already installed, skipping installation' if argocd_ns_check.rc == 0 else '⚙️  Installing ArgoCD' }}"
+
+- name: Install ArgoCD using installation script
+  ansible.builtin.command:
+    cmd: bash {{ argocd_install_script }}
+  environment:
+    KUBECONFIG: "{{ kubeconfig_path }}"
+    PATH: "/home/linuxbrew/.linuxbrew/bin:{{ ansible_env.PATH }}"
+  when: argocd_ns_check.rc != 0
+  changed_when: true
+  register: argocd_install_result
+
+- name: Wait for ArgoCD server to be ready
+  ansible.builtin.command:
+    cmd: kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=argocd-server -n argocd --timeout={{ wait_timeout_argocd }}s
+  environment:
+    KUBECONFIG: "{{ kubeconfig_path }}"
+    PATH: "/home/linuxbrew/.linuxbrew/bin:{{ ansible_env.PATH }}"
+  changed_when: false
+
+- name: Wait for ArgoCD repo server to be ready
+  ansible.builtin.command:
+    cmd: kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=argocd-repo-server -n argocd --timeout={{ wait_timeout_argocd }}s
+  environment:
+    KUBECONFIG: "{{ kubeconfig_path }}"
+    PATH: "/home/linuxbrew/.linuxbrew/bin:{{ ansible_env.PATH }}"
+  changed_when: false
+
+- name: Wait for ArgoCD application controller to be ready
+  ansible.builtin.command:
+    cmd: kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=argocd-application-controller -n argocd --timeout={{ wait_timeout_argocd }}s
+  environment:
+    KUBECONFIG: "{{ kubeconfig_path }}"
+    PATH: "/home/linuxbrew/.linuxbrew/bin:{{ ansible_env.PATH }}"
+  changed_when: false
+
+- name: Wait additional time for ArgoCD to fully initialize
+  ansible.builtin.pause:
+    seconds: 30
+
+- name: Check if app-of-apps already exists
+  ansible.builtin.command:
+    cmd: kubectl get application app-of-apps -n argocd
+  environment:
+    KUBECONFIG: "{{ kubeconfig_path }}"
+    PATH: "/home/linuxbrew/.linuxbrew/bin:{{ ansible_env.PATH }}"
+  register: app_of_apps_check
+  changed_when: false
+  failed_when: false
+
+- name: Display app-of-apps deployment status
+  ansible.builtin.debug:
+    msg: "{{ '✓ App-of-apps already deployed, skipping' if app_of_apps_check.rc == 0 else '⚙️  Deploying app-of-apps' }}"
+
+- name: Apply app-of-apps manifest
+  ansible.builtin.command:
+    cmd: kubectl apply -f {{ app_of_apps_manifest }}
+  environment:
+    KUBECONFIG: "{{ kubeconfig_path }}"
+    PATH: "/home/linuxbrew/.linuxbrew/bin:{{ ansible_env.PATH }}"
+  when: app_of_apps_check.rc != 0
+  changed_when: true
+
+- name: Get ArgoCD applications status
+  ansible.builtin.command:
+    cmd: kubectl get applications -n argocd
+  environment:
+    KUBECONFIG: "{{ kubeconfig_path }}"
+    PATH: "/home/linuxbrew/.linuxbrew/bin:{{ ansible_env.PATH }}"
+  register: argocd_apps
+  changed_when: false
+
+- name: Display GitOps deployment summary
+  ansible.builtin.debug:
+    msg: |
+
+      ╔═══════════════════════════════════════════════════════════════╗
+      ║                 GITOPS DEPLOYMENT COMPLETE!                  ║
+      ╚═══════════════════════════════════════════════════════════════╝
+
+      ArgoCD Details:
+        • Namespace: argocd
+        • App-of-Apps: Deployed
+        • Repository: https://github.com/jamilshaikh07/talos-proxmox-gitops
+
+      ArgoCD Applications:
+      {{ argocd_apps.stdout }}
+
+      Next Steps:
+        1. Get ArgoCD admin password:
+           kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+        2. Port forward ArgoCD UI:
+           kubectl port-forward svc/argocd-server -n argocd 8080:443
+        3. Access ArgoCD UI: https://localhost:8080
+        4. Login with username: admin and the password from step 1
