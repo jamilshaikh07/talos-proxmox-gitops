@@ -142,27 +142,14 @@ This project demonstrates enterprise-grade infrastructure automation, showcasing
 
 ## 📋 Deployment Options
 
-### Option 1: GitHub Actions (Recommended)
-
-1. Configure GitHub secrets:
-   - `PROXMOX_API_URL`
-   - `PROXMOX_API_TOKEN_ID`
-   - `PROXMOX_API_TOKEN_SECRET`
-   - `SSH_PRIVATE_KEY`
-   - `SSH_PUBLIC_KEY`
-
-2. Trigger workflow:
-   ```bash
-   git push origin main
-   ```
-
-3. Monitor deployment in GitHub Actions tab
-
-### Option 2: Local Deployment
+### Option 1: Local Deployment (Recommended)
 
 ```bash
 # Full deployment
 ./deploy-homelab.sh
+
+# Or use Makefile
+make deploy
 
 # Skip specific layers
 ./deploy-homelab.sh --skip-layer1  # Skip infrastructure
@@ -170,14 +157,50 @@ This project demonstrates enterprise-grade infrastructure automation, showcasing
 ./deploy-homelab.sh --skip-layer3  # Skip GitOps
 ```
 
-### Option 3: Makefile
+### Option 2: Makefile
 
 ```bash
 make help     # Show all available commands
 make deploy   # Full deployment
+make layer1   # Deploy infrastructure only
+make layer2   # Configure NFS + Talos only
+make layer3   # Deploy GitOps only
 make status   # Check cluster status
 make destroy  # Destroy all infrastructure
 ```
+
+### Option 3: GitHub Actions (Advanced)
+
+**Requirements:**
+- Self-hosted GitHub Actions runner on Proxmox
+- Runner must have network access to Proxmox API and VMs
+
+**Setup:**
+
+1. Deploy a self-hosted runner VM on Proxmox:
+   ```bash
+   # Follow GitHub's instructions to set up a self-hosted runner
+   # https://docs.github.com/en/actions/hosting-your-own-runners
+   ```
+
+2. Configure GitHub secrets:
+   - `PROXMOX_API_URL`
+   - `PROXMOX_API_TOKEN_ID`
+   - `PROXMOX_API_TOKEN_SECRET`
+   - `SSH_PRIVATE_KEY`
+   - `SSH_PUBLIC_KEY`
+
+3. Trigger workflow:
+   ```bash
+   git push origin main
+   ```
+
+4. Monitor deployment in GitHub Actions tab
+
+**Note:** GitHub Actions deployment requires a self-hosted runner because:
+- Cloud runners cannot access private Proxmox infrastructure
+- Runner needs direct network access to manage VMs
+- Talos/kubectl commands need connectivity to cluster nodes
 
 ## 🔧 Configuration
 
