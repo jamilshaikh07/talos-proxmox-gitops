@@ -6,7 +6,7 @@ spec:
   acme:
     # Production server - strict rate limits!
     server: https://acme-v02.api.letsencrypt.org/directory
-    email: info@hikmahtech.in
+    email: jamilshaikh07@gmail.com
     privateKeySecretRef:
       name: letsencrypt-prod-account-key
     solvers:

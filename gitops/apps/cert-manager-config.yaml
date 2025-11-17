@@ -15,7 +15,7 @@ spec:
   source:
     path: manifests/cert-manager-config
     repoURL: https://github.com/jamilshaikh07/talos-proxmox-gitops
-    targetRevision: main
+    targetRevision: master
   syncPolicy:
     automated:
       prune: true
