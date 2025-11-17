@@ -212,7 +212,7 @@ make destroy  # Destroy all infrastructure
 | Worker 1 | 10.20.0.41 | Talos worker node |
 | Worker 2 | 10.20.0.42 | Talos worker node |
 | NFS Server | 10.20.0.44 | Ubuntu NFS server |
-| MetalLB Pool | 10.20.0.81-198 | Load balancer IP range |
+| MetalLB Pool | 10.20.0.81-99 | Load balancer IP range |
 
 ### Storage Configuration
 
