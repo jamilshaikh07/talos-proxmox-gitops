@@ -22,8 +22,8 @@ talos_nodes:
 # Proxmox configuration (for cleanup)
 proxmox_node: "pve"  # Change this to match your Proxmox node name
 
-# Talos configuration directory
-talos_config_dir: "/tmp/talos-{{ cluster_name }}"
+# Talos configuration directory (relative to repo root)
+talos_config_dir: "{{ playbook_dir }}/../../talos-{{ cluster_name }}"
 
 # CNI to use (none = we'll install Cilium manually)
 cni_name: "none"

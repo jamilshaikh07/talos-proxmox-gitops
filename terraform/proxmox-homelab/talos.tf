@@ -4,7 +4,7 @@ locals {
   master_nodes = {
     "talos-cp-01" = {
       target_node = "alif"
-      memory      = 4096 # 4GB
+      memory      = 8192 # 8GB
       cores       = 2
       storage     = "local-lvm"
       disk_size   = "50G"
@@ -17,7 +17,7 @@ locals {
   worker_nodes = {
     "talos-wk-01" = {
       target_node = "alif"
-      memory      = 4096 # 4GB
+      memory      = 6144 # 6GB
       cores       = 2
       storage     = "local-lvm"
       disk_size   = "50G"
@@ -26,7 +26,7 @@ locals {
     }
     "talos-wk-02" = {
       target_node = "alif"
-      memory      = 4096 # 4GB
+      memory      = 6144 # 6GB
       cores       = 2
       storage     = "local-lvm"
       disk_size   = "50G"

@@ -6,40 +6,23 @@
   ansible.builtin.debug:
     msg: |
       ⚠️  Talos cluster setup failed!
-      ⚠️  Cleaning up all Talos VMs...
+      ⚠️  Cleaning up all Talos VMs using Terraform...
 
-- name: Read Proxmox credentials from environment
-  ansible.builtin.set_fact:
-    proxmox_api_host: "{{ lookup('env', 'PROXMOX_API_URL') | regex_replace('^https?://', '') | regex_replace('/.*$', '') }}"
-    proxmox_api_user: "{{ lookup('env', 'PROXMOX_API_TOKEN_ID') }}"
-    proxmox_api_token: "{{ lookup('env', 'PROXMOX_API_TOKEN_SECRET') }}"
-
-- name: Destroy control plane VM
-  community.general.proxmox_kvm:
-    api_host: "{{ proxmox_api_host }}"
-    api_user: "{{ proxmox_api_user }}"
-    api_token_id: "{{ proxmox_api_user.split('!')[1] if '!' in proxmox_api_user else proxmox_api_user }}"
-    api_token_secret: "{{ proxmox_api_token }}"
-    node: "{{ proxmox_node }}"
-    vmid: "{{ talos_nodes.control_plane.vmid }}"
-    state: absent
-    force: true
+- name: Destroy Talos VMs using make destroy
+  ansible.builtin.shell:
+    cmd: make destroy
+    chdir: "{{ playbook_dir }}/../.."
+  environment:
+    PROXMOX_API_URL: "{{ lookup('env', 'PROXMOX_API_URL') }}"
+    PROXMOX_API_TOKEN_ID: "{{ lookup('env', 'PROXMOX_API_TOKEN_ID') }}"
+    PROXMOX_API_TOKEN_SECRET: "{{ lookup('env', 'PROXMOX_API_TOKEN_SECRET') }}"
   ignore_errors: true
-  register: destroy_cp
+  register: destroy_result
 
-- name: Destroy worker VMs
-  community.general.proxmox_kvm:
-    api_host: "{{ proxmox_api_host }}"
-    api_user: "{{ proxmox_api_user }}"
-    api_token_id: "{{ proxmox_api_user.split('!')[1] if '!' in proxmox_api_user else proxmox_api_user }}"
-    api_token_secret: "{{ proxmox_api_token }}"
-    node: "{{ proxmox_node }}"
-    vmid: "{{ item.vmid }}"
-    state: absent
-    force: true
-  loop: "{{ talos_nodes.workers }}"
-  ignore_errors: true
-  register: destroy_workers
+- name: Display destroy output
+  ansible.builtin.debug:
+    msg: "{{ destroy_result.stdout_lines if destroy_result.stdout_lines is defined else 'No output' }}"
+  when: destroy_result is defined
 
 - name: Clean up Talos configuration directory
   ansible.builtin.file:
@@ -51,5 +34,5 @@
   ansible.builtin.debug:
     msg: |
       ✓ Cleanup completed
-      ✓ All Talos VMs have been destroyed
+      ✓ All Talos VMs have been destroyed via Terraform
       ✓ Configuration directory cleaned up
