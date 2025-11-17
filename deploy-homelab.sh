@@ -213,19 +213,8 @@ layer1_infrastructure() {
     echo "  - Talos Worker 1: 10.20.0.41"
     echo "  - Talos Worker 2: 10.20.0.42"
     echo "  - NFS Server: 10.20.0.44"
-}
 
-# Layer 2: Configuration
-layer2_configuration() {
-    if [ "$SKIP_LAYER2" = true ]; then
-        log_warning "Skipping Layer 2 (Configuration)"
-        return 0
-    fi
-
-    log_layer "Starting Layer 2: Configuration (NFS + Talos Kubernetes)"
-    confirm_layer "Layer 2: Ansible Configuration + Talos Setup"
-
-    # Wait for VMs to be ready
+    # Wait for VMs to boot
     log "Waiting for VMs to boot (60 seconds)..."
     sleep 60
 
@@ -237,6 +226,17 @@ layer2_configuration() {
         fi
     done
     log "✓ All VMs are reachable"
+}
+
+# Layer 2: Configuration
+layer2_configuration() {
+    if [ "$SKIP_LAYER2" = true ]; then
+        log_warning "Skipping Layer 2 (Configuration)"
+        return 0
+    fi
+
+    log_layer "Starting Layer 2: Configuration (NFS + Talos Kubernetes)"
+    confirm_layer "Layer 2: Ansible Configuration + Talos Setup"
 
     cd "${ANSIBLE_DIR}"
 

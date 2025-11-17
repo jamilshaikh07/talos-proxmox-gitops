@@ -46,7 +46,7 @@ module "k8s_nodes" {
 
   vm_name     = each.key
   target_node = each.value.target_node
-  iso         = "local:iso/metal-amd64.iso"
+  iso         = "local:iso/metal-amd64-v1.11.5.iso"
   memory      = each.value.memory
   cores       = each.value.cores
   storage     = each.value.storage

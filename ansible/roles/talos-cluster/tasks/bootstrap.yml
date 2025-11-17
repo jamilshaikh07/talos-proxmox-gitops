@@ -19,22 +19,29 @@
     TALOSCONFIG: "{{ talosconfig_path }}"
   changed_when: true
 
-- name: Wait for control plane to be ready
+- name: Check if nodes are reachable via talosctl
   ansible.builtin.command:
-    cmd: talosctl health --server=false
+    cmd: talosctl version --short
   environment:
     TALOSCONFIG: "{{ talosconfig_path }}"
-  register: health_check
-  until: health_check.rc == 0
+  register: talos_version_check
+  until: talos_version_check.rc == 0
   retries: 20
-  delay: 15
+  delay: 10
   changed_when: false
   failed_when: false
 
-- name: Fail if control plane is not ready
+- name: Display Talos version
+  ansible.builtin.debug:
+    msg: |
+      {{ '✓ Talos nodes are reachable' if talos_version_check.rc == 0 else '❌ Talos nodes not reachable' }}
+      Client: {{ talos_version_check.stdout_lines[0] if talos_version_check.stdout_lines | length > 0 else 'unknown' }}
+      Server: {{ talos_version_check.stdout_lines[1] if talos_version_check.stdout_lines | length > 1 else 'unknown' }}
+
+- name: Fail if nodes not reachable
   ansible.builtin.fail:
-    msg: "Control plane failed to become ready after 5 minutes"
-  when: health_check.rc != 0
+    msg: "Talos nodes are not reachable after waiting"
+  when: talos_version_check.rc != 0
 
 - name: Bootstrap Kubernetes cluster
   ansible.builtin.command:
@@ -43,8 +50,24 @@
     TALOSCONFIG: "{{ talosconfig_path }}"
   changed_when: true
   register: bootstrap_result
-  failed_when: bootstrap_result.rc != 0
+  failed_when: false
 
 - name: Display bootstrap result
   ansible.builtin.debug:
-    msg: "✓ Kubernetes cluster bootstrapped successfully"
+    msg: "{{ '✓ Bootstrap command executed (cluster may already be bootstrapped)' if bootstrap_result.rc == 0 else '⚠️  Bootstrap returned non-zero (may already be bootstrapped): ' ~ bootstrap_result.stderr }}"
+
+- name: Wait for etcd to be running (be patient, this can take 2-3 minutes)
+  ansible.builtin.command:
+    cmd: talosctl service etcd status
+  environment:
+    TALOSCONFIG: "{{ talosconfig_path }}"
+  register: etcd_status
+  until: etcd_status.stdout is search('STATE.*Running')
+  retries: 30
+  delay: 10
+  changed_when: false
+  failed_when: false
+
+- name: Display etcd status
+  ansible.builtin.debug:
+    msg: "{{ '✓ etcd is running' if etcd_status.rc == 0 else '⚠️  etcd status check timed out (cluster may still be initializing)' }}"

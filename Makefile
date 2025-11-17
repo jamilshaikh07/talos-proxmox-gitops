@@ -86,6 +86,17 @@ terraform-apply: terraform-init terraform-validate ## Apply Terraform configurat
 	@echo "$(GREEN)🚀 Deploying infrastructure...$(NC)"
 	cd $(TERRAFORM_DIR) && terraform apply -auto-approve
 	@echo "$(GREEN)✅ Layer 1 Complete!$(NC)"
+	@echo "$(YELLOW)Waiting for VMs to boot (60 seconds)...$(NC)"
+	@sleep 60
+	@echo "$(YELLOW)Checking VM connectivity...$(NC)"
+	@for ip in 10.20.0.40 10.20.0.41 10.20.0.42 10.20.0.44; do \
+		if timeout 300 bash -c "until ping -c 1 $$ip &>/dev/null; do sleep 5; done"; then \
+			echo "$(GREEN)✓$(NC) $$ip is reachable"; \
+		else \
+			echo "$(RED)✗$(NC) $$ip is not reachable"; \
+			exit 1; \
+		fi \
+	done
 
 .PHONY: terraform-destroy
 terraform-destroy: ## Destroy Terraform infrastructure
@@ -106,8 +117,6 @@ layer2: ansible-configure ## Deploy Layer 2 configuration
 .PHONY: ansible-configure
 ansible-configure: ## Run Ansible configuration (NFS + Talos)
 	@echo "$(GREEN)🔧 Configuring NFS Server and Talos Cluster...$(NC)"
-	@echo "$(YELLOW)Waiting for VMs to be ready (60 seconds)...$(NC)"
-	@sleep 60
 	cd $(ANSIBLE_DIR) && ansible-playbook -i inventory.yml playbooks/layer2-configure.yml
 	@echo "$(GREEN)✅ Layer 2 Complete!$(NC)"
 

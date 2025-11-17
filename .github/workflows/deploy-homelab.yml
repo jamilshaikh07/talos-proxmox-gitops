@@ -48,7 +48,7 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.9.0
+          terraform_version: 1.13.5
 
       - name: Terraform Init
         working-directory: ${{ env.TERRAFORM_DIR }}
@@ -91,6 +91,22 @@ jobs:
           echo "  - Talos Worker 2: 10.20.0.42"
           echo "  - NFS Server: 10.20.0.44"
 
+      - name: Wait for VMs to boot
+        run: |
+          echo "Waiting for VMs to boot (60 seconds)..."
+          sleep 60
+
+          echo "Checking VM connectivity..."
+          for ip in 10.20.0.40 10.20.0.41 10.20.0.42 10.20.0.44; do
+            if timeout 300 bash -c "until ping -c 1 $ip &>/dev/null; do sleep 5; done"; then
+              echo "✓ $ip is reachable"
+            else
+              echo "✗ $ip is not reachable"
+              exit 1
+            fi
+          done
+          echo "✓ All VMs are reachable"
+
   layer2-configuration:
     name: "Layer 2: Ansible Configuration + Talos Setup"
     runs-on: self-hosted
@@ -104,27 +120,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Wait for VMs to be ready
-        run: |
-          echo "Waiting for VMs to boot and be network-ready..."
-          sleep 60
-
-          # Wait for NFS server
-          timeout 300 bash -c 'until ping -c 1 10.20.0.44 &>/dev/null; do sleep 5; done' || {
-            echo "❌ NFS server (10.20.0.44) not reachable"
-            exit 1
-          }
-
-          # Wait for Talos nodes
-          for ip in 10.20.0.40 10.20.0.41 10.20.0.42; do
-            timeout 300 bash -c "until ping -c 1 $ip &>/dev/null; do sleep 5; done" || {
-              echo "❌ Talos node $ip not reachable"
-              exit 1
-            }
-          done
-
-          echo "✅ All VMs are reachable"
 
       - name: Setup SSH Key
         run: |
