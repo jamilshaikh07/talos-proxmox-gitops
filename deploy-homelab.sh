@@ -104,20 +104,6 @@ EOF
     echo -e "${NC}"
 }
 
-confirm_layer() {
-    local layer_name=$1
-    echo ""
-    echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e "${CYAN}Ready to execute: ${layer_name}${NC}"
-    echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    read -p "Continue? (y/N) " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        log_error "Deployment cancelled by user"
-        exit 1
-    fi
-}
-
 check_prerequisites() {
     log "Checking prerequisites..."
 
@@ -191,7 +177,6 @@ layer1_infrastructure() {
     fi
 
     log_layer "Starting Layer 1: Infrastructure Deployment"
-    confirm_layer "Layer 1: Terraform Infrastructure (4 VMs)"
 
     cd "${TERRAFORM_DIR}"
 
@@ -236,7 +221,6 @@ layer2_configuration() {
     fi
 
     log_layer "Starting Layer 2: Configuration (NFS + Talos Kubernetes)"
-    confirm_layer "Layer 2: Ansible Configuration + Talos Setup"
 
     cd "${ANSIBLE_DIR}"
 
@@ -261,7 +245,6 @@ layer3_gitops() {
     fi
 
     log_layer "Starting Layer 3: GitOps (ArgoCD + Applications)"
-    confirm_layer "Layer 3: ArgoCD and GitOps Applications"
 
     cd "${ANSIBLE_DIR}"
 
