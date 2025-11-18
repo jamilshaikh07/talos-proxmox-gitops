@@ -24,12 +24,22 @@ spec:
         nfs:
           server: 10.20.0.44
           path: /srv/nfs
+          mountOptions:
+            - nfsvers=4.1
+            - rw
+            - hard
+            - timeo=600
+            - retrans=2
         storageClass:
           name: nfs-client
           defaultClass: true
           allowVolumeExpansion: true
           reclaimPolicy: Delete
           archiveOnDelete: false
+          mountOptions:
+            - nfsvers=4.1
+            - rw
+            - hard
   syncPolicy:
     automated:
       prune: true
