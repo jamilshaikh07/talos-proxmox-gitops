@@ -15,10 +15,10 @@ spec:
   sources:
     - repoURL: https://github.com/jamilshaikh07/talos-proxmox-gitops
       path: manifests/metallb-namespace
-      targetRevision: main
+      targetRevision: master
     - repoURL: https://github.com/jamilshaikh07/talos-proxmox-gitops
       path: manifests/metallb-config
-      targetRevision: main
+      targetRevision: master
     - chart: metallb
       repoURL: https://metallb.github.io/metallb
       targetRevision: 0.15.2

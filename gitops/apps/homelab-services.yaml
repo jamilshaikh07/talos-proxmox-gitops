@@ -15,7 +15,7 @@ spec:
   source:
     path: manifests/homelab-services
     repoURL: https://github.com/jamilshaikh07/talos-proxmox-gitops
-    targetRevision: main
+    targetRevision: master
   syncPolicy:
     automated:
       prune: true
