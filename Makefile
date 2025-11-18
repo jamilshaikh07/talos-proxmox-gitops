@@ -228,7 +228,7 @@ destroy: ## Destroy all infrastructure (Talos + NFS)
 	@echo ""
 	@read -p "Type 'yes' to confirm destruction: " confirm && [ "$$confirm" = "yes" ] || { echo "$(GREEN)Destroy cancelled.$(NC)"; exit 1; }
 	@echo "$(RED)🔥 Destroying infrastructure...$(NC)"
-	cd $(TERRAFORM_DIR) && terraform destroy -auto-approve
+	cd $(TERRAFORM_DIR) && terraform init && terraform destroy -auto-approve
 	@echo "$(GREEN)✅ Infrastructure destroyed$(NC)"
 
 .PHONY: destroy-talos
