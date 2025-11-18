@@ -38,14 +38,6 @@ spec:
             initChownData:
               enabled: false
 
-            # Persistent storage for Grafana (Longhorn 5GB)
-            persistence:
-              enabled: true
-              type: pvc
-              existingClaim: grafana-storage
-              accessModes:
-                - ReadWriteOnce
-
             # Enable sidecar for automatic dashboard loading
             sidecar:
               dashboards:
