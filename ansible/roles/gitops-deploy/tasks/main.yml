@@ -55,7 +55,6 @@
       --namespace {{ argocd_namespace }}
       --version {{ argocd_helm_version }}
       --set server.service.type=ClusterIP
-      --set server.extraArgs[0]="--insecure"
   environment:
     KUBECONFIG: "{{ kubeconfig_path }}"
     PATH: "/home/linuxbrew/.linuxbrew/bin:{{ ansible_env.PATH }}"
