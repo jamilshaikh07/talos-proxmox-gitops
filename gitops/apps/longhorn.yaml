@@ -23,20 +23,21 @@ spec:
         # Longhorn v1.10.1 - Distributed Block Storage
 
         # Disable problematic Helm hooks for GitOps compatibility
+        # https://github.com/longhorn/longhorn/issues/8707
         preUpgradeChecker:
           jobEnabled: false
 
         # Default storage class configuration
         persistence:
           defaultClass: true
-          defaultClassReplicaCount: 3
+          defaultClassReplicaCount: 2
           defaultDataLocality: disabled
-          reclaimPolicy: Delete
+          reclaimPolicy: Retain
 
         # Default settings
         defaultSettings:
           # Storage configuration
-          defaultReplicaCount: 3
+          defaultReplicaCount: 2
           storageMinimalAvailablePercentage: 25
           storageOverProvisioningPercentage: 200
 
@@ -65,9 +66,9 @@ spec:
 
         # Monitoring integration
         metrics:
+          enabled: true
           serviceMonitor:
             enabled: true
-            namespace: longhorn-system
 
         # Service configuration
         service:
