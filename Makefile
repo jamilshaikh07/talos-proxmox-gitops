@@ -5,7 +5,8 @@
 TERRAFORM_DIR = terraform/proxmox-homelab
 ANSIBLE_DIR = ansible
 GITOPS_DIR = gitops
-KUBECONFIG_PATH = /tmp/talos-homelab-cluster/rendered/kubeconfig
+TALOS_CONFIG_DIR = talos-homelab-cluster
+KUBECONFIG_PATH = $(TALOS_CONFIG_DIR)/rendered/kubeconfig
 
 # Colors for output
 GREEN = \033[0;32m
@@ -176,8 +177,8 @@ regenerate-worker-configs: ## Regenerate missing worker configs (run after addin
 	@echo "$(BLUE)This will generate configs only for workers that don't have one yet$(NC)"
 	@cd $(ANSIBLE_DIR) && ansible-playbook -i inventory.yml playbooks/layer2-configure.yml --tags talos
 	@echo "$(GREEN)✅ Worker configs updated$(NC)"
-	@echo "$(BLUE)Configs location: /tmp/talos-homelab-cluster/rendered/$(NC)"
-	@ls -lh /tmp/talos-homelab-cluster/rendered/talos-wk-*.yaml 2>/dev/null || echo "$(YELLOW)No worker configs found yet$(NC)"
+	@echo "$(BLUE)Configs location: $(TALOS_CONFIG_DIR)/rendered/$(NC)"
+	@ls -lh $(TALOS_CONFIG_DIR)/rendered/talos-wk-*.yaml 2>/dev/null || echo "$(YELLOW)No worker configs found yet$(NC)"
 
 # ============================================================================
 # LAYER 3 - GITOPS (ArgoCD)
@@ -281,6 +282,21 @@ destroy: ## Destroy all infrastructure (Talos + NFS)
 	@echo "$(RED)🔥 Destroying infrastructure...$(NC)"
 	cd $(TERRAFORM_DIR) && terraform init && terraform destroy -auto-approve
 	@echo "$(GREEN)✅ Infrastructure destroyed$(NC)"
+
+.PHONY: destroy-all
+destroy-all: ## Destroy all infrastructure AND remove Talos config directory
+	@echo "$(RED)⚠️  WARNING: This will destroy EVERYTHING!$(NC)"
+	@echo "$(YELLOW)The following will be destroyed:$(NC)"
+	@echo "  - All VMs (Talos + NFS)"
+	@echo "  - Talos configuration directory: $(TALOS_CONFIG_DIR)"
+	@echo "  - All kubeconfigs and secrets"
+	@echo ""
+	@read -p "Type 'yes' to confirm complete destruction: " confirm && [ "$$confirm" = "yes" ] || { echo "$(GREEN)Destroy cancelled.$(NC)"; exit 1; }
+	@echo "$(RED)🔥 Destroying infrastructure...$(NC)"
+	cd $(TERRAFORM_DIR) && terraform init && terraform destroy -auto-approve
+	@echo "$(RED)🗑️  Removing Talos configuration directory...$(NC)"
+	@rm -rf $(TALOS_CONFIG_DIR)
+	@echo "$(GREEN)✅ Everything destroyed and cleaned up$(NC)"
 
 .PHONY: destroy-talos
 destroy-talos: ## Destroy only Talos VMs (preserve NFS)
