@@ -27,6 +27,7 @@ help: ## Display this help message
 	@echo "$(CYAN)╚═══════════════════════════════════════════════════════════════╝$(NC)"
 	@echo ""
 	@echo "$(YELLOW)Quick Commands:$(NC)"
+	@echo "  $(GREEN)make create-templates$(NC)    - Create cloud-init templates (Debian + Ubuntu)"
 	@echo "  $(GREEN)make deploy$(NC)              - Full 3-layer deployment"
 	@echo "  $(GREEN)make destroy$(NC)             - Destroy all infrastructure"
 	@echo "  $(GREEN)make status$(NC)              - Check cluster status"
@@ -35,10 +36,30 @@ help: ## Display this help message
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  $(GREEN)%-25s$(NC) %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo ""
 	@echo "$(YELLOW)Deployment Order:$(NC)"
+	@echo "  0. $(GREEN)make create-templates$(NC)  - Create cloud-init templates (run once)"
 	@echo "  1. $(GREEN)make layer1$(NC)  - Deploy infrastructure (3 Talos + 1 NFS = 4 VMs)"
 	@echo "  2. $(GREEN)make layer2$(NC)  - Configure NFS + Talos Kubernetes"
 	@echo "  3. $(GREEN)make layer3$(NC)  - Deploy ArgoCD + GitOps apps"
 	@echo ""
+
+# ============================================================================
+# LAYER 0 - TEMPLATES
+# ============================================================================
+
+.PHONY: create-templates
+create-templates: ## Create both Debian 12 and Ubuntu 24.04 cloud-init templates
+	@echo "$(GREEN)🏗️  Creating cloud-init templates...$(NC)"
+	@./create-cloud-templates.sh
+
+.PHONY: create-debian
+create-debian: ## Create only Debian 12 cloud-init template
+	@echo "$(GREEN)🏗️  Creating Debian 12 template...$(NC)"
+	@DEBIAN_ONLY=true ./create-cloud-templates.sh
+
+.PHONY: create-ubuntu
+create-ubuntu: ## Create only Ubuntu 24.04 cloud-init template
+	@echo "$(GREEN)🏗️  Creating Ubuntu 24.04 template...$(NC)"
+	@UBUNTU_ONLY=true ./create-cloud-templates.sh
 
 # ============================================================================
 # FULL DEPLOYMENT
