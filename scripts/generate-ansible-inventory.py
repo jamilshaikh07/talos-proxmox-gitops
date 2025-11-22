@@ -13,7 +13,7 @@ def get_ip_from_dns(hostname):
     """Get IP from DNS lookup (assumes DHCP reservation is configured)."""
     try:
         result = subprocess.run(
-            ['dig', '+short', f'{hostname}.homelab.local'],
+            ['dig', '+short', f'{hostname}.lab.jamilshaikh.in'],
             capture_output=True,
             text=True,
             timeout=5
@@ -22,7 +22,7 @@ def get_ip_from_dns(hostname):
         if ip and not ip.startswith(';'):
             return ip
     except Exception as e:
-        print(f"Warning: Could not resolve {hostname}.homelab.local: {e}", file=sys.stderr)
+        print(f"Warning: Could not resolve {hostname}.lab.jamilshaikh.in: {e}", file=sys.stderr)
 
     # Fallback to hardcoded IPs based on naming convention
     if 'cp-01' in hostname:

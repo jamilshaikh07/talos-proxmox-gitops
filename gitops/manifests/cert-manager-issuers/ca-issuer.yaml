@@ -8,7 +8,7 @@ spec:
   ca:
     secretName: homelab-root-ca-secret
 ---
-# Wildcard Certificate for *.homelab.local domain
+# Wildcard Certificate for *.lab.jamilshaikh.in domain
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
@@ -20,10 +20,10 @@ spec:
     name: homelab-ca-issuer
     kind: ClusterIssuer
     group: cert-manager.io
-  commonName: "*.homelab.local"
+  commonName: "*.lab.jamilshaikh.in"
   dnsNames:
-    - "*.homelab.local"
-    - "homelab.local"
+    - "*.lab.jamilshaikh.in"
+    - "lab.jamilshaikh.in"
   privateKey:
     algorithm: RSA
     size: 2048

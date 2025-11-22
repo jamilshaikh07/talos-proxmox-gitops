@@ -382,31 +382,31 @@ tempo-port-forward: ## Port-forward Tempo locally on 3100
 # ============================================================================
 
 .PHONY: setup-dns
-setup-dns: ## Add *.homelab.local domains to /etc/hosts
-	@echo "$(YELLOW)📝 Adding *.homelab.local domains to /etc/hosts...$(NC)"
-	@if grep -q "argocd.homelab.local" /etc/hosts 2>/dev/null; then \
+setup-dns: ## Add *.lab.jamilshaikh.in domains to /etc/hosts
+	@echo "$(YELLOW)📝 Adding *.lab.jamilshaikh.in domains to /etc/hosts...$(NC)"
+	@if grep -q "argocd.lab.jamilshaikh.in" /etc/hosts 2>/dev/null; then \
 		echo "$(GREEN)✓$(NC) Domains already configured in /etc/hosts"; \
 	else \
 		echo "$(YELLOW)Adding homelab domains...$(NC)"; \
 		echo "" | sudo tee -a /etc/hosts; \
-		echo "# Homelab Services (*.homelab.local)" | sudo tee -a /etc/hosts; \
-		echo "10.20.0.81 argocd.homelab.local grafana.homelab.local prometheus.homelab.local minio.homelab.local longhorn.homelab.local traefik.homelab.local uptime.homelab.local homarr.homelab.local" | sudo tee -a /etc/hosts; \
+		echo "# Homelab Services (*.lab.jamilshaikh.in)" | sudo tee -a /etc/hosts; \
+		echo "10.20.0.81 argocd.lab.jamilshaikh.in grafana.lab.jamilshaikh.in prometheus.lab.jamilshaikh.in minio.lab.jamilshaikh.in longhorn.lab.jamilshaikh.in traefik.lab.jamilshaikh.in uptime.lab.jamilshaikh.in homarr.lab.jamilshaikh.in" | sudo tee -a /etc/hosts; \
 		echo "$(GREEN)✅ DNS configuration added to /etc/hosts$(NC)"; \
 	fi
 	@echo ""
 	@echo "$(BLUE)🌐 Access your services:$(NC)"
-	@echo "  https://argocd.homelab.local       - ArgoCD UI"
-	@echo "  https://grafana.homelab.local      - Grafana dashboards (+ logs & events!)"
-	@echo "  https://prometheus.homelab.local   - Prometheus UI"
-	@echo "  https://minio.homelab.local        - MinIO console"
-	@echo "  https://longhorn.homelab.local     - Longhorn storage UI"
-	@echo "  https://traefik.homelab.local      - Traefik dashboard"
-	@echo "  https://uptime.homelab.local       - Uptime Kuma monitoring"
-	@echo "  https://homarr.homelab.local       - Homarr dashboard"
+	@echo "  https://argocd.lab.jamilshaikh.in       - ArgoCD UI"
+	@echo "  https://grafana.lab.jamilshaikh.in      - Grafana dashboards (+ logs & events!)"
+	@echo "  https://prometheus.lab.jamilshaikh.in   - Prometheus UI"
+	@echo "  https://minio.lab.jamilshaikh.in        - MinIO console"
+	@echo "  https://longhorn.lab.jamilshaikh.in     - Longhorn storage UI"
+	@echo "  https://traefik.lab.jamilshaikh.in      - Traefik dashboard"
+	@echo "  https://uptime.lab.jamilshaikh.in       - Uptime Kuma monitoring"
+	@echo "  https://homarr.lab.jamilshaikh.in       - Homarr dashboard"
 
 .PHONY: remove-dns
-remove-dns: ## Remove *.homelab.local domains from /etc/hosts
-	@echo "$(YELLOW)🗑️  Removing *.homelab.local domains from /etc/hosts...$(NC)"
+remove-dns: ## Remove *.lab.jamilshaikh.in domains from /etc/hosts
+	@echo "$(YELLOW)🗑️  Removing *.lab.jamilshaikh.in domains from /etc/hosts...$(NC)"
 	@sudo sed -i '/# Homelab Services/,+1d' /etc/hosts 2>/dev/null || true
 	@echo "$(GREEN)✅ DNS configuration removed$(NC)"
 
@@ -446,14 +446,14 @@ trust-ca: extract-ca ## Trust homelab CA certificate (Linux)
 	fi
 	@echo ""
 	@echo "$(BLUE)🌐 You can now access services with valid HTTPS:$(NC)"
-	@echo "  https://argocd.homelab.local"
-	@echo "  https://grafana.homelab.local"
-	@echo "  https://prometheus.homelab.local"
-	@echo "  https://longhorn.homelab.local"
-	@echo "  https://minio.homelab.local"
-	@echo "  https://traefik.homelab.local"
-	@echo "  https://uptime.homelab.local"
-	@echo "  https://homarr.homelab.local"
+	@echo "  https://argocd.lab.jamilshaikh.in"
+	@echo "  https://grafana.lab.jamilshaikh.in"
+	@echo "  https://prometheus.lab.jamilshaikh.in"
+	@echo "  https://longhorn.lab.jamilshaikh.in"
+	@echo "  https://minio.lab.jamilshaikh.in"
+	@echo "  https://traefik.lab.jamilshaikh.in"
+	@echo "  https://uptime.lab.jamilshaikh.in"
+	@echo "  https://homarr.lab.jamilshaikh.in"
 
 .PHONY: untrust-ca
 untrust-ca: ## Remove homelab CA certificate

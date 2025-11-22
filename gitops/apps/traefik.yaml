@@ -81,7 +81,7 @@ spec:
         ingressRoute:
           dashboard:
             enabled: true
-            matchRule: Host(`traefik.homelab.local`)
+            matchRule: Host(`traefik.lab.jamilshaikh.in`)
             entryPoints:
               - websecure
             tls: {}

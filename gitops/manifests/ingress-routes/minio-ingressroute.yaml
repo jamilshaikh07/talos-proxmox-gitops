@@ -9,7 +9,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`minio.homelab.local`)
+    - match: Host(`minio.lab.jamilshaikh.in`)
       kind: Rule
       services:
         - name: minio
@@ -29,9 +29,9 @@ spec:
     name: homelab-ca-issuer
     kind: ClusterIssuer
     group: cert-manager.io
-  commonName: minio.homelab.local
+  commonName: minio.lab.jamilshaikh.in
   dnsNames:
-    - minio.homelab.local
+    - minio.lab.jamilshaikh.in
   privateKey:
     algorithm: RSA
     size: 2048

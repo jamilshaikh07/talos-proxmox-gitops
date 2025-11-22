@@ -9,7 +9,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`prometheus.homelab.local`)
+    - match: Host(`prometheus.lab.jamilshaikh.in`)
       kind: Rule
       services:
         - name: prometheus-stack-kube-prom-prometheus
@@ -29,9 +29,9 @@ spec:
     name: homelab-ca-issuer
     kind: ClusterIssuer
     group: cert-manager.io
-  commonName: prometheus.homelab.local
+  commonName: prometheus.lab.jamilshaikh.in
   dnsNames:
-    - prometheus.homelab.local
+    - prometheus.lab.jamilshaikh.in
   privateKey:
     algorithm: RSA
     size: 2048

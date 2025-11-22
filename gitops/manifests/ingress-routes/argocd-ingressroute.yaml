@@ -9,7 +9,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`argocd.homelab.local`)
+    - match: Host(`argocd.lab.jamilshaikh.in`)
       kind: Rule
       services:
         - name: argocd-server
@@ -29,9 +29,9 @@ spec:
     name: homelab-ca-issuer
     kind: ClusterIssuer
     group: cert-manager.io
-  commonName: argocd.homelab.local
+  commonName: argocd.lab.jamilshaikh.in
   dnsNames:
-    - argocd.homelab.local
+    - argocd.lab.jamilshaikh.in
   privateKey:
     algorithm: RSA
     size: 2048

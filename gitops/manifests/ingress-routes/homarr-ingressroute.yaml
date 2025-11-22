@@ -9,7 +9,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`homarr.homelab.local`)
+    - match: Host(`homarr.lab.jamilshaikh.in`)
       kind: Rule
       services:
         - name: homarr
@@ -29,9 +29,9 @@ spec:
     name: homelab-ca-issuer
     kind: ClusterIssuer
     group: cert-manager.io
-  commonName: homarr.homelab.local
+  commonName: homarr.lab.jamilshaikh.in
   dnsNames:
-    - homarr.homelab.local
+    - homarr.lab.jamilshaikh.in
   privateKey:
     algorithm: RSA
     size: 2048
