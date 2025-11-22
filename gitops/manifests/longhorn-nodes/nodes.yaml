@@ -57,3 +57,20 @@ spec:
       path: /var/mnt/longhorn
       storageReserved: 10737418240  # 10Gi reserved
       tags: []
+---
+# Longhorn Node Configuration for talos-wk-03
+apiVersion: longhorn.io/v1beta2
+kind: Node
+metadata:
+  name: talos-wk-03
+  namespace: longhorn-system
+spec:
+  allowScheduling: true
+  evictionRequested: false
+  disks:
+    default-disk:
+      allowScheduling: true
+      evictionRequested: false
+      path: /var/mnt/longhorn
+      storageReserved: 10737418240  # 10Gi reserved
+      tags: []

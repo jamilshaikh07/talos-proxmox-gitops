@@ -1,0 +1,69 @@
+---
+# Label Kubernetes nodes with proper roles and metadata
+
+- name: Wait for all nodes to be Ready
+  ansible.builtin.shell: |
+    kubectl get nodes --no-headers 2>/dev/null | grep -v NotReady | wc -l
+  environment:
+    KUBECONFIG: "{{ talos_config_dir }}/rendered/kubeconfig"
+  register: ready_nodes
+  until: ready_nodes.stdout | int == (1 + talos_nodes.workers | length)
+  retries: 30
+  delay: 10
+  changed_when: false
+
+- name: Label worker nodes with node-role.kubernetes.io/worker
+  ansible.builtin.shell: |
+    kubectl label node {{ item.hostname }} node-role.kubernetes.io/worker='' --overwrite
+  environment:
+    KUBECONFIG: "{{ talos_config_dir }}/rendered/kubeconfig"
+  loop: "{{ talos_nodes.workers }}"
+  register: label_result
+  changed_when: "'labeled' in label_result.stdout or 'not labeled' not in label_result.stdout"
+  failed_when: false
+
+- name: Label control plane nodes with node-role.kubernetes.io/control-plane
+  ansible.builtin.shell: |
+    kubectl label node {{ talos_nodes.control_plane.hostname }} node-role.kubernetes.io/control-plane='' --overwrite
+  environment:
+    KUBECONFIG: "{{ talos_config_dir }}/rendered/kubeconfig"
+  register: cp_label_result
+  changed_when: "'labeled' in cp_label_result.stdout or 'not labeled' not in cp_label_result.stdout"
+  failed_when: false
+
+- name: Add topology labels to worker nodes
+  ansible.builtin.shell: |
+    kubectl label node {{ item.hostname }} \
+      topology.kubernetes.io/zone=homelab \
+      topology.kubernetes.io/region=proxmox \
+      --overwrite
+  environment:
+    KUBECONFIG: "{{ talos_config_dir }}/rendered/kubeconfig"
+  loop: "{{ talos_nodes.workers }}"
+  register: topology_result
+  changed_when: "'labeled' in topology_result.stdout"
+  failed_when: false
+
+- name: Add topology labels to control plane node
+  ansible.builtin.shell: |
+    kubectl label node {{ talos_nodes.control_plane.hostname }} \
+      topology.kubernetes.io/zone=homelab \
+      topology.kubernetes.io/region=proxmox \
+      --overwrite
+  environment:
+    KUBECONFIG: "{{ talos_config_dir }}/rendered/kubeconfig"
+  register: cp_topology_result
+  changed_when: "'labeled' in cp_topology_result.stdout"
+  failed_when: false
+
+- name: Display labeled nodes
+  ansible.builtin.shell: |
+    kubectl get nodes --show-labels
+  environment:
+    KUBECONFIG: "{{ talos_config_dir }}/rendered/kubeconfig"
+  register: labeled_nodes
+  changed_when: false
+
+- name: Show node labels
+  ansible.builtin.debug:
+    msg: "{{ labeled_nodes.stdout_lines }}"

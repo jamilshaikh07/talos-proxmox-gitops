@@ -231,6 +231,13 @@ set-kubeconfig: ## Export KUBECONFIG environment variable
 	@echo "Run this command in your shell:"
 	@echo "  export KUBECONFIG=$(KUBECONFIG_PATH)"
 
+.PHONY: label-nodes
+label-nodes: ## Label Kubernetes nodes with roles and topology
+	@echo "$(BLUE)🏷️  Labeling Kubernetes nodes...$(NC)"
+	@cd $(ANSIBLE_DIR) && ansible-playbook -i inventory/hosts.yml playbooks/talos-cluster.yml --tags labels
+	@echo "$(GREEN)✅ Nodes labeled$(NC)"
+	@kubectl get nodes --show-labels
+
 # ============================================================================
 # TALOS MANAGEMENT
 # ============================================================================

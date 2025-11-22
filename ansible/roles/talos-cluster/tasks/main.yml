@@ -36,6 +36,11 @@
   tags:
     - cilium
 
+- name: Label Kubernetes nodes
+  ansible.builtin.include_tasks: label-nodes.yml
+  tags:
+    - labels
+
 - name: Display cluster information
   ansible.builtin.include_tasks: display-info.yml
   tags:
