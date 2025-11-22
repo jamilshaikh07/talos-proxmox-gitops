@@ -28,3 +28,8 @@ spec:
       global:
         repo1-retention-full: "7"
         repo1-retention-full-type: time
+  users:
+    - name: homarr
+      databases:
+        - homarr
+      options: "CREATEDB"

@@ -9,7 +9,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`grafana.lab`)
+    - match: Host(`grafana.homelab.local`)
       kind: Rule
       services:
         - name: prometheus-stack-grafana
@@ -29,9 +29,9 @@ spec:
     name: homelab-ca-issuer
     kind: ClusterIssuer
     group: cert-manager.io
-  commonName: grafana.lab
+  commonName: grafana.homelab.local
   dnsNames:
-    - grafana.lab
+    - grafana.homelab.local
   privateKey:
     algorithm: RSA
     size: 2048

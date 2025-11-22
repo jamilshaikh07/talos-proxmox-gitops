@@ -9,7 +9,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`uptime.lab`)
+    - match: Host(`uptime.homelab.local`)
       kind: Rule
       services:
         - name: uptime-kuma
@@ -29,9 +29,9 @@ spec:
     name: homelab-ca-issuer
     kind: ClusterIssuer
     group: cert-manager.io
-  commonName: uptime.lab
+  commonName: uptime.homelab.local
   dnsNames:
-    - uptime.lab
+    - uptime.homelab.local
   privateKey:
     algorithm: RSA
     size: 2048

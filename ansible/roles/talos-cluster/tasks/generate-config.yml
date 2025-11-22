@@ -72,12 +72,22 @@
 - name: Create system extensions and Longhorn support patch
   ansible.builtin.copy:
     content: |
+      # Patch for Proxmox and Longhorn
+      customization:
+        systemExtensions:
+          officialExtensions:
+            # For QEMU support with Proxmox
+            - siderolabs/qemu-guest-agent
+            # Longhorn support
+            - siderolabs/iscsi-tools
+            - siderolabs/util-linux-tools
       machine:
-        install:
-          extensions:
-            - image: ghcr.io/siderolabs/qemu-guest-agent:9.2.2
-            - image: ghcr.io/siderolabs/iscsi-tools:v0.2.0
-            - image: ghcr.io/siderolabs/util-linux-tools:2.40.2
+        features:
+          # KubePrism: Local load balancer for Kubernetes API server
+          # Provides HA and automatic failover for API access
+          kubePrism:
+            enabled: true
+            port: 7445
         kubelet:
           extraMounts:
             - destination: /var/lib/longhorn

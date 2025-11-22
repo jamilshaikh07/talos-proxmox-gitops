@@ -8,22 +8,22 @@ spec:
   ca:
     secretName: homelab-root-ca-secret
 ---
-# Wildcard Certificate for *.lab domain
+# Wildcard Certificate for *.homelab.local domain
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: wildcard-lab-cert
+  name: wildcard-homelab-local-cert
   namespace: cert-manager
 spec:
-  secretName: wildcard-lab-tls
+  secretName: wildcard-homelab-local-tls
   issuerRef:
     name: homelab-ca-issuer
     kind: ClusterIssuer
     group: cert-manager.io
-  commonName: "*.lab"
+  commonName: "*.homelab.local"
   dnsNames:
-    - "*.lab"
-    - "lab"
+    - "*.homelab.local"
+    - "homelab.local"
   privateKey:
     algorithm: RSA
     size: 2048

@@ -9,7 +9,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`argocd.lab`)
+    - match: Host(`argocd.homelab.local`)
       kind: Rule
       services:
         - name: argocd-server
@@ -30,9 +30,9 @@ spec:
     name: homelab-ca-issuer
     kind: ClusterIssuer
     group: cert-manager.io
-  commonName: argocd.lab
+  commonName: argocd.homelab.local
   dnsNames:
-    - argocd.lab
+    - argocd.homelab.local
   privateKey:
     algorithm: RSA
     size: 2048

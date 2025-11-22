@@ -18,10 +18,10 @@ spec:
     targetRevision: 2.4.0
     helm:
       values: |
-        # CoreDNS with k8s_gateway - Internal DNS for *.lab domain
+        # CoreDNS with k8s_gateway - Internal DNS for *.homelab.local domain
 
         # Domain configuration
-        domain: lab
+        domain: homelab.local
 
         # Watch all namespaces for Ingress/Service resources
         watchedResources:
@@ -44,7 +44,7 @@ spec:
             enabled: true
             port: 53
 
-        # Fallthrough - forward non-.lab queries to upstream DNS
+        # Fallthrough - forward non-.homelab.local queries to upstream DNS
         fallthrough:
           enabled: true
           zones:

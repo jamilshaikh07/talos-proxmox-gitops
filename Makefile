@@ -342,30 +342,31 @@ tempo-port-forward: ## Port-forward Tempo locally on 3100
 # ============================================================================
 
 .PHONY: setup-dns
-setup-dns: ## Add *.lab domains to /etc/hosts
-	@echo "$(YELLOW)📝 Adding *.lab domains to /etc/hosts...$(NC)"
-	@if grep -q "argocd.lab" /etc/hosts 2>/dev/null; then \
+setup-dns: ## Add *.homelab.local domains to /etc/hosts
+	@echo "$(YELLOW)📝 Adding *.homelab.local domains to /etc/hosts...$(NC)"
+	@if grep -q "argocd.homelab.local" /etc/hosts 2>/dev/null; then \
 		echo "$(GREEN)✓$(NC) Domains already configured in /etc/hosts"; \
 	else \
 		echo "$(YELLOW)Adding homelab domains...$(NC)"; \
 		echo "" | sudo tee -a /etc/hosts; \
-		echo "# Homelab Services (*.lab)" | sudo tee -a /etc/hosts; \
-		echo "10.20.0.81 argocd.lab grafana.lab prometheus.lab minio.lab longhorn.lab traefik.lab uptime.lab homarr.lab" | sudo tee -a /etc/hosts; \
+		echo "# Homelab Services (*.homelab.local)" | sudo tee -a /etc/hosts; \
+		echo "10.20.0.81 argocd.homelab.local grafana.homelab.local prometheus.homelab.local minio.homelab.local longhorn.homelab.local traefik.homelab.local uptime.homelab.local homarr.homelab.local" | sudo tee -a /etc/hosts; \
 		echo "$(GREEN)✅ DNS configuration added to /etc/hosts$(NC)"; \
 	fi
 	@echo ""
 	@echo "$(BLUE)🌐 Access your services:$(NC)"
-	@echo "  https://argocd.lab       - ArgoCD UI"
-	@echo "  https://grafana.lab      - Grafana dashboards (+ logs & events!)"
-	@echo "  https://prometheus.lab   - Prometheus UI"
-	@echo "  https://minio.lab        - MinIO console"
-	@echo "  https://longhorn.lab     - Longhorn storage UI"
-	@echo "  https://traefik.lab      - Traefik dashboard"
-	@echo "  https://uptime.lab       - Uptime Kuma monitoring"
+	@echo "  https://argocd.homelab.local       - ArgoCD UI"
+	@echo "  https://grafana.homelab.local      - Grafana dashboards (+ logs & events!)"
+	@echo "  https://prometheus.homelab.local   - Prometheus UI"
+	@echo "  https://minio.homelab.local        - MinIO console"
+	@echo "  https://longhorn.homelab.local     - Longhorn storage UI"
+	@echo "  https://traefik.homelab.local      - Traefik dashboard"
+	@echo "  https://uptime.homelab.local       - Uptime Kuma monitoring"
+	@echo "  https://homarr.homelab.local       - Homarr dashboard"
 
 .PHONY: remove-dns
-remove-dns: ## Remove *.lab domains from /etc/hosts
-	@echo "$(YELLOW)🗑️  Removing *.lab domains from /etc/hosts...$(NC)"
+remove-dns: ## Remove *.homelab.local domains from /etc/hosts
+	@echo "$(YELLOW)🗑️  Removing *.homelab.local domains from /etc/hosts...$(NC)"
 	@sudo sed -i '/# Homelab Services/,+1d' /etc/hosts 2>/dev/null || true
 	@echo "$(GREEN)✅ DNS configuration removed$(NC)"
 

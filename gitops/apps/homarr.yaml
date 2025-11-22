@@ -19,12 +19,31 @@ spec:
     helm:
       values: |
         # Homarr - Homelab start page / dashboard
-        # Persistence for config/state
+
+        # Use PostgreSQL from homelab-pg cluster
+        env:
+          - name: DATABASE_URL
+            valueFrom:
+              secretKeyRef:
+                name: homelab-pg-pguser-homarr
+                key: uri
+
+        # Disable the default envSecrets (we're using env with secretKeyRef instead)
+        envSecrets:
+          dbEncryption:
+            existingSecret: ""
+          dbCredentials:
+            existingSecret: ""
+
+        # Persistence for icons/assets only (database is in PostgreSQL)
         persistence:
-          homarrDatabase:
+          homarrIcons:
             enabled: true
             storageClassName: "nfs-client"
             size: "1Gi"
+            mountPath: /app/data/icons
+          homarrDatabase:
+            enabled: false
 
   syncPolicy:
     automated:

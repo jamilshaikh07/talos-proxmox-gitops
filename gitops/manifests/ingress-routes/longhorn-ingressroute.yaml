@@ -9,7 +9,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`longhorn.lab`)
+    - match: Host(`longhorn.homelab.local`)
       kind: Rule
       services:
         - name: longhorn-frontend
@@ -29,9 +29,9 @@ spec:
     name: homelab-ca-issuer
     kind: ClusterIssuer
     group: cert-manager.io
-  commonName: longhorn.lab
+  commonName: longhorn.homelab.local
   dnsNames:
-    - longhorn.lab
+    - longhorn.homelab.local
   privateKey:
     algorithm: RSA
     size: 2048
