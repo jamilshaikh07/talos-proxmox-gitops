@@ -1,0 +1,10 @@
+---
+# ArgoCD ConfigMap - Enable insecure mode for Traefik backend
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cmd-params-cm
+  namespace: argocd
+data:
+  # Run server without TLS since Traefik handles HTTPS
+  server.insecure: "true"

@@ -1,0 +1,11 @@
+---
+# HTTP to HTTPS Redirect Middleware
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: https-redirect
+  namespace: traefik-system
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true

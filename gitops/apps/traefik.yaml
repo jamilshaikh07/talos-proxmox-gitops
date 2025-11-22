@@ -32,12 +32,15 @@ spec:
 
         # Ports configuration
         ports:
-          # HTTP
+          # HTTP (with global redirect to HTTPS)
           web:
             port: 80
             exposedPort: 80
             expose:
               default: true
+            redirectTo:
+              port: websecure
+              priority: 10
 
           # HTTPS
           websecure:
