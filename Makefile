@@ -402,8 +402,14 @@ trust-ca: extract-ca ## Trust homelab CA certificate (Linux)
 	fi
 	@echo ""
 	@echo "$(BLUE)🌐 You can now access services with valid HTTPS:$(NC)"
-	@echo "  https://argocd.lab"
-	@echo "  https://grafana.lab"
+	@echo "  https://argocd.homelab.local"
+	@echo "  https://grafana.homelab.local"
+	@echo "  https://prometheus.homelab.local"
+	@echo "  https://longhorn.homelab.local"
+	@echo "  https://minio.homelab.local"
+	@echo "  https://traefik.homelab.local"
+	@echo "  https://uptime.homelab.local"
+	@echo "  https://homarr.homelab.local"
 
 .PHONY: untrust-ca
 untrust-ca: ## Remove homelab CA certificate

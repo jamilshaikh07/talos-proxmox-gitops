@@ -13,8 +13,7 @@ spec:
       kind: Rule
       services:
         - name: argocd-server
-          port: 443
-          scheme: https  # ArgoCD uses HTTPS internally
+          port: 80  # Use HTTP backend, Traefik handles HTTPS
   tls:
     secretName: argocd-tls-cert
 ---

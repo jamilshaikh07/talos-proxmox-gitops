@@ -22,11 +22,11 @@ spec:
         # Monitor all homelab services and machines
 
         # Persistence - Use NFS for data
-        persistence:
+        volume:
           enabled: true
           storageClass: nfs-client
           accessMode: ReadWriteOnce
-          size: 5Gi
+          size: 2Gi
 
         # Resource limits
         resources:
