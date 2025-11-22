@@ -1,0 +1,39 @@
+---
+# Uptime Kuma IngressRoute
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: uptime-kuma
+  namespace: monitoring
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`uptime.lab`)
+      kind: Rule
+      services:
+        - name: uptime-kuma
+          port: 3001
+  tls:
+    secretName: uptime-kuma-tls-cert
+---
+# TLS Certificate for Uptime Kuma
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: uptime-kuma-tls-cert
+  namespace: monitoring
+spec:
+  secretName: uptime-kuma-tls-cert
+  issuerRef:
+    name: homelab-ca-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io
+  commonName: uptime.lab
+  dnsNames:
+    - uptime.lab
+  privateKey:
+    algorithm: RSA
+    size: 2048
+  duration: 2160h
+  renewBefore: 360h

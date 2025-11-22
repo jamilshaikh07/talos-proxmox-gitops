@@ -1,0 +1,40 @@
+---
+# ArgoCD Server IngressRoute
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: argocd-server
+  namespace: argocd
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`argocd.lab`)
+      kind: Rule
+      services:
+        - name: argocd-server
+          port: 443
+          scheme: https  # ArgoCD uses HTTPS internally
+  tls:
+    secretName: argocd-tls-cert
+---
+# TLS Certificate for ArgoCD
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: argocd-tls-cert
+  namespace: argocd
+spec:
+  secretName: argocd-tls-cert
+  issuerRef:
+    name: homelab-ca-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io
+  commonName: argocd.lab
+  dnsNames:
+    - argocd.lab
+  privateKey:
+    algorithm: RSA
+    size: 2048
+  duration: 2160h  # 90 days
+  renewBefore: 360h  # 15 days

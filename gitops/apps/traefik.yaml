@@ -1,0 +1,111 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: traefik
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: traefik-system
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    chart: traefik
+    repoURL: https://traefik.github.io/charts
+    targetRevision: 33.2.1
+    helm:
+      values: |
+        # Traefik v3 - Modern Ingress Controller
+
+        # Deployment configuration
+        deployment:
+          replicas: 2
+
+        # Service configuration - MetalLB LoadBalancer
+        service:
+          type: LoadBalancer
+          annotations:
+            metallb.universe.tf/loadBalancerIPs: 10.20.0.81
+
+        # Ports configuration
+        ports:
+          # HTTP
+          web:
+            port: 80
+            exposedPort: 80
+            expose:
+              default: true
+
+          # HTTPS
+          websecure:
+            port: 443
+            exposedPort: 443
+            expose:
+              default: true
+            tls:
+              enabled: true
+
+          # Metrics
+          metrics:
+            port: 9100
+            exposedPort: 9100
+
+        # Dashboard configuration
+        ingressRoute:
+          dashboard:
+            enabled: true
+            matchRule: Host(`traefik.lab`)
+            entryPoints:
+              - websecure
+            tls: {}
+
+        # Prometheus metrics
+        metrics:
+          prometheus:
+            enabled: true
+            addEntryPointsLabels: true
+            addRoutersLabels: true
+            addServicesLabels: true
+            serviceMonitor:
+              enabled: true
+              namespace: traefik-system
+
+        # Logs
+        logs:
+          general:
+            level: INFO
+          access:
+            enabled: true
+
+        # Resource limits
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+
+        # Security
+        securityContext:
+          capabilities:
+            drop: [ALL]
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 65532
+
+        # Persistence for certificates
+        persistence:
+          enabled: true
+          storageClass: nfs-client
+          size: 1Gi
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

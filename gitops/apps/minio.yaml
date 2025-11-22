@@ -1,0 +1,93 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: minio
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: minio-system
+    server: https://kubernetes.default.svc
+  project: default
+  sources:
+    - repoURL: https://github.com/jamilshaikh07/talos-proxmox-gitops
+      path: gitops/manifests/minio-namespace
+      targetRevision: master
+    - chart: minio
+      repoURL: https://charts.min.io/
+      targetRevision: 5.3.0
+      helm:
+        values: |
+          # MinIO - S3-Compatible Object Storage
+          # Used as storage backend for Loki logs
+
+          # Deployment mode: Standalone for homelab
+          mode: standalone
+
+          # Resource configuration
+          replicas: 1
+
+          # Storage configuration - Use NFS for object storage
+          persistence:
+            enabled: true
+            storageClass: "nfs-client"
+            size: 100Gi
+
+          # Root credentials (change these in production!)
+          rootUser: minioadmin
+          rootPassword: minioadmin123
+
+          # Service configuration
+          service:
+            type: ClusterIP
+            port: 9000
+
+          # Console configuration
+          consoleService:
+            type: ClusterIP
+            port: 9001
+
+          # Resource limits
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+
+          # Create initial buckets
+          buckets:
+            - name: loki-chunks
+              policy: none
+              purge: false
+            - name: loki-ruler
+              policy: none
+              purge: false
+            - name: loki-admin
+              policy: none
+              purge: false
+
+          # Monitoring
+          metrics:
+            serviceMonitor:
+              enabled: true
+              namespace: minio-system
+
+          # Security context
+          securityContext:
+            enabled: false  # Disabled for NFS compatibility
+
+          # Network policy
+          networkPolicy:
+            enabled: false
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

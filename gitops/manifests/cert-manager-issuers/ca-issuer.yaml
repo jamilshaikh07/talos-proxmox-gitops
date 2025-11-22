@@ -1,0 +1,31 @@
+---
+# CA ClusterIssuer - Uses the root CA to sign service certificates
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: homelab-ca-issuer
+spec:
+  ca:
+    secretName: homelab-root-ca-secret
+---
+# Wildcard Certificate for *.lab domain
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wildcard-lab-cert
+  namespace: cert-manager
+spec:
+  secretName: wildcard-lab-tls
+  issuerRef:
+    name: homelab-ca-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io
+  commonName: "*.lab"
+  dnsNames:
+    - "*.lab"
+    - "lab"
+  privateKey:
+    algorithm: RSA
+    size: 2048
+  duration: 2160h  # 90 days
+  renewBefore: 360h  # 15 days

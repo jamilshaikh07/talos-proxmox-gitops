@@ -1,0 +1,56 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: trust-manager
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: cert-manager
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    chart: trust-manager
+    repoURL: https://charts.jetstack.io
+    targetRevision: v0.14.1
+    helm:
+      values: |
+        # trust-manager - Distribute CA certificates across cluster
+
+        # Resource limits
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
+
+        # Security context
+        securityContext:
+          seccompProfile:
+            type: RuntimeDefault
+
+        # Metrics
+        metrics:
+          enabled: true
+          service:
+            enabled: true
+            type: ClusterIP
+            servicemonitor:
+              enabled: true
+              prometheusInstance: default
+
+        # CRDs
+        crds:
+          enabled: true
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false  # cert-manager namespace already exists
+      - ServerSideApply=true

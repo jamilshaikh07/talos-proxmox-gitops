@@ -54,6 +54,22 @@ spec:
                 label: grafana_datasource
                 labelValue: "1"
                 searchNamespace: ALL
+
+            # Additional datasources (Loki for logs)
+            additionalDataSources:
+              - name: Loki
+                type: loki
+                access: proxy
+                url: http://loki-gateway.monitoring.svc.cluster.local
+                jsonData:
+                  maxLines: 1000
+                  derivedFields:
+                    - datasourceUid: prometheus
+                      matcherRegex: "(?:trace_id|traceID)=(\\w+)"
+                      name: TraceID
+                      url: "$${__value.raw}"
+                isDefault: false
+                editable: true
           prometheus:
             prometheusSpec:
               retention: 30d

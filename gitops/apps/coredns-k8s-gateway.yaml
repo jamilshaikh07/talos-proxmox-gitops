@@ -1,0 +1,81 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: coredns-k8s-gateway
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: kube-system
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    chart: k8s-gateway
+    repoURL: https://ori-edge.github.io/k8s_gateway/
+    targetRevision: 2.4.0
+    helm:
+      values: |
+        # CoreDNS with k8s_gateway - Internal DNS for *.lab domain
+
+        # Domain configuration
+        domain: lab
+
+        # Watch all namespaces for Ingress/Service resources
+        watchedResources:
+          - Ingress
+          - Service
+
+        # Service configuration - MetalLB LoadBalancer
+        service:
+          type: LoadBalancer
+          port: 53
+          annotations:
+            metallb.universe.tf/loadBalancerIPs: 10.20.0.82
+
+          # DNS requires both TCP and UDP
+          # MetalLB IP sharing for same IP on both protocols
+          tcp:
+            enabled: true
+            port: 53
+          udp:
+            enabled: true
+            port: 53
+
+        # Fallthrough - forward non-.lab queries to upstream DNS
+        fallthrough:
+          enabled: true
+          zones:
+            - .
+
+        # Forward configuration - use Google DNS as upstream
+        forward:
+          enabled: true
+          options:
+            - name: forward
+              parameters: . 8.8.8.8 8.8.4.4
+            - name: cache
+              parameters: 30
+
+        # Resource limits
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+
+        # Monitoring
+        serviceMonitor:
+          enabled: true
+          namespace: kube-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false  # kube-system already exists
+      - ServerSideApply=true

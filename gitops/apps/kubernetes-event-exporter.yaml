@@ -1,0 +1,64 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kubernetes-event-exporter
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: monitoring
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    chart: kubernetes-event-exporter
+    repoURL: https://charts.bitnami.com/bitnami
+    targetRevision: 3.4.1
+    helm:
+      values: |
+        # Kubernetes Event Exporter - Export k8s events to Loki
+        # View events in Grafana instead of kubectl describe/get events
+
+        # Configuration for event routing
+        config:
+          logLevel: info
+          logFormat: json
+          receivers:
+            - name: loki
+              loki:
+                streamLabels:
+                  app: kubernetes-events
+                  cluster: homelab
+                url: http://loki-gateway.monitoring.svc.cluster.local/loki/api/v1/push
+          route:
+            routes:
+              # Route all events to Loki
+              - match:
+                  - receiver: loki
+
+        # Resource limits
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
+
+        # RBAC - needs cluster-wide read access to events
+        rbac:
+          create: true
+
+        # ServiceMonitor for Prometheus
+        serviceMonitor:
+          enabled: true
+          namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false
+      - ServerSideApply=true
