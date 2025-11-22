@@ -12,90 +12,90 @@ spec:
     namespace: longhorn-system
     server: https://kubernetes.default.svc
   project: default
-  source:
-  - repoURL: https://github.com/jamilshaikh07/talos-proxmox-gitops
-    path: gitops/manifests/longhorn-namespace
-    targetRevision: master
-  - chart: longhorn
-    repoURL: https://charts.longhorn.io
-    targetRevision: 1.10.1
-    helm:
-      # Skip Helm hooks to avoid ArgoCD sync issues
-      skipCrds: false
-      values: |
-        # Longhorn v1.10.1 - Distributed Block Storage
+  sources:
+    - repoURL: https://github.com/jamilshaikh07/talos-proxmox-gitops
+      path: gitops/manifests/longhorn-namespace
+      targetRevision: master
+    - chart: longhorn
+      repoURL: https://charts.longhorn.io
+      targetRevision: 1.10.1
+      helm:
+        # Skip Helm hooks to avoid ArgoCD sync issues
+        skipCrds: false
+        values: |
+          # Longhorn v1.10.1 - Distributed Block Storage
 
-        # Disable problematic Helm hooks for GitOps compatibility
-        # https://github.com/longhorn/longhorn/issues/8707
-        preUpgradeChecker:
-          jobEnabled: false
+          # Disable problematic Helm hooks for GitOps compatibility
+          # https://github.com/longhorn/longhorn/issues/8707
+          preUpgradeChecker:
+            jobEnabled: false
 
-        # Default storage class configuration
-        persistence:
-          defaultClass: true
-          defaultClassReplicaCount: 2
-          defaultDataLocality: disabled
-          reclaimPolicy: Retain
+          # Default storage class configuration
+          persistence:
+            defaultClass: true
+            defaultClassReplicaCount: 2
+            defaultDataLocality: disabled
+            reclaimPolicy: Retain
 
-        # Default settings
-        defaultSettings:
-          # Storage configuration
-          defaultReplicaCount: 2
-          storageMinimalAvailablePercentage: 25
-          storageOverProvisioningPercentage: 200
+          # Default settings
+          defaultSettings:
+            # Storage configuration
+            defaultReplicaCount: 2
+            storageMinimalAvailablePercentage: 25
+            storageOverProvisioningPercentage: 200
 
-          # Node and volume management
-          nodeDownPodDeletionPolicy: do-nothing
-          nodeDrainPolicy: block-if-contains-last-replica
-          replicaReplenishmentWaitInterval: 600
+            # Node and volume management
+            nodeDownPodDeletionPolicy: do-nothing
+            nodeDrainPolicy: block-if-contains-last-replica
+            replicaReplenishmentWaitInterval: 600
 
-          # Backup configuration (using NFS)
-          backupTarget: nfs://10.20.0.44:/srv/nfs/backups
-          backupTargetCredentialSecret: ""
+            # Backup configuration (using NFS)
+            backupTarget: nfs://10.20.0.44:/srv/nfs/backups
+            backupTargetCredentialSecret: ""
 
-          # Performance settings
-          guaranteedInstanceManagerCPU: 12
+            # Performance settings
+            guaranteedInstanceManagerCPU: 12
 
-          # Talos-specific settings
-          createDefaultDiskLabeledNodes: true
-          defaultDataPath: /var/lib/longhorn
+            # Talos-specific settings
+            createDefaultDiskLabeledNodes: true
+            defaultDataPath: /var/lib/longhorn
 
-          # System management
-          orphanAutoDeletion: true
+            # System management
+            orphanAutoDeletion: true
 
-        # Ingress configuration (disabled - use port-forward or separate ingress)
-        ingress:
-          enabled: false
+          # Ingress configuration (disabled - use port-forward or separate ingress)
+          ingress:
+            enabled: false
 
-        # Monitoring integration
-        metrics:
-          enabled: true
-          serviceMonitor:
+          # Monitoring integration
+          metrics:
             enabled: true
+            serviceMonitor:
+              enabled: true
 
-        # Service configuration
-        service:
-          ui:
-            type: ClusterIP
+          # Service configuration
+          service:
+            ui:
+              type: ClusterIP
 
-        # Resource limits
-        longhornManager:
-          resources:
-            requests:
-              cpu: 100m
-              memory: 128Mi
-            limits:
-              cpu: 500m
-              memory: 512Mi
+          # Resource limits
+          longhornManager:
+            resources:
+              requests:
+                cpu: 100m
+                memory: 128Mi
+              limits:
+                cpu: 500m
+                memory: 512Mi
 
-        longhornDriver:
-          resources:
-            requests:
-              cpu: 100m
-              memory: 128Mi
-            limits:
-              cpu: 500m
-              memory: 512Mi
+          longhornDriver:
+            resources:
+              requests:
+                cpu: 100m
+                memory: 128Mi
+              limits:
+                cpu: 500m
+                memory: 512Mi
   syncPolicy:
     automated:
       prune: true
