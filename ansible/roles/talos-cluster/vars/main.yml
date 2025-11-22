@@ -19,10 +19,10 @@ talos_nodes:
       vmid: 104
     - hostname: "talos-wk-02"
       ip: "10.20.0.42"
-      vmid: 103
+      vmid: 102
     - hostname: "talos-wk-03"
       ip: "10.20.0.43"
-      vmid: 100
+      vmid: 103
 
 # Proxmox configuration (for cleanup)
 proxmox_node: "alif"  # Proxmox node name

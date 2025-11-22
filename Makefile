@@ -281,7 +281,13 @@ destroy: ## Destroy all infrastructure (Talos + NFS)
 	@read -p "Type 'yes' to confirm destruction: " confirm && [ "$$confirm" = "yes" ] || { echo "$(GREEN)Destroy cancelled.$(NC)"; exit 1; }
 	@echo "$(RED)🔥 Destroying infrastructure...$(NC)"
 	cd $(TERRAFORM_DIR) && terraform init && terraform destroy -auto-approve
-	@echo "$(GREEN)✅ Infrastructure destroyed$(NC)"
+	@echo "$(BLUE)🧹 Cleaning up SSH known_hosts...$(NC)"
+	@ssh-keygen -f "$$HOME/.ssh/known_hosts" -R "10.20.0.40" 2>/dev/null || true
+	@ssh-keygen -f "$$HOME/.ssh/known_hosts" -R "10.20.0.41" 2>/dev/null || true
+	@ssh-keygen -f "$$HOME/.ssh/known_hosts" -R "10.20.0.42" 2>/dev/null || true
+	@ssh-keygen -f "$$HOME/.ssh/known_hosts" -R "10.20.0.43" 2>/dev/null || true
+	@ssh-keygen -f "$$HOME/.ssh/known_hosts" -R "10.20.0.44" 2>/dev/null || true
+	@echo "$(GREEN)✅ Infrastructure destroyed and SSH keys cleaned$(NC)"
 
 .PHONY: destroy-all
 destroy-all: ## Destroy all infrastructure AND remove Talos config directory
@@ -290,12 +296,19 @@ destroy-all: ## Destroy all infrastructure AND remove Talos config directory
 	@echo "  - All VMs (Talos + NFS)"
 	@echo "  - Talos configuration directory: $(TALOS_CONFIG_DIR)"
 	@echo "  - All kubeconfigs and secrets"
+	@echo "  - SSH known_hosts entries"
 	@echo ""
 	@read -p "Type 'yes' to confirm complete destruction: " confirm && [ "$$confirm" = "yes" ] || { echo "$(GREEN)Destroy cancelled.$(NC)"; exit 1; }
 	@echo "$(RED)🔥 Destroying infrastructure...$(NC)"
 	cd $(TERRAFORM_DIR) && terraform init && terraform destroy -auto-approve
 	@echo "$(RED)🗑️  Removing Talos configuration directory...$(NC)"
-	@rm -rf $(TALOS_CONFIG_DIR)
+	@sudo rm -rf $(TALOS_CONFIG_DIR)
+	@echo "$(BLUE)🧹 Cleaning up SSH known_hosts...$(NC)"
+	@ssh-keygen -f "$$HOME/.ssh/known_hosts" -R "10.20.0.40" 2>/dev/null || true
+	@ssh-keygen -f "$$HOME/.ssh/known_hosts" -R "10.20.0.41" 2>/dev/null || true
+	@ssh-keygen -f "$$HOME/.ssh/known_hosts" -R "10.20.0.42" 2>/dev/null || true
+	@ssh-keygen -f "$$HOME/.ssh/known_hosts" -R "10.20.0.43" 2>/dev/null || true
+	@ssh-keygen -f "$$HOME/.ssh/known_hosts" -R "10.20.0.44" 2>/dev/null || true
 	@echo "$(GREEN)✅ Everything destroyed and cleaned up$(NC)"
 
 .PHONY: destroy-talos
@@ -309,7 +322,12 @@ destroy-talos: ## Destroy only Talos VMs (preserve NFS)
 	@read -p "Type 'yes' to confirm destruction: " confirm && [ "$$confirm" = "yes" ] || { echo "$(GREEN)Destroy cancelled.$(NC)"; exit 1; }
 	@echo "$(RED)🔥 Destroying Talos VMs...$(NC)"
 	cd $(TERRAFORM_DIR) && terraform destroy -target=module.k8s_nodes -auto-approve
-	@echo "$(GREEN)✅ Talos VMs destroyed (NFS preserved)$(NC)"
+	@echo "$(BLUE)🧹 Cleaning up Talos SSH known_hosts...$(NC)"
+	@ssh-keygen -f "$$HOME/.ssh/known_hosts" -R "10.20.0.40" 2>/dev/null || true
+	@ssh-keygen -f "$$HOME/.ssh/known_hosts" -R "10.20.0.41" 2>/dev/null || true
+	@ssh-keygen -f "$$HOME/.ssh/known_hosts" -R "10.20.0.42" 2>/dev/null || true
+	@ssh-keygen -f "$$HOME/.ssh/known_hosts" -R "10.20.0.43" 2>/dev/null || true
+	@echo "$(GREEN)✅ Talos VMs destroyed and SSH keys cleaned (NFS preserved)$(NC)"
 
 .PHONY: clean
 clean: ## Clean temporary files
