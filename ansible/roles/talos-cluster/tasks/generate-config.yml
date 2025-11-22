@@ -152,7 +152,13 @@
   when: not rendered_config.stat.exists
   changed_when: true
 
-- name: Generate Talos configuration for workers
+- name: Check which worker configs exist
+  ansible.builtin.stat:
+    path: "{{ talos_config_dir }}/rendered/{{ item.hostname }}.yaml"
+  loop: "{{ talos_nodes.workers }}"
+  register: worker_configs_exist
+
+- name: Generate Talos configuration for workers (only missing ones)
   ansible.builtin.command:
     cmd: >
       talosctl gen config {{ cluster_name }} {{ cluster_endpoint }}
@@ -166,11 +172,11 @@
       --config-patch @kubelet-cert-approver.yaml
       --config-patch @system-extensions.yaml
       --config-patch @machine-features.yaml
-      --config-patch-worker @{{ item.hostname }}-hostname.yaml
-      --output rendered-{{ item.hostname }}
+      --config-patch-worker @{{ item.item.hostname }}-hostname.yaml
+      --output rendered-{{ item.item.hostname }}
     chdir: "{{ talos_config_dir }}"
-  loop: "{{ talos_nodes.workers }}"
-  when: not rendered_config.stat.exists
+  loop: "{{ worker_configs_exist.results }}"
+  when: not item.stat.exists
   changed_when: true
 
 - name: Create final rendered directory
@@ -187,14 +193,14 @@
     remote_src: true
   when: not rendered_config.stat.exists
 
-- name: Copy worker configs to rendered directory
+- name: Copy worker configs to rendered directory (only newly generated)
   ansible.builtin.copy:
-    src: "{{ talos_config_dir }}/rendered-{{ item.hostname }}/worker.yaml"
-    dest: "{{ talos_config_dir }}/rendered/{{ item.hostname }}.yaml"
+    src: "{{ talos_config_dir }}/rendered-{{ item.item.hostname }}/worker.yaml"
+    dest: "{{ talos_config_dir }}/rendered/{{ item.item.hostname }}.yaml"
     mode: '0644'
     remote_src: true
-  loop: "{{ talos_nodes.workers }}"
-  when: not rendered_config.stat.exists
+  loop: "{{ worker_configs_exist.results }}"
+  when: not item.stat.exists
 
 - name: Copy talosconfig to rendered directory
   ansible.builtin.copy:

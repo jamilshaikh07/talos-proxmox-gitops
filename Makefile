@@ -170,6 +170,15 @@ ansible-cleanup: ## Cleanup Talos VMs (on failure)
 	@echo "$(RED)🧹 Cleaning up Talos VMs...$(NC)"
 	cd $(ANSIBLE_DIR) && ansible-playbook -i inventory.yml playbooks/cleanup-talos.yml
 
+.PHONY: regenerate-worker-configs
+regenerate-worker-configs: ## Regenerate missing worker configs (run after adding new workers)
+	@echo "$(YELLOW)🔄 Regenerating missing worker configurations...$(NC)"
+	@echo "$(BLUE)This will generate configs only for workers that don't have one yet$(NC)"
+	@cd $(ANSIBLE_DIR) && ansible-playbook -i inventory.yml playbooks/layer2-configure.yml --tags talos
+	@echo "$(GREEN)✅ Worker configs updated$(NC)"
+	@echo "$(BLUE)Configs location: /tmp/talos-homelab-cluster/rendered/$(NC)"
+	@ls -lh /tmp/talos-homelab-cluster/rendered/talos-wk-*.yaml 2>/dev/null || echo "$(YELLOW)No worker configs found yet$(NC)"
+
 # ============================================================================
 # LAYER 3 - GITOPS (ArgoCD)
 # ============================================================================
