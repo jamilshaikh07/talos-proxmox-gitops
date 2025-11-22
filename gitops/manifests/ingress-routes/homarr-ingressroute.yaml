@@ -1,0 +1,39 @@
+---
+# Homarr IngressRoute
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: homarr
+  namespace: homelab
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`homarr.lab`)
+      kind: Rule
+      services:
+        - name: homarr
+          port: 7575
+  tls:
+    secretName: homarr-tls-cert
+---
+# TLS Certificate for Homarr
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: homarr-tls-cert
+  namespace: homelab
+spec:
+  secretName: homarr-tls-cert
+  issuerRef:
+    name: homelab-ca-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io
+  commonName: homarr.lab
+  dnsNames:
+    - homarr.lab
+  privateKey:
+    algorithm: RSA
+    size: 2048
+  duration: 2160h
+  renewBefore: 360h

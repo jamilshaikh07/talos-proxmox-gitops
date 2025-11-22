@@ -1,0 +1,30 @@
+apiVersion: postgres-operator.crunchydata.com/v1beta1
+kind: PostgresCluster
+metadata:
+  name: homelab-pg
+  namespace: postgres-operator
+spec:
+  postgresVersion: 16
+  instances:
+    - name: primary
+      replicas: 1
+      dataVolumeClaimSpec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: longhorn
+        resources:
+          requests:
+            storage: 20Gi
+  backups:
+    pgbackrest:
+      repos:
+        - name: repo1
+          volume:
+            volumeClaimSpec:
+              accessModes: ["ReadWriteOnce"]
+              storageClassName: longhorn
+              resources:
+                requests:
+                  storage: 20Gi
+      global:
+        repo1-retention-full: "7"
+        repo1-retention-full-type: time

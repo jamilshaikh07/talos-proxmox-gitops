@@ -307,6 +307,37 @@ logs: ## View all system logs
 	@kubectl logs -n argocd -l app.kubernetes.io/name=argocd-server --tail=50
 
 # ============================================================================
+# OBSERVABILITY & DATA SERVICES
+# ============================================================================
+
+.PHONY: postgres-creds
+postgres-creds: ## Show homelab Postgres connection info
+	@echo "$(BLUE)🔑 Postgres credentials (homelab-pg):$(NC)"
+	@USER=$$(kubectl -n postgres-operator get secret homelab-pg-pguser-postgres -o jsonpath='{.data.user}' 2>/dev/null | base64 -d); \
+	PASS=$$(kubectl -n postgres-operator get secret homelab-pg-pguser-postgres -o jsonpath='{.data.password}' 2>/dev/null | base64 -d); \
+	if [ -n "$$USER" ] && [ -n "$$PASS" ]; then \
+		echo "  Host: 10.20.0.81"; \
+		echo "  Port: 5432"; \
+		echo "  User: $$USER"; \
+		echo "  Pass: $$PASS"; \
+		echo "  DB:   postgres"; \
+		echo ""; \
+		echo "  psql \"postgresql://$$USER:$$PASS@10.20.0.81:5432/postgres\""; \
+	else \
+		echo "$(RED)❌ Credentials not found. Is the Postgres cluster deployed?$(NC)"; \
+	fi
+
+.PHONY: postgres-port-forward
+postgres-port-forward: ## Port-forward Postgres locally on 5432
+	@echo "$(GREEN)🔌 Port-forwarding Postgres to localhost:5432$(NC)"
+	kubectl -n postgres-operator port-forward svc/homelab-pg-primary 5432:5432
+
+.PHONY: tempo-port-forward
+tempo-port-forward: ## Port-forward Tempo locally on 3100
+	@echo "$(GREEN)🔌 Port-forwarding Tempo to localhost:3100$(NC)"
+	kubectl -n monitoring port-forward svc/tempo 3100:3100
+
+# ============================================================================
 # DNS & CERTIFICATE MANAGEMENT
 # ============================================================================
 
@@ -319,7 +350,7 @@ setup-dns: ## Add *.lab domains to /etc/hosts
 		echo "$(YELLOW)Adding homelab domains...$(NC)"; \
 		echo "" | sudo tee -a /etc/hosts; \
 		echo "# Homelab Services (*.lab)" | sudo tee -a /etc/hosts; \
-		echo "10.20.0.81 argocd.lab grafana.lab prometheus.lab minio.lab longhorn.lab traefik.lab uptime.lab" | sudo tee -a /etc/hosts; \
+		echo "10.20.0.81 argocd.lab grafana.lab prometheus.lab minio.lab longhorn.lab traefik.lab uptime.lab homarr.lab" | sudo tee -a /etc/hosts; \
 		echo "$(GREEN)✅ DNS configuration added to /etc/hosts$(NC)"; \
 	fi
 	@echo ""

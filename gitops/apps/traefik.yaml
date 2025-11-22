@@ -48,6 +48,14 @@ spec:
             tls:
               enabled: true
 
+          # Postgres TCP passthrough
+          postgres:
+            port: 5432
+            exposedPort: 5432
+            expose:
+              default: true
+            protocol: TCP
+
           # Metrics
           metrics:
             port: 9100

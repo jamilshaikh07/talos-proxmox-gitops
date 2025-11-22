@@ -1,0 +1,44 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: homarr
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: homelab
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    chart: homarr
+    repoURL: https://homarr-labs.github.io/charts
+    targetRevision: 0.14.2
+    helm:
+      values: |
+        # Homarr - Homelab start page / dashboard
+        # Service
+        service:
+          type: ClusterIP
+          port: 7575
+
+        # Persistence for config/state
+        persistence:
+          config:
+            enabled: true
+            storageClass: nfs-client
+            size: 2Gi
+
+        # Ingress disabled here; handled via Traefik IngressRoute
+        ingress:
+          main:
+            enabled: false
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
