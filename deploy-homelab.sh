@@ -203,11 +203,18 @@ layer1_infrastructure() {
     log "Applying infrastructure..."
     terraform apply tfplan
 
+    log "Exporting Terraform outputs for Ansible..."
+    terraform output -json > "${ANSIBLE_DIR}/terraform-inventory.json"
+
+    log "Generating Ansible inventory from Terraform..."
+    python3 "${SCRIPT_DIR}/scripts/generate-ansible-inventory.py"
+
+    log "Generating Longhorn node configurations from Terraform..."
+    python3 "${SCRIPT_DIR}/scripts/generate-longhorn-nodes.py"
+
     log "✅ Layer 1 Complete: Infrastructure deployed"
-    echo "VMs Created (4 total):"
-    echo "  - Talos Control Plane: 10.20.0.40"
-    echo "  - Talos Worker 1: 10.20.0.41"
-    echo "  - Talos Worker 2: 10.20.0.42"
+    echo "VMs Created:"
+    terraform output -json all_vms | jq -r 'to_entries[] | "  - \(.value.name): \(.value.type) (MAC: \(.value.mac_address))"' || true
     echo "  - NFS Server: 10.20.0.44"
 
     # Wait for VMs to boot

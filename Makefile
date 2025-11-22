@@ -134,6 +134,14 @@ terraform-destroy: ## Destroy Terraform infrastructure (use 'make destroy' for s
 terraform-output: ## Show Terraform outputs
 	@cd $(TERRAFORM_DIR) && terraform output
 
+.PHONY: sync-inventory
+sync-inventory: ## Generate Ansible inventory and Longhorn nodes from Terraform outputs
+	@echo "$(BLUE)🔄 Syncing inventory from Terraform...$(NC)"
+	@cd $(TERRAFORM_DIR) && terraform output -json > ../../ansible/terraform-inventory.json
+	@python3 scripts/generate-ansible-inventory.py
+	@python3 scripts/generate-longhorn-nodes.py
+	@echo "$(GREEN)✅ Ansible inventory and Longhorn nodes synced from Terraform$(NC)"
+
 # ============================================================================
 # LAYER 2 - CONFIGURATION (Ansible + Talos)
 # ============================================================================

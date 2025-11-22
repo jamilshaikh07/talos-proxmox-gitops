@@ -39,6 +39,17 @@ locals {
       longhorn_storage   = "local-lvm"
       mac_address        = "BC:24:11:00:00:03" # Static MAC for DHCP reservation
     }
+    "talos-wk-03" = {
+      target_node        = "alif"
+      memory             = 6144 # 6GB
+      cores              = 2
+      storage            = "local-lvm"
+      disk_size          = "50G"
+      disk_cache         = "writeback"
+      longhorn_disk_size = "500G" # Longhorn distributed storage
+      longhorn_storage   = "local-lvm"
+      mac_address        = "BC:24:11:00:00:04" # Static MAC for DHCP reservation
+    }
   }
 
   # Combine all nodes
