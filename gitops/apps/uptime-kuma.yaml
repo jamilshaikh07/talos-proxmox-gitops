@@ -21,7 +21,7 @@ spec:
         # Uptime Kuma - Uptime Monitoring & Status Page
         # Monitor all homelab services and machines
 
-        # Persistence - Use NFS for data (not Longhorn)
+        # Persistence
         volume:
           enabled: true
           storageClassName: nfs-client  # Use storageClassName instead of storageClass

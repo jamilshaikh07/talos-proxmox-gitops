@@ -78,7 +78,7 @@ spec:
             replicas: 2
             persistence:
               enabled: true
-              storageClass: nfs-client  # Use NFS, not Longhorn
+              storageClass: nfs-client
               size: 10Gi
             resources:
               requests:
