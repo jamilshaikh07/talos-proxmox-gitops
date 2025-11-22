@@ -15,7 +15,7 @@ spec:
   source:
     chart: traefik
     repoURL: https://traefik.github.io/charts
-    targetRevision: 33.2.1
+    targetRevision: 37.4.0
     helm:
       values: |
         # Traefik v3 - Modern Ingress Controller
@@ -60,6 +60,19 @@ spec:
           metrics:
             port: 9100
             exposedPort: 9100
+
+        # Providers / ingress class
+        providers:
+          kubernetesCRD:
+            enabled: true
+          kubernetesIngress:
+            enabled: true
+            publishedService:
+              enabled: true  # publish external LB address for ingresses
+
+        ingressClass:
+          enabled: true
+          isDefaultClass: true
 
         # Dashboard configuration
         ingressRoute:

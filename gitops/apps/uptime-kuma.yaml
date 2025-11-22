@@ -14,23 +14,12 @@ spec:
   project: default
   source:
     chart: uptime-kuma
-    repoURL: https://dirsigler.github.io/uptime-kuma-helm
-    targetRevision: 2.23.1
+    repoURL: https://helm.irsigler.cloud
+    targetRevision: 2.24.0
     helm:
       values: |
         # Uptime Kuma - Uptime Monitoring & Status Page
         # Monitor all homelab services and machines
-
-        # Image configuration
-        image:
-          repository: louislam/uptime-kuma
-          tag: 1.23.15
-          pullPolicy: IfNotPresent
-
-        # Service configuration
-        service:
-          type: ClusterIP
-          port: 3001
 
         # Persistence - Use NFS for data
         persistence:
@@ -47,24 +36,6 @@ spec:
           limits:
             cpu: 500m
             memory: 512Mi
-
-        # Environment variables
-        env:
-          # Disable analytics
-          - name: UPTIME_KUMA_DISABLE_FRAME_SAMEORIGIN
-            value: "0"
-          - name: UPTIME_KUMA_PORT
-            value: "3001"
-
-        # Security context
-        securityContext:
-          runAsUser: 1000
-          runAsGroup: 1000
-          fsGroup: 1000
-
-        # Ingress disabled (using Traefik IngressRoute)
-        ingress:
-          enabled: false
   syncPolicy:
     automated:
       prune: true

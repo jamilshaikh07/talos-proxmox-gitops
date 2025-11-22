@@ -146,6 +146,17 @@ check_prerequisites() {
 check_env_vars() {
     log "Checking environment variables..."
 
+    # Map Terraform-style TF_VAR_* exports into the variables this script expects
+    if [ -z "${PROXMOX_API_URL:-}" ] && [ -n "${TF_VAR_proxmox_api_url:-}" ]; then
+        export PROXMOX_API_URL="${TF_VAR_proxmox_api_url}"
+    fi
+    if [ -z "${PROXMOX_API_TOKEN_ID:-}" ] && [ -n "${TF_VAR_proxmox_api_token_id:-}" ]; then
+        export PROXMOX_API_TOKEN_ID="${TF_VAR_proxmox_api_token_id}"
+    fi
+    if [ -z "${PROXMOX_API_TOKEN_SECRET:-}" ] && [ -n "${TF_VAR_proxmox_api_token_secret:-}" ]; then
+        export PROXMOX_API_TOKEN_SECRET="${TF_VAR_proxmox_api_token_secret}"
+    fi
+
     local missing_vars=()
 
     if [ -z "${PROXMOX_API_URL:-}" ]; then
