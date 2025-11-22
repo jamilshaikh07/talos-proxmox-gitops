@@ -1,0 +1,51 @@
+---
+# Longhorn Node Configuration for talos-cp-01
+apiVersion: longhorn.io/v1beta2
+kind: Node
+metadata:
+  name: talos-cp-01
+  namespace: longhorn-system
+spec:
+  allowScheduling: true
+  evictionRequested: false
+  disks:
+    default-disk:
+      allowScheduling: true
+      evictionRequested: false
+      path: /var/mnt/longhorn
+      storageReserved: 10737418240  # 10Gi reserved
+      tags: []
+---
+# Longhorn Node Configuration for talos-wk-01
+apiVersion: longhorn.io/v1beta2
+kind: Node
+metadata:
+  name: talos-wk-01
+  namespace: longhorn-system
+spec:
+  allowScheduling: true
+  evictionRequested: false
+  disks:
+    default-disk:
+      allowScheduling: true
+      evictionRequested: false
+      path: /var/mnt/longhorn
+      storageReserved: 10737418240  # 10Gi reserved
+      tags: []
+---
+# Longhorn Node Configuration for talos-wk-02
+apiVersion: longhorn.io/v1beta2
+kind: Node
+metadata:
+  name: talos-wk-02
+  namespace: longhorn-system
+spec:
+  allowScheduling: true
+  evictionRequested: false
+  disks:
+    default-disk:
+      allowScheduling: true
+      evictionRequested: false
+      path: /var/mnt/longhorn
+      storageReserved: 10737418240  # 10Gi reserved
+      tags: []
