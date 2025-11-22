@@ -32,10 +32,10 @@ spec:
           type: ClusterIP
           port: 3001
 
-        # Persistence - Use Longhorn for data
+        # Persistence - Use NFS for data
         persistence:
           enabled: true
-          storageClass: longhorn
+          storageClass: nfs-client
           accessMode: ReadWriteOnce
           size: 5Gi
 

@@ -58,6 +58,7 @@ spec:
             # Additional datasources (Loki for logs)
             additionalDataSources:
               - name: Loki
+                uid: loki
                 type: loki
                 access: proxy
                 url: http://loki-gateway.monitoring.svc.cluster.local
@@ -69,6 +70,24 @@ spec:
                       name: TraceID
                       url: "$${__value.raw}"
                 isDefault: false
+                editable: true
+              - name: Tempo
+                uid: tempo
+                type: tempo
+                access: proxy
+                url: http://tempo.monitoring.svc.cluster.local:3100
+                jsonData:
+                  httpMethod: GET
+                  tracesToLogs:
+                    datasourceUid: loki
+                    filterByTraceID: true
+                    filterBySpanID: true
+                  tracesToMetrics:
+                    datasourceUid: prometheus
+                  serviceMap:
+                    datasourceUid: prometheus
+                  nodeGraph:
+                    enabled: true
                 editable: true
           prometheus:
             prometheusSpec:

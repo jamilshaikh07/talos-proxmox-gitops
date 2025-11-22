@@ -6,7 +6,7 @@ metadata:
   labels:
     grafana_dashboard: "1"
   annotations:
-    grafana_folder: "Hikmah"
+    grafana_folder: "homelab"
 data:
   velero.json: |
     {
