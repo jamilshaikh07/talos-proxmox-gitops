@@ -54,6 +54,10 @@
     PATH: "/home/linuxbrew/.linuxbrew/bin:{{ ansible_env.PATH }}"
   changed_when: false
 
+- name: Calculate expected node count
+  ansible.builtin.set_fact:
+    expected_nodes: "{{ 1 + (talos_nodes.workers | length) }}"
+
 - name: Wait for all nodes to become Ready (now that CNI is installed)
   ansible.builtin.command:
     cmd: kubectl get nodes --no-headers
@@ -62,7 +66,7 @@
     PATH: "/home/linuxbrew/.linuxbrew/bin:{{ ansible_env.PATH }}"
   register: nodes_ready_status
   until: >
-    nodes_ready_status.stdout_lines | length == 3 and
+    nodes_ready_status.stdout_lines | length == expected_nodes | int and
     nodes_ready_status.stdout is search('NotReady') == false
   retries: 30
   delay: 10
@@ -72,5 +76,5 @@
   ansible.builtin.debug:
     msg: |
       ✓ Cilium CNI installed and ready
-      ✓ All 3 nodes are now Ready:
+      ✓ All {{ expected_nodes }} nodes are now Ready:
       {{ nodes_ready_status.stdout }}
