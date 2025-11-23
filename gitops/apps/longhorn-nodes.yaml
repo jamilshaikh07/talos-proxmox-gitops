@@ -14,7 +14,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/jamilshaikh07/talos-proxmox-gitops.git
-    targetRevision: main
+    targetRevision: master
     path: gitops/manifests/longhorn-nodes
   syncPolicy:
     automated:
