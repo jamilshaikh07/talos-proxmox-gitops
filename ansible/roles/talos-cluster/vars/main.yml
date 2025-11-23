@@ -12,7 +12,7 @@ talos_nodes:
   control_plane:
     hostname: "talos-cp-01"
     ip: "10.20.0.40"
-    vmid: 101
+    vmid: 103
   workers:
     - hostname: "talos-wk-01"
       ip: "10.20.0.41"
@@ -22,7 +22,7 @@ talos_nodes:
       vmid: 102
     - hostname: "talos-wk-03"
       ip: "10.20.0.43"
-      vmid: 103
+      vmid: 101
 
 # Proxmox configuration (for cleanup)
 proxmox_node: "alif"  # Proxmox node name
