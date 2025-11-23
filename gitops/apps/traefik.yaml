@@ -32,15 +32,14 @@ spec:
 
         # Ports configuration
         ports:
-          # HTTP (with global redirect to HTTPS)
+          # HTTP (redirect to HTTPS via middleware)
           web:
             port: 80
             exposedPort: 80
             expose:
               default: true
-            redirectTo:
-              port: websecure
-              priority: 10
+            middlewares:
+              - traefik-system-redirect-to-https@kubernetescrd
 
           # HTTPS
           websecure:
