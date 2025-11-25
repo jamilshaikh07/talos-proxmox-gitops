@@ -13,7 +13,7 @@ spec:
     server: https://kubernetes.default.svc
   project: default
   source:
-    chart: kubernetes-event-exporter
+    chart: bitnami/kubernetes-event-exporter
     repoURL: https://charts.bitnami.com/bitnami
     targetRevision: 3.6.3
     helm:
