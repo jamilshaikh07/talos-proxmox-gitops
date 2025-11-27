@@ -39,9 +39,12 @@ help: ## Display this help message
 	@echo ""
 	@echo "$(YELLOW)Deployment Order:$(NC)"
 	@echo "  0. $(GREEN)make create-templates$(NC)  - Create cloud-init templates (run once)"
-	@echo "  1. $(GREEN)make layer1$(NC)  - Deploy infrastructure (3 Talos + 1 NFS = 4 VMs)"
-	@echo "  2. $(GREEN)make layer2$(NC)  - Configure NFS + Talos Kubernetes"
+	@echo "  1. $(GREEN)make layer1$(NC)  - Deploy Talos VMs (CP + workers)"
+	@echo "  2. $(GREEN)make layer2$(NC)  - Configure Talos Kubernetes cluster"
 	@echo "  3. $(GREEN)make layer3$(NC)  - Deploy ArgoCD + GitOps apps"
+	@echo ""
+	@echo "$(YELLOW)External Services:$(NC)"
+	@echo "  NFS: OMV server at 10.20.0.229 (not managed by this repo)"
 	@echo ""
 
 # ============================================================================
@@ -116,8 +119,8 @@ terraform-apply: terraform-init terraform-validate ## Apply Terraform configurat
 	@echo "$(GREEN)✅ Layer 1 Complete!$(NC)"
 	@echo "$(YELLOW)Waiting for VMs to boot (60 seconds)...$(NC)"
 	@sleep 60
-	@echo "$(YELLOW)Checking VM connectivity...$(NC)"
-	@for ip in 10.20.0.40 10.20.0.41 10.20.0.42 10.20.0.44; do \
+	@echo "$(YELLOW)Checking Talos VM connectivity...$(NC)"
+	@for ip in 10.20.0.40 10.20.0.41 10.20.0.42 10.20.0.43; do \
 		if timeout 300 bash -c "until ping -c 1 $$ip &>/dev/null; do sleep 5; done"; then \
 			echo "$(GREEN)✓$(NC) $$ip is reachable"; \
 		else \
@@ -151,15 +154,11 @@ sync-inventory: ## Generate Ansible inventory and Longhorn nodes from Terraform 
 layer2: ansible-configure ## Deploy Layer 2 configuration
 
 .PHONY: ansible-configure
-ansible-configure: ## Run Ansible configuration (NFS + Talos)
-	@echo "$(GREEN)🔧 Configuring NFS Server and Talos Cluster...$(NC)"
-	cd $(ANSIBLE_DIR) && ansible-playbook -i inventory.yml playbooks/layer2-configure.yml
+ansible-configure: ## Run Ansible configuration (Talos cluster)
+	@echo "$(GREEN)🔧 Configuring Talos Kubernetes Cluster...$(NC)"
+	@echo "$(BLUE)ℹ️  NFS: Using external OMV server at 10.20.0.229$(NC)"
+	cd $(ANSIBLE_DIR) && ansible-playbook -i inventory.yml playbooks/layer2-configure.yml --tags talos
 	@echo "$(GREEN)✅ Layer 2 Complete!$(NC)"
-
-.PHONY: ansible-nfs-only
-ansible-nfs-only: ## Configure NFS server only
-	@echo "$(GREEN)🔧 Configuring NFS Server...$(NC)"
-	cd $(ANSIBLE_DIR) && ansible-playbook -i inventory.yml playbooks/layer2-configure.yml --tags nfs
 
 .PHONY: ansible-talos-only
 ansible-talos-only: ## Configure Talos cluster only
@@ -272,11 +271,12 @@ talos-logs: ## View Talos logs
 # ============================================================================
 
 .PHONY: destroy
-destroy: ## Destroy all infrastructure (Talos + NFS)
-	@echo "$(RED)⚠️  WARNING: This will destroy all infrastructure!$(NC)"
+destroy: ## Destroy all Talos VMs
+	@echo "$(RED)⚠️  WARNING: This will destroy all Talos VMs!$(NC)"
 	@echo "$(YELLOW)The following will be destroyed:$(NC)"
-	@echo "  - 3 Talos VMs (control-plane + 2 workers)"
-	@echo "  - 1 NFS server VM"
+	@echo "  - Talos control-plane + worker VMs"
+	@echo "$(GREEN)The following will NOT be affected:$(NC)"
+	@echo "  - External OMV NFS server (10.20.0.229)"
 	@echo ""
 	@read -p "Type 'yes' to confirm destruction: " confirm && [ "$$confirm" = "yes" ] || { echo "$(GREEN)Destroy cancelled.$(NC)"; exit 1; }
 	@echo "$(RED)🔥 Destroying infrastructure...$(NC)"
@@ -286,14 +286,13 @@ destroy: ## Destroy all infrastructure (Talos + NFS)
 	@ssh-keygen -f "$$HOME/.ssh/known_hosts" -R "10.20.0.41" 2>/dev/null || true
 	@ssh-keygen -f "$$HOME/.ssh/known_hosts" -R "10.20.0.42" 2>/dev/null || true
 	@ssh-keygen -f "$$HOME/.ssh/known_hosts" -R "10.20.0.43" 2>/dev/null || true
-	@ssh-keygen -f "$$HOME/.ssh/known_hosts" -R "10.20.0.44" 2>/dev/null || true
 	@echo "$(GREEN)✅ Infrastructure destroyed and SSH keys cleaned$(NC)"
 
 .PHONY: destroy-all
-destroy-all: ## Destroy all infrastructure AND remove Talos config directory
+destroy-all: ## Destroy all VMs AND remove Talos config directory
 	@echo "$(RED)⚠️  WARNING: This will destroy EVERYTHING!$(NC)"
 	@echo "$(YELLOW)The following will be destroyed:$(NC)"
-	@echo "  - All VMs (Talos + NFS)"
+	@echo "  - All Talos VMs"
 	@echo "  - Talos configuration directory: $(TALOS_CONFIG_DIR)"
 	@echo "  - All kubeconfigs and secrets"
 	@echo "  - SSH known_hosts entries"
@@ -308,26 +307,7 @@ destroy-all: ## Destroy all infrastructure AND remove Talos config directory
 	@ssh-keygen -f "$$HOME/.ssh/known_hosts" -R "10.20.0.41" 2>/dev/null || true
 	@ssh-keygen -f "$$HOME/.ssh/known_hosts" -R "10.20.0.42" 2>/dev/null || true
 	@ssh-keygen -f "$$HOME/.ssh/known_hosts" -R "10.20.0.43" 2>/dev/null || true
-	@ssh-keygen -f "$$HOME/.ssh/known_hosts" -R "10.20.0.44" 2>/dev/null || true
 	@echo "$(GREEN)✅ Everything destroyed and cleaned up$(NC)"
-
-.PHONY: destroy-talos
-destroy-talos: ## Destroy only Talos VMs (preserve NFS)
-	@echo "$(RED)⚠️  WARNING: This will destroy Talos cluster VMs!$(NC)"
-	@echo "$(YELLOW)The following will be destroyed:$(NC)"
-	@echo "  - 3 Talos VMs (control-plane + 2 workers)"
-	@echo "$(GREEN)The following will be preserved:$(NC)"
-	@echo "  - NFS server VM"
-	@echo ""
-	@read -p "Type 'yes' to confirm destruction: " confirm && [ "$$confirm" = "yes" ] || { echo "$(GREEN)Destroy cancelled.$(NC)"; exit 1; }
-	@echo "$(RED)🔥 Destroying Talos VMs...$(NC)"
-	cd $(TERRAFORM_DIR) && terraform destroy -target=module.k8s_nodes -auto-approve
-	@echo "$(BLUE)🧹 Cleaning up Talos SSH known_hosts...$(NC)"
-	@ssh-keygen -f "$$HOME/.ssh/known_hosts" -R "10.20.0.40" 2>/dev/null || true
-	@ssh-keygen -f "$$HOME/.ssh/known_hosts" -R "10.20.0.41" 2>/dev/null || true
-	@ssh-keygen -f "$$HOME/.ssh/known_hosts" -R "10.20.0.42" 2>/dev/null || true
-	@ssh-keygen -f "$$HOME/.ssh/known_hosts" -R "10.20.0.43" 2>/dev/null || true
-	@echo "$(GREEN)✅ Talos VMs destroyed and SSH keys cleaned (NFS preserved)$(NC)"
 
 .PHONY: clean
 clean: ## Clean temporary files
@@ -343,20 +323,21 @@ clean: ## Clean temporary files
 # ============================================================================
 
 .PHONY: ping
-ping: ## Ping all VMs
-	@echo "$(BLUE)📡 Pinging all VMs...$(NC)"
-	@for ip in 10.20.0.40 10.20.0.41 10.20.0.42 10.20.0.44; do \
+ping: ## Ping Talos VMs + NFS server
+	@echo "$(BLUE)📡 Pinging Talos VMs...$(NC)"
+	@for ip in 10.20.0.40 10.20.0.41 10.20.0.42 10.20.0.43; do \
 		if ping -c 1 -W 1 $$ip &>/dev/null; then \
-			echo "$(GREEN)✓$(NC) $$ip"; \
+			echo "$(GREEN)✓$(NC) $$ip (Talos)"; \
 		else \
-			echo "$(RED)✗$(NC) $$ip"; \
+			echo "$(RED)✗$(NC) $$ip (Talos)"; \
 		fi \
 	done
-
-.PHONY: ssh-nfs
-ssh-nfs: ## SSH to NFS server
-	@echo "$(GREEN)🔐 SSH to NFS server (10.20.0.44)...$(NC)"
-	@ssh ubuntu@10.20.0.44
+	@echo "$(BLUE)📡 Pinging NFS server (OMV)...$(NC)"
+	@if ping -c 1 -W 1 10.20.0.229 &>/dev/null; then \
+		echo "$(GREEN)✓$(NC) 10.20.0.229 (OMV NFS)"; \
+	else \
+		echo "$(RED)✗$(NC) 10.20.0.229 (OMV NFS)"; \
+	fi
 
 .PHONY: logs
 logs: ## View all system logs

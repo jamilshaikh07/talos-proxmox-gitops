@@ -17,13 +17,12 @@ spec:
     repoURL: https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner/
     targetRevision: 4.0.18
     helm:
-      # NOTE: ensure each Kubernetes node has the NFS client installed (Ubuntu: `nfs-common`)
-      # and can reach the NFS server (10.20.0.44). If nodes don't have the client
-      # package installed, mounts from pods will fail with "access denied" or similar.
+      # NOTE: Using external OMV NFS server at 10.20.0.229
+      # Talos nodes have iscsi-tools extension which includes NFS client support
       values: |
         nfs:
-          server: 10.20.0.44
-          path: /srv/nfs
+          server: 10.20.0.229
+          path: /export/k8s-nfs
           mountOptions:
             - nfsvers=4.1
             - rw

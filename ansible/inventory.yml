@@ -1,33 +1,22 @@
 ---
-# Static Ansible Inventory - All IPs configured via Terraform static IPs or DHCP reservations
-# Ubuntu VMs: NFS: 10.20.0.44
-# Talos K8s: CP: 10.20.0.40, Worker1: 10.20.0.41, Worker2: 10.20.0.42 (DHCP reserved by MAC)
-# Services in K8s: PostgreSQL, Redis
+# Static Ansible Inventory
+# NFS: External OMV server at 10.20.0.229 (not managed by Ansible)
+# Talos K8s: CP: 10.20.0.40, Workers: 10.20.0.41-43, Bare metal: 10.20.0.45
 
 all:
   children:
-    ubuntu_vms:
-      hosts:
-        ubuntu-nfs:
-          ansible_host: 10.20.0.44
-          ansible_user: ubuntu
-          ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
-          services:
-            - nfs-server
-
-    # Group for NFS servers
+    # NFS servers group is empty - using external OMV server
     nfs_servers:
-      hosts:
-        ubuntu-nfs:
+      hosts: {}
 
   vars:
     ansible_python_interpreter: /usr/bin/python3
     # Network configuration
     network_cidr: "10.20.0.0/24"
     network_gateway: "10.20.0.1"
-    # NFS exports
-    nfs_server_ip: "10.20.0.44"
-    nfs_export_path: "/srv/nfs/shared"
+    # NFS configuration (external OMV server - not provisioned by Ansible)
+    nfs_server_ip: "10.20.0.229"
+    nfs_export_path: "/export/k8s-nfs"
     # Database configurations
     postgres_db: "homelab"
     postgres_user: "homelab"

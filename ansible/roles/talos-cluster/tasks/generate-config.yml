@@ -104,24 +104,47 @@
     dest: "{{ talos_config_dir }}/machine-features.yaml"
     mode: '0644'
 
-- name: Create control plane hostname patch
+- name: Create control plane machine patch (hostname + install disk)
   ansible.builtin.copy:
     content: |
       machine:
         network:
           hostname: {{ talos_nodes.control_plane.hostname }}
-    dest: "{{ talos_config_dir }}/controlplane-hostname.yaml"
+        install:
+          disk: {{ talos_nodes.control_plane.install_disk | default(default_install_disk) }}
+    dest: "{{ talos_config_dir }}/controlplane-machine.yaml"
     mode: '0644'
 
-- name: Create worker hostname patches
+- name: Create VM worker machine patches (hostname + install disk)
   ansible.builtin.copy:
     content: |
       machine:
         network:
           hostname: {{ item.hostname }}
-    dest: "{{ talos_config_dir }}/{{ item.hostname }}-hostname.yaml"
+        install:
+          disk: {{ item.install_disk | default(default_install_disk) }}
+    dest: "{{ talos_config_dir }}/{{ item.hostname }}-machine.yaml"
     mode: '0644'
   loop: "{{ talos_nodes.workers }}"
+
+- name: Create bare metal worker machine patches (hostname + install disk + longhorn disk)
+  ansible.builtin.copy:
+    content: |
+      machine:
+        network:
+          hostname: {{ item.hostname }}
+        install:
+          disk: {{ item.install_disk | default(default_install_disk) }}
+      {% if item.longhorn_disk is defined %}
+        disks:
+          - device: {{ item.longhorn_disk }}
+            partitions:
+              - mountpoint: /var/mnt/longhorn
+      {% endif %}
+    dest: "{{ talos_config_dir }}/{{ item.hostname }}-machine.yaml"
+    mode: '0644'
+  loop: "{{ baremetal_workers | default([]) }}"
+  when: baremetal_workers is defined and baremetal_workers | length > 0
 
 - name: Check if rendered configs already exist
   ansible.builtin.stat:
@@ -141,21 +164,24 @@
       --kubernetes-version v{{ kubernetes_version }}
       --config-patch @cni.yaml
       --config-patch @allowcontrolplanes.yaml
-      --config-patch @installer-version.yaml
       --config-patch @kubelet-certs.yaml
       --config-patch @kubelet-cert-approver.yaml
       --config-patch @system-extensions.yaml
       --config-patch @machine-features.yaml
-      --config-patch-control-plane @controlplane-hostname.yaml
+      --config-patch-control-plane @controlplane-machine.yaml
       --output rendered-cp
     chdir: "{{ talos_config_dir }}"
   when: not rendered_config.stat.exists
   changed_when: true
 
+- name: Combine all workers (VMs + bare metal)
+  ansible.builtin.set_fact:
+    all_workers: "{{ talos_nodes.workers + (baremetal_workers | default([])) }}"
+
 - name: Check which worker configs exist
   ansible.builtin.stat:
     path: "{{ talos_config_dir }}/rendered/{{ item.hostname }}.yaml"
-  loop: "{{ talos_nodes.workers }}"
+  loop: "{{ all_workers }}"
   register: worker_configs_exist
 
 - name: Generate Talos configuration for workers (only missing ones)
@@ -167,12 +193,11 @@
       --kubernetes-version v{{ kubernetes_version }}
       --config-patch @cni.yaml
       --config-patch @allowcontrolplanes.yaml
-      --config-patch @installer-version.yaml
       --config-patch @kubelet-certs.yaml
       --config-patch @kubelet-cert-approver.yaml
       --config-patch @system-extensions.yaml
       --config-patch @machine-features.yaml
-      --config-patch-worker @{{ item.item.hostname }}-hostname.yaml
+      --config-patch-worker @{{ item.item.hostname }}-machine.yaml
       --output rendered-{{ item.item.hostname }}
     chdir: "{{ talos_config_dir }}"
   loop: "{{ worker_configs_exist.results }}"
@@ -201,6 +226,10 @@
     remote_src: true
   loop: "{{ worker_configs_exist.results }}"
   when: not item.stat.exists
+
+- name: Display all configured workers
+  ansible.builtin.debug:
+    msg: "Workers configured: {{ all_workers | map(attribute='hostname') | list }}"
 
 - name: Copy talosconfig to rendered directory
   ansible.builtin.copy:
