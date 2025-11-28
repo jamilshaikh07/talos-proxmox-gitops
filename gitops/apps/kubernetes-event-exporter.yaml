@@ -25,12 +25,13 @@ spec:
         image:
           registry: ghcr.io
           repository: resmoio/kubernetes-event-exporter
-          tag: v1.7
+          tag: "v1.7"
 
         # Configuration for event routing
         config:
           logLevel: info
           logFormat: json
+          clusterName: homelab
           receivers:
             - name: loki
               loki:
@@ -40,7 +41,6 @@ spec:
                 url: http://loki-gateway.monitoring.svc.cluster.local/loki/api/v1/push
           route:
             routes:
-              # Route all events to Loki
               - match:
                   - receiver: loki
 

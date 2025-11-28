@@ -37,12 +37,6 @@ spec:
           dbCredentials:
             existingSecret: "homelab-pg-pguser-homarr"
             dbUrlKey: "uri"
-          dbEncryption:
-            existingSecret: ""
-          authOidcCredentials:
-            existingSecret: ""
-          authLdapCredentials:
-            existingSecret: ""
 
         # Persistence for icons/assets
         persistence:
