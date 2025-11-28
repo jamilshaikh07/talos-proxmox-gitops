@@ -30,23 +30,17 @@ spec:
             memory: 128Mi
 
         # Security context
-        securityContext:
-          seccompProfile:
-            type: RuntimeDefault
-
-        # Metrics
-        metrics:
-          enabled: true
-          service:
+        app:
+          securityContext:
+            seccompProfileEnabled: true
+          # Metrics
+          metrics:
             enabled: true
-            type: ClusterIP
-            servicemonitor:
+            service:
               enabled: true
-              prometheusInstance: default
-
-        # CRDs
-        crds:
-          enabled: true
+              servicemonitor:
+                enabled: true
+                prometheusInstance: default
   syncPolicy:
     automated:
       prune: true
