@@ -2,7 +2,7 @@ apiVersion: postgres-operator.crunchydata.com/v1beta1
 kind: PostgresCluster
 metadata:
   name: homelab-pg
-  namespace: postgres-operator
+  namespace: homelab
 spec:
   postgresVersion: 16
   instances:

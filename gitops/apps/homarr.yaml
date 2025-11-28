@@ -4,7 +4,7 @@ metadata:
   name: homarr
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "4"
+    argocd.argoproj.io/sync-wave: "5"  # After postgres-cluster creates secrets
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:

@@ -10,7 +10,7 @@ metadata:
 spec:
   project: default
   destination:
-    namespace: postgres-operator
+    namespace: homelab
     server: https://kubernetes.default.svc
   source:
     repoURL: https://github.com/jamilshaikh07/talos-proxmox-gitops
