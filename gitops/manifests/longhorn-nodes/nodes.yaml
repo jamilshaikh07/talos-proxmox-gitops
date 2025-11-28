@@ -1,10 +1,10 @@
 # Longhorn Node Configurations
 # This file configures Longhorn storage disks on all Talos nodes.
-# All nodes have /dev/sdb attached for Longhorn storage:
-# - VM workers: 500GB each
-# - Bare metal (talos-wk-04): 512GB SSD
+# Disk configuration per node:
+# - VM nodes (cp-01, wk-01/02/03): /dev/sdb (500GB) mounted at /var/mnt/longhorn
+# - Bare metal (talos-wk-04): /dev/sda (512GB SSD) mounted at /var/mnt/longhorn
 #
-# Disk is mounted at /var/mnt/longhorn via Talos machine config
+# All disks mounted at /var/mnt/longhorn via Talos machine config
 
 ---
 # Longhorn Node Configuration for talos-cp-01

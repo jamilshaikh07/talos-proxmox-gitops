@@ -21,13 +21,13 @@ talos_nodes:
   control_plane:
     hostname: "talos-cp-01"
     ip: "10.20.0.40"
-    vmid: 100
+    vmid: 101
     longhorn_disk: "/dev/sdb"  # 500GB for Longhorn
   # VM workers (from Terraform)
   workers:
     - hostname: "talos-wk-01"
       ip: "10.20.0.41"
-      vmid: 101
+      vmid: 100
       longhorn_disk: "/dev/sdb"  # 500GB for Longhorn
     - hostname: "talos-wk-02"
       ip: "10.20.0.42"
@@ -43,8 +43,8 @@ talos_nodes:
 baremetal_workers:
   - hostname: "talos-wk-04"
     ip: "10.20.0.45"
-    install_disk: "/dev/nvme0n1"   # NVMe for Talos OS
-    longhorn_disk: "/dev/sdb"       # 512GB SSD for Longhorn storage
+    install_disk: "/dev/nvme0n1"   # NVMe 250GB for Talos OS
+    longhorn_disk: "/dev/sda"       # SATA SSD 512GB for Longhorn storage
 
 # Proxmox configuration (for cleanup)
 proxmox_node: "alif"  # Proxmox node name
