@@ -10,7 +10,7 @@ A complete Infrastructure-as-Code solution for deploying a Kubernetes homelab on
 [![Kubernetes](https://img.shields.io/badge/Kubernetes-v1.34.1-green.svg)](https://kubernetes.io/)
 [![Longhorn](https://img.shields.io/badge/Longhorn-v1.10.1-orange.svg)](https://longhorn.io/)
 
-## 🎯 Overview
+## Overview
 
 This project demonstrates enterprise-grade infrastructure automation, showcasing skills in:
 
@@ -27,7 +27,7 @@ This project demonstrates enterprise-grade infrastructure automation, showcasing
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                    TALOS PROXMOX GITOPS                         │
-│                   4-Layer Architecture                          │
+│                   3-Layer Architecture                          │
 └─────────────────────────────────────────────────────────────────┘
 
 ┌──────────────────┐
@@ -38,16 +38,15 @@ This project demonstrates enterprise-grade infrastructure automation, showcasing
           │
 ┌─────────▼────────┐
 │  Layer 1         │  Terraform Infrastructure
-│  Infrastructure  │  ├─ 3x Talos VMs (1 control-plane + 2 workers)
-│                  │  │   └─ 50GB OS + 500GB Longhorn disk each
-│                  │  └─ 1x NFS Server VM (Ubuntu 24.04 - 600GB)
+│  Infrastructure  │  ├─ 1x Talos Control Plane VM (50GB OS + 500GB Longhorn)
+│                  │  ├─ 3x Talos Worker VMs (50GB OS + 500GB Longhorn each)
+│                  │  └─ 1x Bare Metal Worker (optional)
 └─────────┬────────┘
           │
 ┌─────────▼────────┐
 │  Layer 2         │  Ansible Configuration + Talos Setup
-│  Configuration   │  ├─ NFS Server (10.20.0.44:/srv/nfs)
-│                  │  ├─ Talos Cluster Bootstrap (v1.11.5)
-│                  │  ├─ Longhorn Support Configuration
+│  Configuration   │  ├─ Talos Cluster Bootstrap (v1.11.5)
+│                  │  ├─ Longhorn Disk Configuration (/dev/sdb)
 │                  │  ├─ Cilium CNI Installation (v1.16.5)
 │                  │  └─ Metrics Server + Cert Rotation
 └─────────┬────────┘
@@ -55,30 +54,32 @@ This project demonstrates enterprise-grade infrastructure automation, showcasing
 ┌─────────▼────────┐
 │  Layer 3         │  GitOps Applications (via ArgoCD Helm)
 │  GitOps          │  ├─ ArgoCD (Helm v7.7.12)
-│                  │  ├─ Longhorn (PRIMARY storage - 1.5TB)
-│                  │  ├─ NFS Provisioner (SECONDARY storage)
+│                  │  ├─ Longhorn (PRIMARY storage - 2TB+)
+│                  │  ├─ NFS Provisioner (SECONDARY - External OMV)
 │                  │  ├─ Metrics Server (Talos-compatible)
-│                  │  ├─ cert-manager
-│                  │  ├─ ingress-nginx
-│                  │  ├─ MetalLB
-│                  │  ├─ PostgreSQL (CloudNativePG)
-│                  │  ├─ Prometheus Stack (with Longhorn dashboard)
+│                  │  ├─ cert-manager + trust-manager
+│                  │  ├─ Traefik Ingress Controller
+│                  │  ├─ MetalLB Load Balancer
+│                  │  ├─ PostgreSQL (Crunchy Postgres Operator)
+│                  │  ├─ Prometheus Stack (Grafana + Alertmanager)
+│                  │  ├─ Loki + Promtail (Log Aggregation)
+│                  │  ├─ Tempo (Distributed Tracing)
 │                  │  └─ More...
 └──────────────────┘
 ```
 
-## ✨ Features
+## Features
 
 ### Core Infrastructure
 
 - **Talos Linux Kubernetes**: Immutable, secure Kubernetes OS (v1.11.5)
 - **Kubernetes v1.34.1**: Latest stable release
-- **High Availability**: 1 control-plane + 2 worker nodes (3-node cluster)
-- **Longhorn Distributed Storage**: 1.5TB replicated block storage (PRIMARY)
-  - 3x 500GB disks across all nodes
+- **Hybrid Cluster**: VM workers + optional bare metal workers
+- **Longhorn Distributed Storage**: 2TB+ replicated block storage (PRIMARY)
+  - Dedicated /dev/sdb disks on all nodes (500GB each)
   - 2-replica configuration for HA
-  - NFS backup target integration
-- **NFS Storage**: 600GB centralized storage (SECONDARY) for backups and media
+  - NFS backup target integration (external OMV server)
+- **External NFS Storage**: OMV server at 10.20.0.229 (SECONDARY)
 - **Failure Recovery**: Automatic Talos VM cleanup on configuration failure
 
 ### GitOps Applications
@@ -90,22 +91,26 @@ This project demonstrates enterprise-grade infrastructure automation, showcasing
   - Grafana dashboard included
 - **Metrics Server**: Kubernetes resource metrics (Talos-compatible)
 - **cert-manager**: Automatic SSL certificate management
-- **ingress-nginx**: HTTP/HTTPS ingress controller
+- **Traefik**: Modern HTTP/HTTPS ingress controller with TCP support
 - **MetalLB**: Load balancer for bare-metal Kubernetes
-- **CloudNativePG**: PostgreSQL operator for HA databases
+- **Crunchy PostgreSQL**: Enterprise PostgreSQL operator for HA databases
 - **Prometheus Stack**: Complete observability (Prometheus + Grafana + Alertmanager)
-- **NFS Provisioner**: Dynamic NFS volume provisioning (secondary storage)
-- **Cilium v1.16.5**: eBPF-based CNI with Gateway API support
+- **Loki + Promtail**: Log aggregation with MinIO S3 backend
+- **Tempo**: Distributed tracing
+- **NFS Provisioner**: Dynamic NFS volume provisioning (external OMV server)
+- **Cilium v1.16.5**: eBPF-based CNI
+- **CoreDNS k8s-gateway**: Internal DNS for *.lab.jamilshaikh.in
 
 ### Automation
 
 - **Single-Click Deployment**: Via Makefile or local script
-- **4-Layer Architecture**: Clean separation of concerns
+- **3-Layer Architecture**: Clean separation of concerns
 - **Idempotent**: Safe to run multiple times
 - **Self-Healing**: ArgoCD automatically syncs application state
 - **Template Creation**: Automated Debian 12 and Ubuntu 24.04 cloud-init templates
+- **Bare Metal Auto-Detection**: Auto-detect disks on bare metal nodes via talosctl
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -121,8 +126,9 @@ This project demonstrates enterprise-grade infrastructure automation, showcasing
 
 - Proxmox VE 8.x server
 - Network: 10.20.0.0/24
-- Available IPs: 10.20.0.40-44
-- Storage: 1.8TB available (1.5TB for Longhorn + 600GB for NFS)
+- Available IPs: 10.20.0.40-45 (Talos nodes)
+- External NFS: OMV server at 10.20.0.229 (optional)
+- Storage: 2TB+ for Longhorn (500GB per node)
 
 ### Setup
 
@@ -173,84 +179,71 @@ This project demonstrates enterprise-grade infrastructure automation, showcasing
 
 **Total: ~30 minutes** for complete deployment (including template creation)
 
-## 📋 Deployment Options
-
-### Option 1: Local Deployment (Recommended)
-
-```bash
-# Create templates first (one-time)
-make create-templates
-
-# Full deployment
-./deploy-homelab.sh
-
-# Or use Makefile
-make deploy
-
-# Skip specific layers
-./deploy-homelab.sh --skip-layer1  # Skip infrastructure
-./deploy-homelab.sh --skip-layer2  # Skip configuration
-./deploy-homelab.sh --skip-layer3  # Skip GitOps
-```
-
-### Option 2: Makefile
-
-```bash
-make help              # Show all available commands
-make create-templates  # Create cloud-init templates (Debian + Ubuntu)
-make create-debian     # Create only Debian 12 template
-make create-ubuntu     # Create only Ubuntu 24.04 template
-make deploy            # Full deployment
-make layer1            # Deploy infrastructure only
-make layer2            # Configure NFS + Talos only
-make layer3            # Deploy GitOps only
-make status            # Check cluster status
-make destroy           # Destroy all infrastructure
-```
-
-### Option 3: GitHub Actions (Advanced)
-
-**Requirements:**
-- Self-hosted GitHub Actions runner on Proxmox
-- Runner must have network access to Proxmox API and VMs
-
-**Note:** GitHub Actions deployment requires a self-hosted runner because:
-- Cloud runners cannot access private Proxmox infrastructure
-- Runner needs direct network access to manage VMs
-- Talos/kubectl commands need connectivity to cluster nodes
-
-## 🔧 Configuration
+## Configuration
 
 ### Network Configuration
 
 | Component | IP Address | Description |
 |-----------|------------|-------------|
 | Control Plane | 10.20.0.40 | Talos master node |
-| Worker 1 | 10.20.0.41 | Talos worker node |
-| Worker 2 | 10.20.0.42 | Talos worker node |
-| NFS Server | 10.20.0.44 | Ubuntu NFS server |
+| Worker 1 | 10.20.0.41 | Talos worker node (VM) |
+| Worker 2 | 10.20.0.42 | Talos worker node (VM) |
+| Worker 3 | 10.20.0.43 | Talos worker node (VM) |
+| Worker 4 | 10.20.0.45 | Talos worker node (Bare Metal - optional) |
+| OMV NFS Server | 10.20.0.229 | External OpenMediaVault NFS |
 | MetalLB Pool | 10.20.0.81-99 | Load balancer IP range |
+| Traefik LB | 10.20.0.81 | Ingress controller |
+| k8s-gateway DNS | 10.20.0.82 | Internal DNS server |
 
 ### Storage Configuration
 
 #### Longhorn (PRIMARY - Distributed Block Storage)
 - **Type**: Distributed replicated block storage
-- **Total Capacity**: 1.5TB (3x 500GB disks)
+- **Total Capacity**: 2TB+ (500GB per node x 4-5 nodes)
+- **Disk Path**: `/var/mnt/longhorn` (mounted from `/dev/sdb`)
 - **Replica Count**: 2 (HA configuration)
 - **Storage Class**: `longhorn` (default)
 - **Reclaim Policy**: Retain
-- **Backup Target**: NFS at 10.20.0.44:/srv/nfs/backups
+- **Backup Target**: `nfs://10.20.0.229:/export/k8s-nfs/longhorn-backups`
 - **Features**:
   - High performance SSD-backed storage
   - Automatic replication across nodes
   - Snapshot and backup support
   - Prometheus metrics + Grafana dashboard
 
-#### NFS (SECONDARY - Centralized Storage)
-- **Server**: 10.20.0.44:/srv/nfs (600GB)
+#### NFS (SECONDARY - External OMV Storage)
+- **Server**: 10.20.0.229:/export/k8s-nfs (External OMV)
 - **Storage Class**: `nfs-client` (non-default)
-- **Exports**: `/srv/nfs/{shared,media,backups,config}`
-- **Use Cases**: Backups, media files, Longhorn backup target
+- **Use Cases**: Backups, media files, Longhorn backup target, logs
+
+### Node Disk Configuration
+
+| Node | Install Disk | Longhorn Disk | Longhorn Size |
+|------|--------------|---------------|---------------|
+| talos-cp-01 (VM) | /dev/sda | /dev/sdb | 500GB |
+| talos-wk-01 (VM) | /dev/sda | /dev/sdb | 500GB |
+| talos-wk-02 (VM) | /dev/sda | /dev/sdb | 500GB |
+| talos-wk-03 (VM) | /dev/sda | /dev/sdb | 500GB |
+| talos-wk-04 (Bare Metal) | /dev/nvme0n1 | /dev/sda | 512GB |
+
+### Adding Bare Metal Workers
+
+The inventory script supports auto-detection of disks on bare metal nodes:
+
+```bash
+# Auto-detect disks on a new bare metal node
+./scripts/generate-ansible-inventory.py --baremetal-ip 10.20.0.45
+
+# Auto-detect disks on existing bare metal nodes in config
+./scripts/generate-ansible-inventory.py --detect-baremetal-disks
+
+# Specify custom hostname
+./scripts/generate-ansible-inventory.py --baremetal-ip 10.20.0.45 --baremetal-hostname talos-wk-05
+```
+
+**Disk Detection Logic:**
+- Install disk: Prefers NVMe (smallest), falls back to smallest non-USB disk
+- Longhorn disk: Prefers largest SATA/SAS disk, falls back to largest NVMe
 
 ### Talos Configuration
 
@@ -258,19 +251,12 @@ make destroy           # Destroy all infrastructure
 - **Kubernetes Version**: v1.34.1
 - **Cluster Name**: homelab-cluster
 - **Cluster Endpoint**: https://10.20.0.40:6443
-- **CNI**: Cilium v1.16.5 (with Gateway API support)
+- **CNI**: Cilium v1.16.5
 - **Allow Control Plane Scheduling**: Yes
 - **Metrics Server**: Enabled (with kubelet cert rotation)
 - **Longhorn Support**: Enabled (extraMounts configured)
 
-### Template Configuration
-
-| Template | VM ID | OS | User | Password | SSH Key |
-|----------|-------|----|----|----------|---------|
-| debian12-template | 9002 | Debian 12 Bookworm | ubuntu | as | Yes |
-| ubuntu24-template | 9003 | Ubuntu 24.04 LTS | ubuntu | as | Yes |
-
-## 📊 Management
+## Management
 
 ### Access Cluster
 
@@ -294,8 +280,6 @@ make argocd-password
 
 # Port forward to ArgoCD UI
 make argocd-port-forward
-# Or manually:
-# kubectl port-forward svc/argocd-server -n argocd 8080:443
 
 # Access at: https://localhost:8080
 # Username: admin
@@ -308,8 +292,22 @@ make argocd-port-forward
 kubectl port-forward -n longhorn-system svc/longhorn-frontend 8090:80
 
 # Access at: http://localhost:8090
-# View volumes, nodes, disks, and backups
 ```
+
+### Access Services via Ingress
+
+With DNS configured (k8s-gateway at 10.20.0.82):
+
+| Service | URL |
+|---------|-----|
+| Grafana | https://grafana.lab.jamilshaikh.in |
+| ArgoCD | https://argocd.lab.jamilshaikh.in |
+| Longhorn | https://longhorn.lab.jamilshaikh.in |
+| Prometheus | https://prometheus.lab.jamilshaikh.in |
+| Traefik | https://traefik.lab.jamilshaikh.in |
+| Homarr | https://homarr.lab.jamilshaikh.in |
+| Uptime Kuma | https://uptime.lab.jamilshaikh.in |
+| MinIO | https://minio.lab.jamilshaikh.in |
 
 ### Talos Management
 
@@ -319,33 +317,22 @@ export TALOSCONFIG=talos-homelab-cluster/rendered/talosconfig
 
 # Check cluster health
 make talos-health
-# Or manually:
-# talosctl health
 
 # View dashboard
 make talos-dashboard
-# Or manually:
-# talosctl dashboard
 
 # View logs
 make talos-logs
-# Or manually:
-# talosctl logs -f
 ```
 
-## 🛠️ Troubleshooting
+## Troubleshooting
 
 ### Layer 2 Failure (Talos Setup)
 
-If Talos configuration fails, the deployment will preserve infrastructure for debugging and retry:
+If Talos configuration fails:
 
 ```bash
 # Retry Layer 2 without destroying VMs
-make layer2
-
-# Or destroy only Talos VMs and redeploy (keeps NFS)
-make destroy-talos
-make layer1
 make layer2
 
 # Or destroy everything and start fresh
@@ -361,13 +348,9 @@ kubectl get pods -n longhorn-system
 
 # Check Longhorn nodes and disks
 kubectl get nodes.longhorn.io -n longhorn-system
-kubectl get disks.longhorn.io -n longhorn-system
 
 # View Longhorn logs
 kubectl logs -n longhorn-system -l app=longhorn-manager
-
-# Access Longhorn UI for troubleshooting
-kubectl port-forward -n longhorn-system svc/longhorn-frontend 8090:80
 ```
 
 ### Storage Issues
@@ -375,11 +358,6 @@ kubectl port-forward -n longhorn-system svc/longhorn-frontend 8090:80
 ```bash
 # Check storage classes
 kubectl get storageclass
-
-# Longhorn should be default:
-# NAME           PROVISIONER          RECLAIMPOLICY   VOLUMEBINDINGMODE
-# longhorn (default)  driver.longhorn.io   Retain          Immediate
-# nfs-client          cluster.local/nfs-client  Delete    Immediate
 
 # Test Longhorn PVC
 kubectl apply -f - <<EOF
@@ -397,20 +375,9 @@ spec:
 EOF
 
 kubectl get pvc test-longhorn-pvc
-kubectl get pv
 ```
 
-### Idempotent Operations
-
-All layers are idempotent and safe to re-run:
-
-```bash
-# Re-run any layer safely
-make layer2  # Will skip if configs already exist
-make layer3  # Will skip if ArgoCD already installed
-```
-
-## 🎯 Makefile Commands
+## Makefile Commands
 
 ### Layer 0 - Templates
 - `make create-templates` - Create both Debian 12 and Ubuntu 24.04 templates
@@ -420,7 +387,7 @@ make layer3  # Will skip if ArgoCD already installed
 ### Deployment
 - `make deploy` - Full 3-layer deployment
 - `make layer1` - Deploy infrastructure (Terraform)
-- `make layer2` - Configure NFS + Talos cluster (Ansible)
+- `make layer2` - Configure Talos cluster (Ansible)
 - `make layer3` - Deploy GitOps applications (ArgoCD)
 
 ### Management
@@ -436,75 +403,33 @@ make layer3  # Will skip if ArgoCD already installed
 - `make talos-logs` - View Talos logs
 
 ### Cleanup
-- `make destroy-talos` - Destroy only Talos VMs (preserve NFS)
-- `make destroy` - Destroy all infrastructure (with confirmation)
+- `make destroy` - Destroy all Talos VMs (with confirmation)
+- `make destroy-all` - Destroy VMs AND remove Talos config directory
 - `make clean` - Clean temporary files
 
 ### Utilities
 - `make help` - Show all available commands
-- `make ping` - Ping all VMs
+- `make ping` - Ping all VMs and NFS server
 - `make version` - Display tool versions
+- `make setup-dns` - Add *.lab.jamilshaikh.in to /etc/hosts
 
-## 📚 Documentation
-
-- **ARCHITECTURE.md** - Detailed architecture documentation
-- **GitHub Actions Workflow** - CI/CD pipeline ([.github/workflows/deploy-homelab.yml](.github/workflows/deploy-homelab.yml))
-- **Terraform Modules** - Infrastructure code ([terraform/proxmox-homelab/](terraform/proxmox-homelab/))
-- **Ansible Roles** - Configuration management ([ansible/roles/](ansible/roles/))
-- **GitOps Apps** - ArgoCD applications ([gitops/apps/](gitops/apps/))
-
-## 🧪 Testing
-
-```bash
-# Test infrastructure connectivity
-make ping
-
-# Verify cluster health
-make talos-health
-
-# Check all components
-make status
-
-# Test Longhorn storage
-kubectl apply -f - <<EOF
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: test-pvc
-spec:
-  accessModes: [ReadWriteOnce]
-  resources:
-    requests:
-      storage: 1Gi
-EOF
-kubectl get pvc test-pvc
-```
-
-## 🗑️ Cleanup
-
-```bash
-# Destroy only Talos VMs (preserve NFS)
-make destroy-talos
-
-# Destroy all infrastructure (Talos + NFS)
-make destroy
-```
-
-## 🔐 Security
+## Security
 
 - Talos secrets are **not committed** to Git (see [.gitignore](.gitignore))
 - Use environment variables for Proxmox credentials
 - ArgoCD credentials stored in Kubernetes secrets
 - SSH keys managed via GitHub Secrets (for GitHub Actions)
 - Longhorn encryption support ready (can be enabled via Helm values)
+- Internal CA for TLS certificates (cert-manager + trust-manager)
 
-## 📈 Monitoring
+## Monitoring
 
 ### Grafana Dashboards
 - **Longhorn Dashboard**: Pre-configured for storage monitoring
 - **Prometheus Stack**: Complete observability
-- **Node Metrics**: Via metrics-server
-- **Application Metrics**: Via ServiceMonitors
+- **Kubernetes Events**: Event dashboard
+- **PostgreSQL**: Database monitoring
+- **Loki**: Log exploration
 
 Access Grafana:
 ```bash
@@ -512,7 +437,7 @@ kubectl port-forward -n monitoring svc/prometheus-stack-grafana 3000:80
 # Access at: http://localhost:3000
 ```
 
-## 🤝 Contributing
+## Contributing
 
 This is a personal showcase project, but feedback and suggestions are welcome!
 
@@ -521,18 +446,17 @@ This is a personal showcase project, but feedback and suggestions are welcome!
 3. Make your changes
 4. Submit a pull request
 
-## 📝 License
+## License
 
 MIT License - See [LICENSE](LICENSE) file for details
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
-- **Friend's Homelab**: Inspired by production-ready configurations from [homelab-gitops](https://github.com/hikmahtech/homelab-gitops)
 - **Talos Linux**: For the amazing immutable Kubernetes OS
 - **ArgoCD**: For declarative GitOps made easy
 - **Longhorn**: For cloud-native distributed block storage
 
-## 📧 Contact
+## Contact
 
 For inquiries about this project or professional opportunities:
 
@@ -541,4 +465,4 @@ For inquiries about this project or professional opportunities:
 
 ---
 
-**Built with ❤️ for showcasing DevOps/SRE skills**
+**Built with care for showcasing DevOps/SRE skills**
