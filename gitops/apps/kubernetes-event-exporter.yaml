@@ -14,7 +14,7 @@ spec:
   project: default
   source:
     chart: kubernetes-event-exporter
-    repoURL: https://repo.broadcom.com/bitnami-files
+    repoURL: oci://registry-1.docker.io/bitnamicharts
     targetRevision: 3.6.3
     helm:
       values: |

@@ -15,35 +15,50 @@ spec:
   source:
     chart: homarr
     repoURL: https://homarr-labs.github.io/charts
-    targetRevision: 8.2.3
+    targetRevision: 8.3.0
     helm:
       values: |
-        # Homarr - Homelab start page / dashboard
+        # Homarr - Homelab start page / dashboard (v8.3.0)
 
-        # Use PostgreSQL from homelab-pg cluster
+        # Environment variables (key-value format for v8.x)
         env:
-          - name: DATABASE_URL
-            valueFrom:
-              secretKeyRef:
-                name: homelab-pg-pguser-homarr
-                key: uri
+          TZ: "Asia/Kolkata"
+          LOG_LEVEL: "info"
+          AUTH_PROVIDERS: "credentials"
+          AUTH_SESSION_EXPIRY_TIME: "30d"
 
-        # Disable the default envSecrets (we're using env with secretKeyRef instead)
+        # Database - use PostgreSQL from homelab-pg cluster
+        database:
+          type: postgresql
+          migrationEnabled: true
+
+        # Database credentials from PGO secret
         envSecrets:
+          dbCredentials:
+            existingSecret: "homelab-pg-pguser-homarr"
+            dbUrlKey: "uri"
           dbEncryption:
             existingSecret: ""
-          dbCredentials:
+          authOidcCredentials:
+            existingSecret: ""
+          authLdapCredentials:
             existingSecret: ""
 
-        # Persistence for icons/assets only (database is in PostgreSQL)
+        # Persistence for icons/assets
         persistence:
           homarrIcons:
             enabled: true
             storageClassName: "nfs-client"
             size: "1Gi"
-            mountPath: /app/data/icons
-          homarrDatabase:
-            enabled: false
+
+        # Resources
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
 
   syncPolicy:
     automated:
