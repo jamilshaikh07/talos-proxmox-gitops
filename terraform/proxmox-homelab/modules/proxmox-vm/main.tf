@@ -56,9 +56,7 @@ resource "proxmox_vm_qemu" "vm" {
   searchdomain = var.searchdomain
   ciuser       = var.ciuser
   cipassword   = var.cipassword
-  sshkeys      = <<EOF
-    ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCo+YWXjytd2oSP8O7h4C8XBm1rwuMsWulsGLn/p1jJYXXnxfkVHJiBLCpiebDObRekCoWemjaWndC69lYiPeibIqy83tLhjjqljSrEbuZqvRyZIrLfTIwRSgIFLuH6DsKgPEZhnfv80U59vm0W/FHCN/HjZo9Qstu/NUwMW7JrgCxcfSBdz0o3b1H59+R+UpexuK3o2D/GEVVJJR848szKCxlIFGuftFYgigYJ6OWdtpoga/LJPOv0qJheZpwnZgYnIzkWfpbNO3RNUP7CaUTep+n+gEkdSQ8lzn5vs1seT8tqzOL7OExkcmLgch0/oE894J0oSF3NTQjSYPjt3sAxa3RDpDszkOkOVT1HJa0MQGdUJ1chuiz4ubezIPlsR21pTnYSNyGIn25g3IxckYrcJdCboWEVK3lkyfb5bWP7rfu/r6oaq2UWILjGbSXHknKuQ+HyojYbMusVkVNuuF8iSC/mJkETV16Ufy2NQ3BTBdn93urtU8kvVG7QcLZAVIs= jamil.shaikh@OPLPT069.local
-    EOF 
+  sshkeys      = var.sshkeys 
 
   serial {
     id   = "0"
