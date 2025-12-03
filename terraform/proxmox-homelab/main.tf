@@ -1,3 +1,8 @@
+# Load SSH public key from file (never committed to git)
+locals {
+  ssh_public_key = var.ssh_public_key != "" ? var.ssh_public_key : file(pathexpand(var.ssh_public_key_path))
+}
+
 # # Ubuntu VM for NFS Server (Large storage for persistent volumes)
 # module "ubuntu-nfs" {
 #   source = "./modules/proxmox-vm"
@@ -18,6 +23,7 @@
 #   ipconfig0  = "ip=10.20.0.44/24,gw=10.20.0.1"
 #   ciuser     = "ubuntu"
 #   cipassword = "as"
+#   sshkeys    = local.ssh_public_key
 # }
 
 # # Output for NFS VM

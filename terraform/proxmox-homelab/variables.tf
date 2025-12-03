@@ -53,3 +53,16 @@ variable "talos_version" {
   default     = "v1.10.4"
   description = "talos_version"
 }
+
+variable "ssh_public_key_path" {
+  type        = string
+  default     = "~/.ssh/id_rsa.pub"
+  description = "Path to SSH public key file for cloud-init VMs"
+}
+
+variable "ssh_public_key" {
+  type        = string
+  sensitive   = true
+  default     = ""
+  description = "SSH public key content. If empty, reads from ssh_public_key_path"
+}
