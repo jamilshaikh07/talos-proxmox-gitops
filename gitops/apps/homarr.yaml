@@ -18,14 +18,9 @@ spec:
     targetRevision: 8.3.0
     helm:
       values: |
-        # Homarr - Homelab start page / dashboard (v8.3.0)
-
         # Environment variables (key-value format for v8.x)
         env:
           TZ: "Asia/Kolkata"
-          LOG_LEVEL: "info"
-          AUTH_PROVIDERS: "credentials"
-          AUTH_SESSION_EXPIRY_TIME: "30d"
 
         # Database - use PostgreSQL from homelab-pg cluster
         database:
@@ -40,46 +35,13 @@ spec:
 
         # Persistence for icons/assets
         persistence:
-          homarrIcons:
+          homarrDatabase:
             enabled: true
-            storageClassName: "nfs-client"
-            size: "1Gi"
+            name: "homarr-db-pvc-data"
+            storageClass: "nfs-client"
+            accessModes: "ReadWriteOnce"
+            size: 500Mi
 
-        # Override ports - v1.44 uses port 3000, not 7575
-        containerPorts:
-          http:
-            port: 3000
-            protocol: TCP
-
-        livenessProbe:
-          httpGet:
-            path: /api/health
-            port: 3000
-          initialDelaySeconds: 30
-          periodSeconds: 30
-          timeoutSeconds: 10
-
-        readinessProbe:
-          httpGet:
-            path: /api/health
-            port: 3000
-          initialDelaySeconds: 10
-          periodSeconds: 10
-          timeoutSeconds: 5
-
-        service:
-          ports:
-            port: 3000
-            targetPort: 3000
-
-        # Resources
-        resources:
-          requests:
-            cpu: 50m
-            memory: 128Mi
-          limits:
-            cpu: 500m
-            memory: 512Mi
 
   syncPolicy:
     automated:
