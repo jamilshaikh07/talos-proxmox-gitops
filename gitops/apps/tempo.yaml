@@ -28,6 +28,14 @@ spec:
           size: 20Gi
         serviceMonitor:
           enabled: true
+  ignoreDifferences:
+    - group: apps
+      kind: StatefulSet
+      name: tempo
+      namespace: monitoring
+      jsonPointers:
+        - /spec/volumeClaimTemplates
+
   syncPolicy:
     automated:
       prune: true
