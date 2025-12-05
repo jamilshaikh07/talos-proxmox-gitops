@@ -15,7 +15,7 @@ spec:
   source:
     chart: homarr
     repoURL: https://homarr-labs.github.io/charts
-    targetRevision: 8.3.0
+    targetRevision: 8.4.0
     helm:
       values: |
         # Environment variables (key-value format for v8.x)
