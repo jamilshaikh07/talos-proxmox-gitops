@@ -20,7 +20,6 @@ spec:
       values: |
         # Grafana Tempo - Tracing backend (monolithic)
         tempo:
-          searchEnabled: true
           metricsGenerator:
             enabled: true
         persistence:
@@ -29,13 +28,6 @@ spec:
           size: 20Gi
         serviceMonitor:
           enabled: true
-          namespace: monitoring
-  ignoreDifferences:
-    - group: apps
-      kind: StatefulSet
-      jsonPointers:
-        - /spec/persistentVolumeClaimRetentionPolicy
-        - /spec/volumeClaimTemplates/0/status
   syncPolicy:
     automated:
       prune: true
