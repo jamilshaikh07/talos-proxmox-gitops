@@ -38,7 +38,7 @@ spec:
           homarrDatabase:
             enabled: true
             name: "homarr-db-pvc-data"
-            storageClass: "nfs-client"
+            storageClassName: "nfs-client"
             accessModes: "ReadWriteOnce"
             size: 500Mi
 
