@@ -53,7 +53,7 @@ spec:
             autoPR:
               enabled: true
               schedule: "0 0 * * 1"  # Weekly on Monday at midnight
-              priority: "major"       # Create PRs for major+ updates
+              priority: "minor"       # Create PRs for minor+ (includes critical, major, minor)
               repoOwner: "jamilshaikh07"
               repoName: "talos-proxmox-gitops"
               scanPath: "gitops/apps"
