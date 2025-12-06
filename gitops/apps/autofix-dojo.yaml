@@ -49,6 +49,14 @@ spec:
             enabled: true
             scanPath: "/gitops"
             scanInterval: "24h"
+            # Auto PR creation - like Dependabot but for Helm!
+            autoPR:
+              enabled: true
+              schedule: "0 0 * * 1"  # Weekly on Monday at midnight
+              priority: "major"       # Create PRs for major+ updates
+              repoOwner: "jamilshaikh07"
+              repoName: "talos-proxmox-gitops"
+              scanPath: "gitops/apps"
 
           # Scan Schedule
           schedule:
