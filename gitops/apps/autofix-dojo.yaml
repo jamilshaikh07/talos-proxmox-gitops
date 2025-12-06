@@ -20,7 +20,7 @@ spec:
     # Helm chart from autofix-dojo repo
     - repoURL: https://github.com/jamilshaikh07/autofix-dojo
       path: deploy/helm-chart
-      targetRevision: main
+      targetRevision: master
       helm:
         values: |
           image:
