@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: autofix-dojo
+  labels:
+    app.kubernetes.io/name: autofix-dojo
+    app.kubernetes.io/part-of: autofix-dojo

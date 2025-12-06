@@ -1,0 +1,95 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: autofix-dojo
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: autofix-dojo
+    server: https://kubernetes.default.svc
+  project: default
+  sources:
+    # Namespace and secrets from git
+    - repoURL: https://github.com/jamilshaikh07/talos-proxmox-gitops
+      path: gitops/manifests/autofix-dojo
+      targetRevision: master
+    # Helm chart from autofix-dojo repo
+    - repoURL: https://github.com/jamilshaikh07/autofix-dojo
+      path: deploy/helm-chart
+      targetRevision: main
+      helm:
+        values: |
+          image:
+            repository: ghcr.io/jamilshaikh07/autofix-dojo
+            tag: "0.2.0"
+            pullPolicy: IfNotPresent
+
+          # Disable controller mode - use CronJobs
+          controller:
+            enabled: false
+
+          # DefectDojo - disabled for now (will enable when DefectDojo is deployed)
+          defectdojo:
+            enabled: false
+
+          # Git Configuration for PR creation
+          git:
+            enabled: true
+            repoUrl: "https://github.com/jamilshaikh07/talos-proxmox-gitops"
+            mainBranch: "master"
+            platform: "github"
+            existingSecret: "autofix-dojo-github"
+
+          # Helm Chart Scanning
+          helm:
+            enabled: true
+            scanPath: "/gitops"
+            scanInterval: "24h"
+
+          # Scan Schedule
+          schedule:
+            vulnerabilities: "0 6 * * *"   # Daily at 6 AM
+            helmDrift: "0 0 * * 1"         # Weekly on Monday
+
+          # SLO tracking
+          slo:
+            enabled: true
+            dbPath: "/data/slo_data.json"
+
+          # Persistence - use longhorn
+          persistence:
+            enabled: true
+            storageClass: "longhorn"
+            size: 1Gi
+
+          # Resources for homelab
+          resources:
+            limits:
+              cpu: 200m
+              memory: 256Mi
+            requests:
+              cpu: 50m
+              memory: 64Mi
+
+          # Security context
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            readOnlyRootFilesystem: false
+            allowPrivilegeEscalation: false
+
+          # Metrics
+          metrics:
+            enabled: false
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
