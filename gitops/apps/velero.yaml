@@ -1,0 +1,37 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: velero
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: velero
+    server: https://kubernetes.default.svc
+  project: default
+  sources:
+    # Namespace from git
+    - repoURL: https://github.com/jamilshaikh07/talos-proxmox-gitops
+      path: gitops/manifests/velero-namespace
+      targetRevision: master
+    # Helm chart from upstream
+    - repoURL: https://vmware-tanzu.github.io/helm-charts
+      chart: velero
+      targetRevision: "4.3.0"
+      helm:
+        valueFiles:
+          - $values/gitops/manifests/velero-namespace/velero-values-v4.3.0.yaml
+    # Values from git repo
+    - repoURL: https://github.com/jamilshaikh07/talos-proxmox-gitops
+      targetRevision: master
+      ref: values
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
