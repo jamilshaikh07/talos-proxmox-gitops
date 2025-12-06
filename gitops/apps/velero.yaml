@@ -22,12 +22,61 @@ spec:
       chart: velero
       targetRevision: "4.3.0"
       helm:
-        valueFiles:
-          - $values/gitops/manifests/velero-namespace/velero-values-v4.3.0.yaml
-    # Values from git repo
-    - repoURL: https://github.com/jamilshaikh07/talos-proxmox-gitops
-      targetRevision: master
-      ref: values
+        values: |
+          # Velero v4.3.0 values for Minio backend
+          upgradeCRDs: false
+          kubectl:
+            image:
+              repository: bitnami/kubectl
+              tag: "latest"
+          image:
+            repository: velero/velero
+            tag: v1.11.1
+            pullPolicy: IfNotPresent
+          initContainers:
+            - name: velero-plugin-for-aws
+              image: velero/velero-plugin-for-aws:v1.7.1
+              imagePullPolicy: IfNotPresent
+              volumeMounts:
+                - mountPath: /target
+                  name: plugins
+          resources:
+            requests:
+              cpu: 500m
+              memory: 128Mi
+            limits:
+              cpu: 1000m
+              memory: 512Mi
+          metrics:
+            enabled: true
+            serviceMonitor:
+              enabled: false
+          configuration:
+            backupStorageLocation:
+              - name: default
+                provider: aws
+                bucket: velero
+                default: true
+                config:
+                  region: minio
+                  s3ForcePathStyle: "true"
+                  s3Url: http://minio.minio-system.svc.cluster.local:9000
+                  insecureSkipTLSVerify: "true"
+            volumeSnapshotLocation:
+              - name: default
+                provider: aws
+                config:
+                  region: minio
+          credentials:
+            useSecret: true
+            name: velero-credentials
+            secretContents:
+              cloud: |
+                [default]
+                aws_access_key_id = minioadmin
+                aws_secret_access_key = minioadmin123
+          deployNodeAgent: false
+          schedules: {}
   syncPolicy:
     automated:
       prune: true
