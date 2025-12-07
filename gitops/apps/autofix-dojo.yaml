@@ -25,7 +25,7 @@ spec:
         values: |
           image:
             repository: ghcr.io/jamilshaikh07/autofix-dojo
-            tag: "4efb5e72b6552f221bf10cc1d9616da77135f86d"
+            tag: "sha-4efb5e7"
             pullPolicy: Always
 
           # Disable controller mode - use CronJobs
