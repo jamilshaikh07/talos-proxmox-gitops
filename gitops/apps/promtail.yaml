@@ -15,7 +15,7 @@ spec:
   source:
     chart: promtail
     repoURL: https://grafana.github.io/helm-charts
-    targetRevision: 6.16.6
+    targetRevision: 6.17.1
     helm:
       values: |
         # Promtail - Log Collection Agent
