@@ -90,9 +90,36 @@ spec:
             readOnlyRootFilesystem: false
             allowPrivilegeEscalation: false
 
-          # Metrics
+          # Web Dashboard
+          web:
+            enabled: true
+            replicas: 1
+            port: 8080
+            service:
+              type: ClusterIP
+              port: 80
+            ingress:
+              enabled: true
+              className: "cilium"
+              annotations:
+                cert-manager.io/cluster-issuer: "letsencrypt-prod"
+              hosts:
+                - host: autofix.homelab.local
+                  paths:
+                    - path: /
+                      pathType: Prefix
+              tls:
+                - secretName: autofix-tls
+                  hosts:
+                    - autofix.homelab.local
+
+          # Metrics for Prometheus/Grafana
           metrics:
-            enabled: false
+            enabled: true
+            port: 9090
+            serviceMonitor:
+              enabled: true
+              interval: 30s
 
   syncPolicy:
     automated:
