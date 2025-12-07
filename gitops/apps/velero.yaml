@@ -20,7 +20,7 @@ spec:
     # Helm chart from upstream
     - repoURL: https://vmware-tanzu.github.io/helm-charts
       chart: velero
-      targetRevision: "4.3.0"
+      targetRevision: "11.2.0"
       helm:
         values: |
           # Velero v4.3.0 values for Minio backend
