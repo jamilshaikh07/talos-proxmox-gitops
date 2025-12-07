@@ -18,7 +18,7 @@ spec:
       targetRevision: master
     - chart: minio
       repoURL: https://charts.min.io/
-      targetRevision: 5.3.0
+      targetRevision: 5.4.0
       helm:
         values: |
           # MinIO - S3-Compatible Object Storage
