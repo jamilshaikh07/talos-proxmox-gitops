@@ -25,8 +25,8 @@ spec:
         values: |
           image:
             repository: ghcr.io/jamilshaikh07/autofix-dojo
-            tag: "master"
-            pullPolicy: Always
+            tag: "sha-02d1c07"  # auto-updated by autofix-dojo helm-upgrade-pr
+            pullPolicy: IfNotPresent
 
           # Disable controller mode - use CronJobs
           controller:
