@@ -74,14 +74,14 @@ spec:
             storageClass: "longhorn"
             size: 1Gi
 
-          # Resources for homelab
+          # Resources for CronJobs (helm-scan, helm-upgrade-pr, vuln-scan)
           resources:
             limits:
-              cpu: 200m
-              memory: 256Mi
+              cpu: "1"
+              memory: 512Mi
             requests:
-              cpu: 50m
-              memory: 64Mi
+              cpu: 200m
+              memory: 128Mi
 
           # Security context
           securityContext:
