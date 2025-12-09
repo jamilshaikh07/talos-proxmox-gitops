@@ -23,6 +23,8 @@ spec:
           args:
             - tunnel
             - --no-autoupdate
+            - --metrics
+            - 0.0.0.0:2000
             - run
           env:
             - name: TUNNEL_TOKEN
@@ -30,6 +32,9 @@ spec:
                 secretKeyRef:
                   name: cloudflared-tunnel-token
                   key: token
+          ports:
+            - containerPort: 2000
+              name: metrics
           resources:
             requests:
               cpu: 50m
@@ -43,6 +48,7 @@ spec:
               port: 2000
             initialDelaySeconds: 10
             periodSeconds: 10
+            failureThreshold: 3
           readinessProbe:
             httpGet:
               path: /ready
