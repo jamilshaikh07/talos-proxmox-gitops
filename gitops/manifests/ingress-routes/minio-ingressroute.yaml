@@ -15,25 +15,4 @@ spec:
         - name: minio
           port: 9001  # MinIO console port
   tls:
-    secretName: minio-tls-cert
----
-# TLS Certificate for MinIO
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: minio-tls-cert
-  namespace: minio-system
-spec:
-  secretName: minio-tls-cert
-  issuerRef:
-    name: homelab-ca-issuer
-    kind: ClusterIssuer
-    group: cert-manager.io
-  commonName: minio.lab.jamilshaikh.in
-  dnsNames:
-    - minio.lab.jamilshaikh.in
-  privateKey:
-    algorithm: RSA
-    size: 2048
-  duration: 2160h
-  renewBefore: 360h
+    secretName: wildcard-lab-tls  # Replicated wildcard certificate

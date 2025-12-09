@@ -1,0 +1,72 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: external-dns
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: external-dns
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    chart: external-dns
+    repoURL: https://kubernetes-sigs.github.io/external-dns
+    targetRevision: 1.15.0
+    helm:
+      values: |
+        # External-DNS - Auto-manage DNS records in Cloudflare
+
+        provider:
+          name: cloudflare
+
+        env:
+          - name: CF_API_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: cloudflare-api-token
+                key: api-token
+
+        # Domain filter - only manage these domains
+        domainFilters:
+          - jamilshaikh.in
+
+        # Sources to watch for DNS records
+        sources:
+          - ingress
+          - crd  # Traefik IngressRoute
+
+        # Traefik IngressRoute CRD support
+        crd:
+          apiversion: traefik.io/v1alpha1
+          kind: IngressRoute
+
+        # Policy: sync will create, update, and delete records
+        policy: sync
+
+        # Registry to track ownership of DNS records
+        registry: txt
+        txtOwnerId: homelab-cluster
+        txtPrefix: external-dns-
+
+        # Resource limits
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
+
+        # Logging
+        logLevel: info
+        logFormat: text
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

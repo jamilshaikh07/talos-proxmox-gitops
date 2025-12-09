@@ -15,25 +15,4 @@ spec:
         - name: longhorn-frontend
           port: 80
   tls:
-    secretName: longhorn-tls-cert
----
-# TLS Certificate for Longhorn
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: longhorn-tls-cert
-  namespace: longhorn-system
-spec:
-  secretName: longhorn-tls-cert
-  issuerRef:
-    name: homelab-ca-issuer
-    kind: ClusterIssuer
-    group: cert-manager.io
-  commonName: longhorn.lab.jamilshaikh.in
-  dnsNames:
-    - longhorn.lab.jamilshaikh.in
-  privateKey:
-    algorithm: RSA
-    size: 2048
-  duration: 2160h
-  renewBefore: 360h
+    secretName: wildcard-lab-tls  # Replicated wildcard certificate
