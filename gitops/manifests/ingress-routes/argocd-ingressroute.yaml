@@ -15,25 +15,4 @@ spec:
         - name: argocd-server
           port: 80  # Use HTTP backend, Traefik handles HTTPS
   tls:
-    secretName: argocd-tls-cert
----
-# TLS Certificate for ArgoCD
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: argocd-tls-cert
-  namespace: argocd
-spec:
-  secretName: argocd-tls-cert
-  issuerRef:
-    name: homelab-ca-issuer
-    kind: ClusterIssuer
-    group: cert-manager.io
-  commonName: argocd.lab.jamilshaikh.in
-  dnsNames:
-    - argocd.lab.jamilshaikh.in
-  privateKey:
-    algorithm: RSA
-    size: 2048
-  duration: 2160h  # 90 days
-  renewBefore: 360h  # 15 days
+    secretName: wildcard-lab-tls  # Replicated wildcard certificate

@@ -15,25 +15,4 @@ spec:
         - name: uptime-kuma
           port: 3001
   tls:
-    secretName: uptime-kuma-tls-cert
----
-# TLS Certificate for Uptime Kuma
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: uptime-kuma-tls-cert
-  namespace: monitoring
-spec:
-  secretName: uptime-kuma-tls-cert
-  issuerRef:
-    name: homelab-ca-issuer
-    kind: ClusterIssuer
-    group: cert-manager.io
-  commonName: uptime.lab.jamilshaikh.in
-  dnsNames:
-    - uptime.lab.jamilshaikh.in
-  privateKey:
-    algorithm: RSA
-    size: 2048
-  duration: 2160h
-  renewBefore: 360h
+    secretName: wildcard-lab-tls  # Replicated wildcard certificate

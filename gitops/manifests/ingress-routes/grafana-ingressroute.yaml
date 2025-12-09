@@ -15,25 +15,4 @@ spec:
         - name: prometheus-stack-grafana
           port: 80
   tls:
-    secretName: grafana-tls-cert
----
-# TLS Certificate for Grafana
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: grafana-tls-cert
-  namespace: monitoring
-spec:
-  secretName: grafana-tls-cert
-  issuerRef:
-    name: homelab-ca-issuer
-    kind: ClusterIssuer
-    group: cert-manager.io
-  commonName: grafana.lab.jamilshaikh.in
-  dnsNames:
-    - grafana.lab.jamilshaikh.in
-  privateKey:
-    algorithm: RSA
-    size: 2048
-  duration: 2160h
-  renewBefore: 360h
+    secretName: wildcard-lab-tls  # Replicated wildcard certificate

@@ -1,0 +1,12 @@
+creation_rules:
+  # Encrypt all .enc.yaml files
+  - path_regex: .*\.enc\.yaml$
+    age: age1fwe5ta3ey6mzz35t9tupd9a7wpcx5zch9x886hg53vll0ev77g6st4wwc6
+
+  # Match secrets in gitops/manifests/secrets/
+  - path_regex: gitops/manifests/secrets/.*\.yaml$
+    age: age1fwe5ta3ey6mzz35t9tupd9a7wpcx5zch9x886hg53vll0ev77g6st4wwc6
+
+  # Match age-secret in argocd-config
+  - path_regex: gitops/manifests/argocd-config/age-secret\.yaml$
+    age: age1fwe5ta3ey6mzz35t9tupd9a7wpcx5zch9x886hg53vll0ev77g6st4wwc6
