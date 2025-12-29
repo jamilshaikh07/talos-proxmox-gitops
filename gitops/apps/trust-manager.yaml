@@ -15,7 +15,7 @@ spec:
   source:
     chart: trust-manager
     repoURL: https://charts.jetstack.io
-    targetRevision: v0.20.2
+    targetRevision: v0.20.3
     helm:
       values: |
         # trust-manager - Distribute CA certificates across cluster
