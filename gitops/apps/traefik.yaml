@@ -15,7 +15,7 @@ spec:
   source:
     chart: traefik
     repoURL: https://traefik.github.io/charts
-    targetRevision: 37.4.0
+    targetRevision: 38.0.2
     helm:
       values: |
         # Traefik v3 - Modern Ingress Controller
