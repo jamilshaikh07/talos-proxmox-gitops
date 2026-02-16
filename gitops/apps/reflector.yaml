@@ -15,7 +15,7 @@ spec:
   source:
     chart: reflector
     repoURL: https://emberstack.github.io/helm-charts
-    targetRevision: 7.1.288
+    targetRevision: 9.0.311
     helm:
       values: |
         # Kubernetes Reflector - Mirror secrets/configmaps across namespaces
