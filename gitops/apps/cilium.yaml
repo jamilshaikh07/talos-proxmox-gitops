@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: https://helm.cilium.io/
     chart: cilium
-    targetRevision: 1.18.4
+    targetRevision: 1.19.0
     helm:
       values: |
         ipam:
