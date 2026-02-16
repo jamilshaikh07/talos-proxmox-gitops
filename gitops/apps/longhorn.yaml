@@ -18,7 +18,7 @@ spec:
       targetRevision: master
     - chart: longhorn
       repoURL: https://charts.longhorn.io
-      targetRevision: 1.10.1
+      targetRevision: 1.11.0
       helm:
         # Skip Helm hooks to avoid ArgoCD sync issues
         skipCrds: false

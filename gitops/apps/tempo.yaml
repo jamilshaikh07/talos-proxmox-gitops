@@ -15,7 +15,7 @@ spec:
   source:
     chart: tempo
     repoURL: https://grafana.github.io/helm-charts
-    targetRevision: 1.24.1
+    targetRevision: 1.24.4
     helm:
       values: |
         # Grafana Tempo - Tracing backend (monolithic)
