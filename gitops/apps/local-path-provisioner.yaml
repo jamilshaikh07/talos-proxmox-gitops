@@ -1,0 +1,45 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: local-path-provisioner
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: local-path-provisioner
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    repoURL: https://github.com/rancher/local-path-provisioner.git
+    targetRevision: v0.0.34
+    path: deploy/chart/local-path-provisioner
+    helm:
+      values: |
+        storageClass:
+          name: local-path
+          defaultClass: true
+          reclaimPolicy: Retain
+
+        # Uses the dedicated extra disk mounted by Talos at /var/mnt/longhorn
+        # (path name is from Talos machine config, not related to Longhorn)
+        nodePathMap:
+          - node: DEFAULT_PATH_FOR_NON_LISTED_NODES
+            paths:
+              - /var/mnt/longhorn
+
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

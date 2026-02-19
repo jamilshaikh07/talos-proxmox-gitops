@@ -20,9 +20,9 @@ spec:
     annotations:
       # Reflector annotations - replicate this secret to all namespaces that need it
       reflector.v1.k8s.emberstack.com/reflection-allowed: "true"
-      reflector.v1.k8s.emberstack.com/reflection-allowed-namespaces: "argocd,monitoring,homelab,longhorn-system,minio-system,traefik-system"
+      reflector.v1.k8s.emberstack.com/reflection-allowed-namespaces: "argocd,monitoring,homelab,traefik-system"
       reflector.v1.k8s.emberstack.com/reflection-auto-enabled: "true"
-      reflector.v1.k8s.emberstack.com/reflection-auto-namespaces: "argocd,monitoring,homelab,longhorn-system,minio-system,traefik-system"
+      reflector.v1.k8s.emberstack.com/reflection-auto-namespaces: "argocd,monitoring,homelab,traefik-system"
   issuerRef:
     name: letsencrypt-prod
     kind: ClusterIssuer

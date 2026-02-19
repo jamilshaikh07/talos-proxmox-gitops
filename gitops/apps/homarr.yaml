@@ -4,7 +4,7 @@ metadata:
   name: homarr
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "5"  # After postgres-cluster creates secrets
+    argocd.argoproj.io/sync-wave: "4"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
@@ -18,31 +18,17 @@ spec:
     targetRevision: 8.4.3
     helm:
       values: |
-        # Environment variables (key-value format for v8.x)
         env:
           TZ: "Asia/Kolkata"
 
-        # Database - use PostgreSQL from homelab-pg cluster
-        database:
-          type: postgresql
-          migrationEnabled: true
-
-        # Database credentials from PGO secret
-        envSecrets:
-          dbCredentials:
-            existingSecret: "homelab-pg-pguser-homarr"
-            dbUrlKey: "uri"
-
-        # Persistence for icons/assets
+        # Persistence for database (SQLite) and icons/assets
         persistence:
           homarrDatabase:
             enabled: true
             name: "homarr-db-pvc-data"
-            storageClassName: "nfs-client"
+            storageClassName: "local-path"
             accessModes: "ReadWriteOnce"
             size: 500Mi
-
-
   syncPolicy:
     automated:
       prune: true

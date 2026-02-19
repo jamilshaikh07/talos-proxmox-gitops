@@ -30,11 +30,4 @@ This directory contains Grafana dashboards as ConfigMaps that are automatically 
 
 Dashboards can be organized into folders using the `grafana_folder` annotation:
 - `grafana_folder: "Kubernetes"` - For cluster monitoring
-- `grafana_folder: "Databases"` - For PostgreSQL, ClickHouse
-- `grafana_folder: "Applications"` - For Dagster, custom apps
-- `grafana_folder: "Logs"` - For Loki log dashboards
-
-## Example Files
-
-- `example-dashboard.yaml` - Simple example showing the structure
-- `loki-logs-dashboard.yaml` - Log exploration dashboard
+- `grafana_folder: "Applications"` - For custom apps
