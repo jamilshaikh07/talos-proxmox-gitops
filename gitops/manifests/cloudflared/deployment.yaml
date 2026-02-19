@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: cloudflared
-          image: cloudflare/cloudflared:2024.12.1
+          image: cloudflare/cloudflared:2025.2.1
           args:
             - tunnel
             - --no-autoupdate
@@ -51,20 +51,24 @@ spec:
                 - ALL
             seccompProfile:
               type: RuntimeDefault
+          startupProbe:
+            httpGet:
+              path: /ready
+              port: 2000
+            failureThreshold: 30
+            periodSeconds: 10
           livenessProbe:
             httpGet:
               path: /ready
               port: 2000
-            initialDelaySeconds: 60
             periodSeconds: 30
-            failureThreshold: 5
+            failureThreshold: 3
             timeoutSeconds: 10
           readinessProbe:
             httpGet:
               path: /ready
               port: 2000
-            initialDelaySeconds: 30
             periodSeconds: 10
-            failureThreshold: 5
+            failureThreshold: 3
             timeoutSeconds: 5
       restartPolicy: Always

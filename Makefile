@@ -43,8 +43,6 @@ help: ## Display this help message
 	@echo "  2. $(GREEN)make layer2$(NC)  - Configure Talos Kubernetes cluster"
 	@echo "  3. $(GREEN)make layer3$(NC)  - Deploy ArgoCD + GitOps apps"
 	@echo ""
-	@echo "$(YELLOW)External Services:$(NC)"
-	@echo "  NFS: OMV server at 10.20.0.229 (not managed by this repo)"
 	@echo ""
 
 # ============================================================================
@@ -139,12 +137,11 @@ terraform-output: ## Show Terraform outputs
 	@cd $(TERRAFORM_DIR) && terraform output
 
 .PHONY: sync-inventory
-sync-inventory: ## Generate Ansible inventory and Longhorn nodes from Terraform outputs
+sync-inventory: ## Generate Ansible inventory from Terraform outputs
 	@echo "$(BLUE)🔄 Syncing inventory from Terraform...$(NC)"
 	@cd $(TERRAFORM_DIR) && terraform output -json > ../../ansible/terraform-inventory.json
 	@python3 scripts/generate-ansible-inventory.py
-	@python3 scripts/generate-longhorn-nodes.py
-	@echo "$(GREEN)✅ Ansible inventory and Longhorn nodes synced from Terraform$(NC)"
+	@echo "$(GREEN)✅ Ansible inventory synced from Terraform$(NC)"
 
 # ============================================================================
 # LAYER 2 - CONFIGURATION (Ansible + Talos)
@@ -156,7 +153,6 @@ layer2: ansible-configure ## Deploy Layer 2 configuration
 .PHONY: ansible-configure
 ansible-configure: ## Run Ansible configuration (Talos cluster)
 	@echo "$(GREEN)🔧 Configuring Talos Kubernetes Cluster...$(NC)"
-	@echo "$(BLUE)ℹ️  NFS: Using external OMV server at 10.20.0.229$(NC)"
 	cd $(ANSIBLE_DIR) && ansible-playbook -i inventory.yml playbooks/layer2-configure.yml --tags talos
 	@echo "$(GREEN)✅ Layer 2 Complete!$(NC)"
 
@@ -346,37 +342,6 @@ logs: ## View all system logs
 	@kubectl logs -n argocd -l app.kubernetes.io/name=argocd-server --tail=50
 
 # ============================================================================
-# OBSERVABILITY & DATA SERVICES
-# ============================================================================
-
-.PHONY: postgres-creds
-postgres-creds: ## Show homelab Postgres connection info
-	@echo "$(BLUE)🔑 Postgres credentials (homelab-pg):$(NC)"
-	@USER=$$(kubectl -n postgres-operator get secret homelab-pg-pguser-postgres -o jsonpath='{.data.user}' 2>/dev/null | base64 -d); \
-	PASS=$$(kubectl -n postgres-operator get secret homelab-pg-pguser-postgres -o jsonpath='{.data.password}' 2>/dev/null | base64 -d); \
-	if [ -n "$$USER" ] && [ -n "$$PASS" ]; then \
-		echo "  Host: 10.20.0.81"; \
-		echo "  Port: 5432"; \
-		echo "  User: $$USER"; \
-		echo "  Pass: $$PASS"; \
-		echo "  DB:   postgres"; \
-		echo ""; \
-		echo "  psql \"postgresql://$$USER:$$PASS@10.20.0.81:5432/postgres\""; \
-	else \
-		echo "$(RED)❌ Credentials not found. Is the Postgres cluster deployed?$(NC)"; \
-	fi
-
-.PHONY: postgres-port-forward
-postgres-port-forward: ## Port-forward Postgres locally on 5432
-	@echo "$(GREEN)🔌 Port-forwarding Postgres to localhost:5432$(NC)"
-	kubectl -n postgres-operator port-forward svc/homelab-pg-primary 5432:5432
-
-.PHONY: tempo-port-forward
-tempo-port-forward: ## Port-forward Tempo locally on 3100
-	@echo "$(GREEN)🔌 Port-forwarding Tempo to localhost:3100$(NC)"
-	kubectl -n monitoring port-forward svc/tempo 3100:3100
-
-# ============================================================================
 # DNS & CERTIFICATE MANAGEMENT
 # ============================================================================
 
@@ -389,16 +354,14 @@ setup-dns: ## Add *.lab.jamilshaikh.in domains to /etc/hosts
 		echo "$(YELLOW)Adding homelab domains...$(NC)"; \
 		echo "" | sudo tee -a /etc/hosts; \
 		echo "# Homelab Services (*.lab.jamilshaikh.in)" | sudo tee -a /etc/hosts; \
-		echo "10.20.0.81 argocd.lab.jamilshaikh.in grafana.lab.jamilshaikh.in prometheus.lab.jamilshaikh.in minio.lab.jamilshaikh.in longhorn.lab.jamilshaikh.in traefik.lab.jamilshaikh.in uptime.lab.jamilshaikh.in homarr.lab.jamilshaikh.in" | sudo tee -a /etc/hosts; \
+		echo "10.20.0.81 argocd.lab.jamilshaikh.in grafana.lab.jamilshaikh.in prometheus.lab.jamilshaikh.in traefik.lab.jamilshaikh.in uptime.lab.jamilshaikh.in homarr.lab.jamilshaikh.in" | sudo tee -a /etc/hosts; \
 		echo "$(GREEN)✅ DNS configuration added to /etc/hosts$(NC)"; \
 	fi
 	@echo ""
 	@echo "$(BLUE)🌐 Access your services:$(NC)"
 	@echo "  https://argocd.lab.jamilshaikh.in       - ArgoCD UI"
-	@echo "  https://grafana.lab.jamilshaikh.in      - Grafana dashboards (+ logs & events!)"
+	@echo "  https://grafana.lab.jamilshaikh.in      - Grafana dashboards"
 	@echo "  https://prometheus.lab.jamilshaikh.in   - Prometheus UI"
-	@echo "  https://minio.lab.jamilshaikh.in        - MinIO console"
-	@echo "  https://longhorn.lab.jamilshaikh.in     - Longhorn storage UI"
 	@echo "  https://traefik.lab.jamilshaikh.in      - Traefik dashboard"
 	@echo "  https://uptime.lab.jamilshaikh.in       - Uptime Kuma monitoring"
 	@echo "  https://homarr.lab.jamilshaikh.in       - Homarr dashboard"
@@ -448,8 +411,6 @@ trust-ca: extract-ca ## Trust homelab CA certificate (Linux)
 	@echo "  https://argocd.lab.jamilshaikh.in"
 	@echo "  https://grafana.lab.jamilshaikh.in"
 	@echo "  https://prometheus.lab.jamilshaikh.in"
-	@echo "  https://longhorn.lab.jamilshaikh.in"
-	@echo "  https://minio.lab.jamilshaikh.in"
 	@echo "  https://traefik.lab.jamilshaikh.in"
 	@echo "  https://uptime.lab.jamilshaikh.in"
 	@echo "  https://homarr.lab.jamilshaikh.in"

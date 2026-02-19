@@ -50,14 +50,6 @@ spec:
             tls:
               enabled: true
 
-          # Postgres TCP passthrough
-          postgres:
-            port: 5432
-            exposedPort: 5432
-            expose:
-              default: true
-            protocol: TCP
-
           # Metrics
           metrics:
             port: 9100
@@ -123,7 +115,7 @@ spec:
         # Persistence for certificates
         persistence:
           enabled: true
-          storageClass: nfs-client
+          storageClass: local-path
           size: 1Gi
   syncPolicy:
     automated:

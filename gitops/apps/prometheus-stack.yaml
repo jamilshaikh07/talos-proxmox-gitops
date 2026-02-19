@@ -34,10 +34,6 @@ spec:
             ingress:
               enabled: false
 
-            # Disable init container that tries to chown (NFS doesn't support chown)
-            initChownData:
-              enabled: false
-
             # Enable sidecar for automatic dashboard loading
             sidecar:
               dashboards:
@@ -54,48 +50,13 @@ spec:
                 label: grafana_datasource
                 labelValue: "1"
                 searchNamespace: ALL
-
-            # Additional datasources (Loki for logs)
-            additionalDataSources:
-              - name: Loki
-                uid: loki
-                type: loki
-                access: proxy
-                url: http://loki-gateway.monitoring.svc.cluster.local
-                jsonData:
-                  maxLines: 1000
-                  derivedFields:
-                    - datasourceUid: prometheus
-                      matcherRegex: "(?:trace_id|traceID)=(\\w+)"
-                      name: TraceID
-                      url: "$${__value.raw}"
-                isDefault: false
-                editable: true
-              - name: Tempo
-                uid: tempo
-                type: tempo
-                access: proxy
-                url: http://tempo.monitoring.svc.cluster.local:3100
-                jsonData:
-                  httpMethod: GET
-                  tracesToLogs:
-                    datasourceUid: loki
-                    filterByTraceID: true
-                    filterBySpanID: true
-                  tracesToMetrics:
-                    datasourceUid: prometheus
-                  serviceMap:
-                    datasourceUid: prometheus
-                  nodeGraph:
-                    enabled: true
-                editable: true
           prometheus:
             prometheusSpec:
               retention: 30d
               storageSpec:
                 volumeClaimTemplate:
                   spec:
-                    storageClassName: nfs-client
+                    storageClassName: local-path
                     accessModes: ["ReadWriteOnce"]
                     resources:
                       requests:

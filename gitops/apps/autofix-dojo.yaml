@@ -68,10 +68,10 @@ spec:
             enabled: true
             dbPath: "/data/slo_data.json"
 
-          # Persistence - use longhorn
+          # Persistence
           persistence:
             enabled: true
-            storageClass: "longhorn"
+            storageClass: "local-path"
             size: 1Gi
 
           # Resources for CronJobs (helm-scan, helm-upgrade-pr, vuln-scan)

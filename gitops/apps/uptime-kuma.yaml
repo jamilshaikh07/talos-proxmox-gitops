@@ -24,7 +24,7 @@ spec:
         # Persistence
         volume:
           enabled: true
-          storageClassName: nfs-client  # Use storageClassName instead of storageClass
+          storageClassName: local-path
           accessMode: ReadWriteOnce
           size: 2Gi
 
