@@ -1,0 +1,9 @@
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: db-encryption
+  namespace: homelab
+type: Opaque
+stringData:
+  db-encryption-key: "26d071d364557361697f318cdda9678f5e45310ecb4c5bcd5760666bc30a185f"
