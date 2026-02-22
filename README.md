@@ -38,8 +38,7 @@ This project demonstrates enterprise-grade infrastructure automation, showcasing
 ┌─────────▼────────┐
 │  Layer 1         │  Terraform Infrastructure
 │  Infrastructure  │  ├─ 1x Talos Control Plane VM (50GB OS + 500GB data)
-│                  │  ├─ 3x Talos Worker VMs (50GB OS + 500GB data each)
-│                  │  └─ 1x Bare Metal Worker (optional)
+│                  │  └─ 1x Bare Metal Worker (i5-8th gen, 32GB RAM)
 └─────────┬────────┘
           │
 ┌─────────▼────────┐
@@ -72,7 +71,7 @@ This project demonstrates enterprise-grade infrastructure automation, showcasing
 
 - **Talos Linux Kubernetes**: Immutable, secure Kubernetes OS (v1.11.5)
 - **Kubernetes v1.34.1**: Latest stable release
-- **Hybrid Cluster**: VM workers + optional bare metal workers
+- **Hybrid Cluster**: Control plane VM + bare metal worker
 - **Zero-Maintenance Storage**: Rancher local-path-provisioner using dedicated extra disks
   - Extra disk mounted at `/var/mnt/longhorn` on each node
   - No replication overhead — simple and fast local storage
@@ -180,11 +179,8 @@ This project demonstrates enterprise-grade infrastructure automation, showcasing
 
 | Component | IP Address | Description |
 |-----------|------------|-------------|
-| Control Plane | 10.20.0.40 | Talos master node |
-| Worker 1 | 10.20.0.41 | Talos worker node (VM) |
-| Worker 2 | 10.20.0.42 | Talos worker node (VM) |
-| Worker 3 | 10.20.0.43 | Talos worker node (VM) |
-| Worker 4 | 10.20.0.45 | Talos worker node (Bare Metal - optional) |
+| Control Plane | 10.20.0.40 | Talos master node (VM) |
+| Worker 4 | 10.20.0.45 | Talos worker node (Bare Metal, i5-8th gen, 32GB) |
 | MetalLB Pool | 10.20.0.81-99 | Load balancer IP range |
 | Traefik LB | 10.20.0.81 | Ingress controller |
 | k8s-gateway DNS | 10.20.0.82 | Internal DNS server |
@@ -207,9 +203,6 @@ This project demonstrates enterprise-grade infrastructure automation, showcasing
 | Node | Install Disk | Data Disk | Mount Path |
 |------|--------------|-----------|------------|
 | talos-cp-01 (VM) | /dev/sda | /dev/sdb | /var/mnt/longhorn |
-| talos-wk-01 (VM) | /dev/sda | /dev/sdb | /var/mnt/longhorn |
-| talos-wk-02 (VM) | /dev/sda | /dev/sdb | /var/mnt/longhorn |
-| talos-wk-03 (VM) | /dev/sda | /dev/sdb | /var/mnt/longhorn |
 | talos-wk-04 (Bare Metal) | /dev/nvme0n1 | /dev/sda | /var/mnt/longhorn |
 
 ### Adding Bare Metal Workers

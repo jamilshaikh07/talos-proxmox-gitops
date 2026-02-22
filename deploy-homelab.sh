@@ -220,7 +220,7 @@ layer1_infrastructure() {
     sleep 60
 
     log "Checking VM connectivity..."
-    for ip in 10.20.0.40 10.20.0.41 10.20.0.42 10.20.0.43; do
+    for ip in 10.20.0.40; do
         if ! timeout 300 bash -c "until ping -c 1 $ip &>/dev/null; do sleep 5; done"; then
             log_error "VM $ip is not reachable"
             exit 1

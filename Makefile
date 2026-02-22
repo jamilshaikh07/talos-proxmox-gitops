@@ -118,7 +118,7 @@ terraform-apply: terraform-init terraform-validate ## Apply Terraform configurat
 	@echo "$(YELLOW)Waiting for VMs to boot (60 seconds)...$(NC)"
 	@sleep 60
 	@echo "$(YELLOW)Checking Talos VM connectivity...$(NC)"
-	@for ip in 10.20.0.40 10.20.0.41 10.20.0.42 10.20.0.43; do \
+	@for ip in 10.20.0.40; do \
 		if timeout 300 bash -c "until ping -c 1 $$ip &>/dev/null; do sleep 5; done"; then \
 			echo "$(GREEN)✓$(NC) $$ip is reachable"; \
 		else \
@@ -279,9 +279,6 @@ destroy: ## Destroy all Talos VMs
 	cd $(TERRAFORM_DIR) && terraform init && terraform destroy -auto-approve
 	@echo "$(BLUE)🧹 Cleaning up SSH known_hosts...$(NC)"
 	@ssh-keygen -f "$$HOME/.ssh/known_hosts" -R "10.20.0.40" 2>/dev/null || true
-	@ssh-keygen -f "$$HOME/.ssh/known_hosts" -R "10.20.0.41" 2>/dev/null || true
-	@ssh-keygen -f "$$HOME/.ssh/known_hosts" -R "10.20.0.42" 2>/dev/null || true
-	@ssh-keygen -f "$$HOME/.ssh/known_hosts" -R "10.20.0.43" 2>/dev/null || true
 	@echo "$(GREEN)✅ Infrastructure destroyed and SSH keys cleaned$(NC)"
 
 .PHONY: destroy-all
@@ -300,9 +297,6 @@ destroy-all: ## Destroy all VMs AND remove Talos config directory
 	@sudo rm -rf $(TALOS_CONFIG_DIR)
 	@echo "$(BLUE)🧹 Cleaning up SSH known_hosts...$(NC)"
 	@ssh-keygen -f "$$HOME/.ssh/known_hosts" -R "10.20.0.40" 2>/dev/null || true
-	@ssh-keygen -f "$$HOME/.ssh/known_hosts" -R "10.20.0.41" 2>/dev/null || true
-	@ssh-keygen -f "$$HOME/.ssh/known_hosts" -R "10.20.0.42" 2>/dev/null || true
-	@ssh-keygen -f "$$HOME/.ssh/known_hosts" -R "10.20.0.43" 2>/dev/null || true
 	@echo "$(GREEN)✅ Everything destroyed and cleaned up$(NC)"
 
 .PHONY: clean
@@ -321,7 +315,7 @@ clean: ## Clean temporary files
 .PHONY: ping
 ping: ## Ping Talos VMs + NFS server
 	@echo "$(BLUE)📡 Pinging Talos VMs...$(NC)"
-	@for ip in 10.20.0.40 10.20.0.41 10.20.0.42 10.20.0.43; do \
+	@for ip in 10.20.0.40; do \
 		if ping -c 1 -W 1 $$ip &>/dev/null; then \
 			echo "$(GREEN)✓$(NC) $$ip (Talos)"; \
 		else \

@@ -1,6 +1,6 @@
 ---
 # Static Ansible Inventory
-# Talos K8s: CP: 10.20.0.40, Workers: 10.20.0.41-43, Bare metal: 10.20.0.45
+# Talos K8s: CP: 10.20.0.40, Bare metal worker: 10.20.0.45
 
 all:
   vars:

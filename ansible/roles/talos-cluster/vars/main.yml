@@ -23,20 +23,8 @@ talos_nodes:
     ip: "10.20.0.40"
     vmid: 101
     longhorn_disk: "/dev/sdb"  # 500GB for Longhorn
-  # VM workers (from Terraform)
-  workers:
-    - hostname: "talos-wk-01"
-      ip: "10.20.0.41"
-      vmid: 100
-      longhorn_disk: "/dev/sdb"  # 500GB for Longhorn
-    - hostname: "talos-wk-02"
-      ip: "10.20.0.42"
-      vmid: 103
-      longhorn_disk: "/dev/sdb"  # 500GB for Longhorn
-    - hostname: "talos-wk-03"
-      ip: "10.20.0.43"
-      vmid: 102
-      longhorn_disk: "/dev/sdb"  # 500GB for Longhorn
+  # VM workers — none (all removed to free Proxmox resources)
+  workers: []
 
 # Bare metal workers (manually maintained - not managed by Terraform)
 # Add your bare metal nodes here with custom disk configurations
