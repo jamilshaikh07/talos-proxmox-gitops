@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Talos Proxmox GitOps — a 3-layer IaC solution for deploying a Kubernetes homelab on Proxmox using Talos Linux, Terraform, Ansible, and ArgoCD.
 
-- **Layer 1 (Infrastructure):** Terraform provisions VMs on Proxmox (1 control plane + 3 workers + optional bare metal)
+- **Layer 1 (Infrastructure):** Terraform provisions VMs on Proxmox (1 control plane VM + 1 bare metal worker)
 - **Layer 2 (Configuration):** Ansible bootstraps a Talos Kubernetes cluster with Cilium CNI
 - **Layer 3 (GitOps):** ArgoCD deploys ~20 Helm-based applications via app-of-apps pattern
 
@@ -81,8 +81,7 @@ Run `make help` for the full list of targets.
 
 | Role | IP(s) |
 |------|-------|
-| Control plane | 10.20.0.40 |
-| Workers 1-3 (VMs) | 10.20.0.41-43 |
+| Control plane (VM) | 10.20.0.40 |
 | Worker 4 (bare metal) | 10.20.0.45 |
 | MetalLB pool | 10.20.0.81-99 |
 | Traefik LB / services | 10.20.0.81 |

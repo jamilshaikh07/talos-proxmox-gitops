@@ -134,12 +134,6 @@ def get_ip_from_dns(hostname):
     # Fallback to hardcoded IPs based on naming convention
     if 'cp-01' in hostname:
         return '10.20.0.40'
-    elif 'wk-01' in hostname:
-        return '10.20.0.41'
-    elif 'wk-02' in hostname:
-        return '10.20.0.42'
-    elif 'wk-03' in hostname:
-        return '10.20.0.43'
     return 'unknown'
 
 def extract_baremetal_section(file_path):

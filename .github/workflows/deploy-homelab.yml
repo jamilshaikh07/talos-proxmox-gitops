@@ -85,11 +85,8 @@ jobs:
       - name: Display Infrastructure Status
         run: |
           echo "✅ Layer 1 Complete: Infrastructure deployed"
-          echo "VMs Created (4 total):"
+          echo "VMs Created (1 total):"
           echo "  - Talos Control Plane: 10.20.0.40"
-          echo "  - Talos Worker 1: 10.20.0.41"
-          echo "  - Talos Worker 2: 10.20.0.42"
-          echo "  - NFS Server: 10.20.0.44"
 
       - name: Wait for VMs to boot
         run: |
@@ -97,7 +94,7 @@ jobs:
           sleep 60
 
           echo "Checking VM connectivity..."
-          for ip in 10.20.0.40 10.20.0.41 10.20.0.42 10.20.0.44; do
+          for ip in 10.20.0.40; do
             if timeout 300 bash -c "until ping -c 1 $ip &>/dev/null; do sleep 5; done"; then
               echo "✓ $ip is reachable"
             else
