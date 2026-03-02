@@ -15,7 +15,7 @@ spec:
   source:
     chart: uptime-kuma
     repoURL: https://helm.irsigler.cloud
-    targetRevision: 2.24.0
+    targetRevision: 3.0.0
     helm:
       values: |
         # Uptime Kuma - Uptime Monitoring & Status Page
