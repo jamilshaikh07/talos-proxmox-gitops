@@ -15,7 +15,7 @@ spec:
   source:
     chart: external-dns
     repoURL: https://kubernetes-sigs.github.io/external-dns
-    targetRevision: 1.15.0
+    targetRevision: 1.20.0
     helm:
       values: |
         # External-DNS - Auto-manage DNS records in Cloudflare
