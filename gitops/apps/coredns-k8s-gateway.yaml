@@ -33,7 +33,7 @@ spec:
           type: LoadBalancer
           port: 53
           annotations:
-            metallb.universe.tf/loadBalancerIPs: 10.20.0.82
+            metallb.universe.tf/loadBalancerIPs: 192.168.60.82
 
           # DNS requires both TCP and UDP
           # MetalLB IP sharing for same IP on both protocols

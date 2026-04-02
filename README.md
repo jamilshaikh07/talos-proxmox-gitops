@@ -37,7 +37,8 @@ This project demonstrates enterprise-grade infrastructure automation, showcasing
           │
 ┌─────────▼────────┐
 │  Layer 1         │  Terraform Infrastructure
-│  Infrastructure  │  ├─ 1x Talos Control Plane VM (100GB, 8GB RAM)
+│  Infrastructure  │  ├─ OPNsense VM (router, vmbr0 WAN + vmbr2 LAN)
+│                  │  ├─ 1x Talos Control Plane VM (100GB, 8GB RAM)
 │                  │  └─ 1x Talos Worker VM (100GB, 16GB RAM)
 └─────────┬────────┘
           │
@@ -127,9 +128,9 @@ This project demonstrates enterprise-grade infrastructure automation, showcasing
 **Infrastructure:**
 
 - Proxmox VE 8.x server
-- Network: 10.20.0.0/24
-- Available IPs: 10.20.0.40-45 (Talos nodes)
-- Storage: Extra disk per node for local-path-provisioner (500GB recommended)
+- Network: OPNsense VM as router (WAN on `vmbr0`, LAN on `vmbr2` — `192.168.60.0/24`)
+- Talos nodes on isolated internal subnet: `192.168.60.40-41`
+- Storage: OS disk per node for local-path-provisioner (`/var/local-path-storage`)
 
 ### Setup
 
@@ -186,11 +187,14 @@ This project demonstrates enterprise-grade infrastructure automation, showcasing
 
 | Component | IP Address | Description |
 |-----------|------------|-------------|
-| Control Plane | 10.20.0.40 | Talos master node (VM) |
-| Worker 1 | 10.20.0.41 | Talos worker node (VM, 16GB RAM) |
-| MetalLB Pool | 10.20.0.81-99 | Load balancer IP range |
-| Traefik LB | 10.20.0.81 | Ingress controller |
-| k8s-gateway DNS | 10.20.0.82 | Internal DNS server |
+| Proxmox host | 10.20.0.10 | Proxmox management (vmbr0) |
+| OPNsense WAN | 10.20.0.x (DHCP) | Shared vmbr0 → home router |
+| OPNsense LAN | 192.168.60.1 | Internal gateway (vmbr2) |
+| Control Plane | 192.168.60.40 | Talos master node (VM) |
+| Worker 1 | 192.168.60.41 | Talos worker node (VM, 16GB RAM) |
+| MetalLB Pool | 192.168.60.81-99 | Load balancer IP range |
+| Traefik LB | 192.168.60.81 | Ingress controller |
+| k8s-gateway DNS | 192.168.60.82 | Internal DNS server |
 
 ### Storage Configuration
 
@@ -202,8 +206,6 @@ This project demonstrates enterprise-grade infrastructure automation, showcasing
 - **Reclaim Policy**: Retain
 - **Binding Mode**: WaitForFirstConsumer (provisions when pod is scheduled)
 - **Trade-off**: No replication — data lives on the node where the pod runs
-
-> **Note**: The mount path `/var/mnt/longhorn` is the disk mount point configured in the Talos machine config, retained from the original setup. It is unrelated to Longhorn.
 
 ### Node Disk Configuration
 
@@ -217,7 +219,7 @@ This project demonstrates enterprise-grade infrastructure automation, showcasing
 - **Talos Version**: v1.12.6
 - **Kubernetes Version**: v1.34.1
 - **Cluster Name**: homelab-cluster
-- **Cluster Endpoint**: https://10.20.0.40:6443
+- **Cluster Endpoint**: https://192.168.60.40:6443
 - **CNI**: Cilium v1.16.5
 - **Allow Control Plane Scheduling**: Yes
 - **Metrics Server**: Enabled (with kubelet cert rotation)
@@ -253,7 +255,7 @@ make argocd-port-forward
 
 ### Access Services via Ingress
 
-With DNS configured (k8s-gateway at 10.20.0.82):
+With DNS configured (k8s-gateway at 192.168.60.82):
 
 | Service | URL |
 |---------|-----|

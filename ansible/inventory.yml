@@ -1,10 +1,10 @@
 ---
 # Static Ansible Inventory
-# Talos K8s: CP: 10.20.0.40 (VM), Worker-01: 10.20.0.41 (VM) — all on Proxmox
+# Talos K8s: CP: 192.168.60.40 (VM), Worker-01: 192.168.60.41 (VM) — all on Proxmox via OPNsense vmbr2
 
 all:
   vars:
     ansible_python_interpreter: /usr/bin/python3
     # Network configuration
-    network_cidr: "10.20.0.0/24"
-    network_gateway: "10.20.0.1"
+    network_cidr: "192.168.60.0/24"
+    network_gateway: "192.168.60.1"

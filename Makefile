@@ -118,9 +118,9 @@ terraform-apply: terraform-init terraform-validate ## Apply Terraform configurat
 	@echo "$(GREEN)✅ Layer 1 Complete!$(NC)"
 	@echo "$(YELLOW)Waiting for VMs to boot (60 seconds)...$(NC)"
 	@sleep 60
-	@echo "$(YELLOW)Checking Talos VM connectivity...$(NC)"
-	@for ip in 10.20.0.40; do \
-		if timeout 300 bash -c "until ping -c 1 $$ip &>/dev/null; do sleep 5; done"; then \
+	@echo "$(YELLOW)Checking Talos VM connectivity (via Proxmox host)...$(NC)"
+	@for ip in 192.168.60.40 192.168.60.41; do \
+		if timeout 300 bash -c "until ssh prox 'ping -c 1 $$ip' &>/dev/null; do sleep 5; done"; then \
 			echo "$(GREEN)✓$(NC) $$ip is reachable"; \
 		else \
 			echo "$(RED)✗$(NC) $$ip is not reachable"; \
@@ -283,13 +283,13 @@ destroy: ## Destroy all Talos VMs
 	@echo "$(YELLOW)The following will be destroyed:$(NC)"
 	@echo "  - Talos control-plane + worker VMs"
 	@echo "$(GREEN)The following will NOT be affected:$(NC)"
-	@echo "  - External OMV NFS server (10.20.0.229)"
+	@echo "  - External OMV NFS server (192.168.60.229)"
 	@echo ""
 	@read -p "Type 'yes' to confirm destruction: " confirm && [ "$$confirm" = "yes" ] || { echo "$(GREEN)Destroy cancelled.$(NC)"; exit 1; }
 	@echo "$(RED)🔥 Destroying infrastructure...$(NC)"
 	cd $(TERRAFORM_DIR) && terraform init && terraform destroy -auto-approve
 	@echo "$(BLUE)🧹 Cleaning up SSH known_hosts...$(NC)"
-	@ssh-keygen -f "$$HOME/.ssh/known_hosts" -R "10.20.0.40" 2>/dev/null || true
+	@ssh-keygen -f "$$HOME/.ssh/known_hosts" -R "192.168.60.40" 2>/dev/null || true
 	@echo "$(GREEN)✅ Infrastructure destroyed and SSH keys cleaned$(NC)"
 
 .PHONY: destroy-all
@@ -307,7 +307,7 @@ destroy-all: ## Destroy all VMs AND remove Talos config directory
 	@echo "$(RED)🗑️  Removing Talos configuration directory...$(NC)"
 	@sudo rm -rf $(TALOS_CONFIG_DIR)
 	@echo "$(BLUE)🧹 Cleaning up SSH known_hosts...$(NC)"
-	@ssh-keygen -f "$$HOME/.ssh/known_hosts" -R "10.20.0.40" 2>/dev/null || true
+	@ssh-keygen -f "$$HOME/.ssh/known_hosts" -R "192.168.60.40" 2>/dev/null || true
 	@echo "$(GREEN)✅ Everything destroyed and cleaned up$(NC)"
 
 .PHONY: clean
@@ -326,19 +326,13 @@ clean: ## Clean temporary files
 .PHONY: ping
 ping: ## Ping Talos VMs + NFS server
 	@echo "$(BLUE)📡 Pinging Talos VMs...$(NC)"
-	@for ip in 10.20.0.40; do \
-		if ping -c 1 -W 1 $$ip &>/dev/null; then \
-			echo "$(GREEN)✓$(NC) $$ip (Talos)"; \
-		else \
-			echo "$(RED)✗$(NC) $$ip (Talos)"; \
-		fi \
-	done
-	@echo "$(BLUE)📡 Pinging NFS server (OMV)...$(NC)"
-	@if ping -c 1 -W 1 10.20.0.229 &>/dev/null; then \
-		echo "$(GREEN)✓$(NC) 10.20.0.229 (OMV NFS)"; \
-	else \
-		echo "$(RED)✗$(NC) 10.20.0.229 (OMV NFS)"; \
-	fi
+	@for ip in 192.168.60.40 192.168.60.41; do \
+                if ping -c 1 -W 1 $$ip &>/dev/null; then \
+                        echo "$(GREEN)✓$(NC) $$ip (Talos)"; \
+                else \
+                        echo "$(RED)✗$(NC) $$ip (Talos)"; \
+                fi \
+        done
 
 .PHONY: logs
 logs: ## View all system logs
@@ -359,7 +353,7 @@ setup-dns: ## Add *.lab.jamilshaikh.in domains to /etc/hosts
 		echo "$(YELLOW)Adding homelab domains...$(NC)"; \
 		echo "" | sudo tee -a /etc/hosts; \
 		echo "# Homelab Services (*.lab.jamilshaikh.in)" | sudo tee -a /etc/hosts; \
-		echo "10.20.0.81 argocd.lab.jamilshaikh.in grafana.lab.jamilshaikh.in prometheus.lab.jamilshaikh.in traefik.lab.jamilshaikh.in uptime.lab.jamilshaikh.in homarr.lab.jamilshaikh.in" | sudo tee -a /etc/hosts; \
+		echo "192.168.60.81 argocd.lab.jamilshaikh.in grafana.lab.jamilshaikh.in prometheus.lab.jamilshaikh.in traefik.lab.jamilshaikh.in uptime.lab.jamilshaikh.in homarr.lab.jamilshaikh.in" | sudo tee -a /etc/hosts; \
 		echo "$(GREEN)✅ DNS configuration added to /etc/hosts$(NC)"; \
 	fi
 	@echo ""

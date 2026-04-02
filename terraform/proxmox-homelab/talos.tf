@@ -9,7 +9,7 @@ locals {
       storage     = "local-lvm"
       disk_size   = "100G"
       disk_cache  = "writethrough"
-      mac_address = "BC:24:11:00:00:01" # Static MAC for DHCP reservation
+      mac_address = "BC:24:11:00:00:01" # Static MAC for DHCP reservation (→ 192.168.60.40)
     }
   }
 
@@ -22,7 +22,7 @@ locals {
       storage     = "local-lvm"
       disk_size   = "100G"
       disk_cache  = "writethrough"
-      mac_address = "BC:24:11:00:00:02" # Static MAC for DHCP reservation (→ 10.20.0.41)
+      mac_address = "BC:24:11:00:00:02" # Static MAC for DHCP reservation (→ 192.168.60.41)
     }
   }
 
@@ -46,6 +46,7 @@ module "k8s_nodes" {
   longhorn_disk_size = lookup(each.value, "longhorn_disk_size", "")
   longhorn_storage   = lookup(each.value, "longhorn_storage", "local-lvm")
   mac_address        = each.value.mac_address
+  network_bridge     = "vmbr2"
   tags               = "kubernetes;talos;${contains(keys(local.master_nodes), each.key) ? "controlplane" : "worker"}"
 }
 
