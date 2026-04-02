@@ -1,0 +1,161 @@
+---
+# Flux Bootstrap Tasks
+# Installs Flux controllers via Helm and configures a GitRepository + Kustomization
+# pointing at gitops/flux/ in this repo.
+#
+# Flux manages its OWN set of apps (gitops/flux/apps/) — separate from ArgoCD.
+# This lets you compare both GitOps tools side-by-side on the same cluster.
+
+- name: Check if flux CLI is available
+  ansible.builtin.command:
+    cmd: flux version --client
+  register: flux_cli_check
+  changed_when: false
+  failed_when: false
+  environment:
+    PATH: "/home/linuxbrew/.linuxbrew/bin:{{ ansible_env.PATH }}"
+
+- name: Fail if flux CLI not found
+  ansible.builtin.fail:
+    msg: |
+      flux CLI not found. Install it with:
+        brew install fluxcd/tap/flux
+      Then re-run make layer3a.
+  when: flux_cli_check.rc != 0
+
+- name: Display flux CLI version
+  ansible.builtin.debug:
+    msg: "✓ flux CLI found: {{ flux_cli_check.stdout | trim }}"
+  when: flux_cli_check.rc == 0
+
+# ── Install Flux controllers via Helm ────────────────────────────────────────
+
+- name: Add Flux Helm repository
+  ansible.builtin.command:
+    cmd: helm repo add fluxcd-community https://fluxcd-community.github.io/helm-charts
+  environment:
+    KUBECONFIG: "{{ kubeconfig_path }}"
+    PATH: "/home/linuxbrew/.linuxbrew/bin:{{ ansible_env.PATH }}"
+  register: flux_repo_add
+  changed_when: "'has been added' in flux_repo_add.stdout"
+  failed_when: false
+
+- name: Update Helm repositories
+  ansible.builtin.command:
+    cmd: helm repo update
+  environment:
+    KUBECONFIG: "{{ kubeconfig_path }}"
+    PATH: "/home/linuxbrew/.linuxbrew/bin:{{ ansible_env.PATH }}"
+  changed_when: false
+
+- name: Check if Flux is already installed
+  ansible.builtin.command:
+    cmd: helm list -n {{ flux_namespace }} -o json
+  environment:
+    KUBECONFIG: "{{ kubeconfig_path }}"
+    PATH: "/home/linuxbrew/.linuxbrew/bin:{{ ansible_env.PATH }}"
+  register: flux_helm_check
+  changed_when: false
+  failed_when: false
+
+- name: Parse Flux installation status
+  ansible.builtin.set_fact:
+    flux_installed: "{{ (flux_helm_check.stdout | from_json | selectattr('name', 'equalto', 'flux') | list | length > 0) if flux_helm_check.rc == 0 else false }}"
+
+- name: Display Flux installation status
+  ansible.builtin.debug:
+    msg: "{{ '✓ Flux already installed, skipping installation' if flux_installed else '⚙️  Installing Flux controllers via Helm' }}"
+
+- name: Create flux-system namespace
+  ansible.builtin.command:
+    cmd: kubectl create namespace {{ flux_namespace }}
+  environment:
+    KUBECONFIG: "{{ kubeconfig_path }}"
+    PATH: "/home/linuxbrew/.linuxbrew/bin:{{ ansible_env.PATH }}"
+  when: not flux_installed
+  register: create_ns
+  changed_when: create_ns.rc == 0
+  failed_when: create_ns.rc != 0 and 'already exists' not in create_ns.stderr
+
+- name: Install Flux controllers via Helm
+  ansible.builtin.command:
+    cmd: >
+      helm install flux fluxcd-community/flux2
+      --namespace {{ flux_namespace }}
+      --version {{ flux_version }}
+      --wait
+      --timeout 5m
+  environment:
+    KUBECONFIG: "{{ kubeconfig_path }}"
+    PATH: "/home/linuxbrew/.linuxbrew/bin:{{ ansible_env.PATH }}"
+  when: not flux_installed
+  changed_when: true
+
+- name: Wait for Flux controllers to be ready
+  ansible.builtin.command:
+    cmd: >
+      kubectl wait --for=condition=available deployment
+      --all
+      -n {{ flux_namespace }}
+      --timeout={{ wait_timeout_flux }}s
+  environment:
+    KUBECONFIG: "{{ kubeconfig_path }}"
+    PATH: "/home/linuxbrew/.linuxbrew/bin:{{ ansible_env.PATH }}"
+  changed_when: false
+
+# ── Wire up GitRepository + Kustomization ────────────────────────────────────
+
+- name: Check if Flux GitRepository already exists
+  ansible.builtin.command:
+    cmd: kubectl get gitrepository homelab -n {{ flux_namespace }}
+  environment:
+    KUBECONFIG: "{{ kubeconfig_path }}"
+    PATH: "/home/linuxbrew/.linuxbrew/bin:{{ ansible_env.PATH }}"
+  register: gitrepo_check
+  changed_when: false
+  failed_when: false
+
+- name: Apply Flux GitRepository + Kustomization manifests
+  ansible.builtin.command:
+    cmd: kubectl apply -f {{ playbook_dir }}/../../gitops/flux/flux-system/
+  environment:
+    KUBECONFIG: "{{ kubeconfig_path }}"
+    PATH: "/home/linuxbrew/.linuxbrew/bin:{{ ansible_env.PATH }}"
+  when: gitrepo_check.rc != 0
+  changed_when: true
+
+- name: Check Flux reconciliation status
+  ansible.builtin.command:
+    cmd: flux get all -n {{ flux_namespace }}
+  environment:
+    KUBECONFIG: "{{ kubeconfig_path }}"
+    PATH: "/home/linuxbrew/.linuxbrew/bin:{{ ansible_env.PATH }}"
+  register: flux_status
+  changed_when: false
+  failed_when: false
+
+- name: Display Flux deployment summary
+  ansible.builtin.debug:
+    msg: |
+
+      ╔═══════════════════════════════════════════════════════════════╗
+      ║              FLUX BOOTSTRAP COMPLETE! (Layer 3a)             ║
+      ╚═══════════════════════════════════════════════════════════════╝
+
+      Flux Details:
+        • Namespace:   {{ flux_namespace }}
+        • Installed:   Helm (flux2 chart v{{ flux_version }})
+        • GitRepo:     {{ flux_git_repo_url }}
+        • Branch:      {{ flux_git_branch }}
+        • Managed path: {{ flux_git_path }}/
+
+      Flux manages apps under: gitops/flux/apps/
+      ArgoCD manages apps under: gitops/apps/    ← still running independently
+
+      Flux Reconciliation Status:
+      {{ flux_status.stdout }}
+
+      Useful commands:
+        flux get all                          # status of all Flux objects
+        flux logs                             # controller logs
+        flux reconcile kustomization apps     # force re-sync

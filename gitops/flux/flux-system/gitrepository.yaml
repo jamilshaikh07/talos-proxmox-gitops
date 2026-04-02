@@ -1,0 +1,13 @@
+---
+# Flux GitRepository — points to this repo
+# Flux polls this every 1 minute and reconciles any changes
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: homelab
+  namespace: flux-system
+spec:
+  interval: 1m
+  url: https://github.com/jamilshaikh07/talos-proxmox-gitops
+  ref:
+    branch: master

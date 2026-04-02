@@ -1,0 +1,27 @@
+---
+# Flux bootstrap configuration
+
+# Cluster name (must match talos-cluster role)
+cluster_name: "homelab-cluster"
+
+# Talos configuration directory
+talos_config_dir: "{{ playbook_dir }}/../../talos-{{ cluster_name }}"
+
+# Path to kubeconfig
+kubeconfig_path: "{{ talos_config_dir }}/rendered/kubeconfig"
+
+# Flux version to install (flux CLI + controllers)
+flux_version: "2.5.1"
+
+# GitHub repository details
+flux_git_repo_url: "https://github.com/jamilshaikh07/talos-proxmox-gitops"
+flux_git_branch: "master"
+
+# Path inside the repo where Flux Kustomizations live
+flux_git_path: "gitops/flux"
+
+# Flux namespace
+flux_namespace: "flux-system"
+
+# Wait timeouts (in seconds)
+wait_timeout_flux: 300
