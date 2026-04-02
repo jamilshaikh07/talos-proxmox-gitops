@@ -5,7 +5,7 @@
 A complete Infrastructure-as-Code solution for deploying a Kubernetes homelab on Proxmox using Talos Linux, Terraform, Ansible, and ArgoCD GitOps with zero-maintenance local storage.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Talos](https://img.shields.io/badge/Talos-v1.11.5-blue.svg)](https://www.talos.dev/)
+[![Talos](https://img.shields.io/badge/Talos-v1.12.6-blue.svg)](https://www.talos.dev/)
 [![Terraform](https://img.shields.io/badge/Terraform-1.9+-purple.svg)](https://www.terraform.io/)
 [![Kubernetes](https://img.shields.io/badge/Kubernetes-v1.34.1-green.svg)](https://kubernetes.io/)
 
@@ -15,8 +15,8 @@ This project demonstrates enterprise-grade infrastructure automation, showcasing
 
 - **Infrastructure as Code** (Terraform)
 - **Configuration Management** (Ansible)
-- **Kubernetes** (Talos Linux v1.11.5 with Kubernetes v1.34.1)
-- **GitOps** (ArgoCD with Helm)
+- **Kubernetes** (Talos Linux v1.12.6 with Kubernetes v1.34.1)
+- **GitOps** (ArgoCD + FluxCD hybrid, both running side-by-side)
 - **Local Storage** (Rancher local-path-provisioner)
 - **CI/CD** (GitHub Actions)
 - **Cloud Native Technologies** (Cilium, cert-manager, Prometheus, etc.)
@@ -26,7 +26,7 @@ This project demonstrates enterprise-grade infrastructure automation, showcasing
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                    TALOS PROXMOX GITOPS                         │
-│                   3-Layer Architecture                          │
+│                   4-Layer Architecture                          │
 └─────────────────────────────────────────────────────────────────┘
 
 ┌──────────────────┐
@@ -37,31 +37,36 @@ This project demonstrates enterprise-grade infrastructure automation, showcasing
           │
 ┌─────────▼────────┐
 │  Layer 1         │  Terraform Infrastructure
-│  Infrastructure  │  ├─ 1x Talos Control Plane VM (50GB OS + 500GB data)
-│                  │  └─ 1x Bare Metal Worker (i5-8th gen, 32GB RAM)
+│  Infrastructure  │  ├─ 1x Talos Control Plane VM (100GB, 8GB RAM)
+│                  │  └─ 1x Talos Worker VM (100GB, 16GB RAM)
 └─────────┬────────┘
           │
 ┌─────────▼────────┐
 │  Layer 2         │  Ansible Configuration + Talos Setup
-│  Configuration   │  ├─ Talos Cluster Bootstrap (v1.11.5)
-│                  │  ├─ Extra disk mounted at /var/mnt/longhorn
+│  Configuration   │  ├─ Talos Cluster Bootstrap (v1.12.6)
 │                  │  ├─ Cilium CNI Installation (v1.16.5)
-│                  │  └─ Metrics Server + Cert Rotation
+│                  │  └─ Cert Rotation + KubePrism
 └─────────┬────────┘
           │
 ┌─────────▼────────┐
 │  Layer 3         │  GitOps Applications (via ArgoCD Helm)
 │  GitOps          │  ├─ ArgoCD (Helm v7.7.12)
-│                  │  ├─ local-path-provisioner (default StorageClass)
-│                  │  ├─ Metrics Server (Talos-compatible)
+│  (ArgoCD)        │  ├─ local-path-provisioner (default StorageClass)
 │                  │  ├─ cert-manager + trust-manager
 │                  │  ├─ Traefik Ingress Controller
 │                  │  ├─ MetalLB Load Balancer
 │                  │  ├─ Prometheus Stack (Grafana + Alertmanager)
-│                  │  ├─ Homarr (homelab dashboard, SQLite)
+│                  │  ├─ Homarr (homelab dashboard)
 │                  │  ├─ Uptime Kuma (service monitoring)
 │                  │  ├─ Cloudflared (Cloudflare Tunnel)
 │                  │  └─ More...
+└─────────┬────────┘
+          │
+┌─────────▼────────┐
+│  Layer 3a        │  GitOps Applications (via FluxCD)
+│  GitOps          │  ├─ Flux controllers (Helm OCI install)
+│  (FluxCD)        │  ├─ GitRepository → this repo (master)
+│                  │  └─ metrics-server (HelmRelease)
 └──────────────────┘
 ```
 
@@ -69,18 +74,18 @@ This project demonstrates enterprise-grade infrastructure automation, showcasing
 
 ### Core Infrastructure
 
-- **Talos Linux Kubernetes**: Immutable, secure Kubernetes OS (v1.11.5)
+- **Talos Linux Kubernetes**: Immutable, secure Kubernetes OS (v1.12.6)
 - **Kubernetes v1.34.1**: Latest stable release
-- **Hybrid Cluster**: Control plane VM + bare metal worker
-- **Zero-Maintenance Storage**: Rancher local-path-provisioner using dedicated extra disks
-  - Extra disk mounted at `/var/mnt/longhorn` on each node
-  - No replication overhead — simple and fast local storage
+- **All-Proxmox Cluster**: Control plane VM + worker VM, both on Proxmox
+- **Zero-Maintenance Storage**: Rancher local-path-provisioner using `/var/local-path-storage` on the OS disk
+  - No extra disk required
   - Single default StorageClass: `local-path`
 - **Failure Recovery**: Automatic Talos VM cleanup on configuration failure
 
 ### GitOps Applications
 
 - **ArgoCD**: Declarative GitOps CD for Kubernetes (Helm-based deployment)
+- **FluxCD**: GitOps controller running side-by-side with ArgoCD (manages metrics-server)
 - **local-path-provisioner**: Zero-maintenance local block storage (default StorageClass)
 - **Metrics Server**: Kubernetes resource metrics (Talos-compatible)
 - **cert-manager**: Automatic SSL certificate management
@@ -115,8 +120,9 @@ This project demonstrates enterprise-grade infrastructure automation, showcasing
 - [Terraform](https://www.terraform.io/downloads) >= 1.9.0
 - [Ansible](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html) >= 2.15
 - [kubectl](https://kubernetes.io/docs/tasks/tools/) >= 1.28
-- [talosctl](https://www.talos.dev/latest/introduction/getting-started/#talosctl) >= 1.11
+- [talosctl](https://www.talos.dev/latest/introduction/getting-started/#talosctl) >= 1.12
 - [Helm](https://helm.sh/docs/intro/install/) >= 3.12
+- [flux CLI](https://fluxcd.io/flux/installation/) >= 2.0 (for layer3a)
 
 **Infrastructure:**
 
@@ -137,9 +143,9 @@ This project demonstrates enterprise-grade infrastructure automation, showcasing
 2. **Configure Proxmox credentials**
 
    ```bash
-   export PROXMOX_API_URL="https://your-proxmox-host:8006/api2/json"
-   export PROXMOX_API_TOKEN_ID="terraform@pve!terraform"
-   export PROXMOX_API_TOKEN_SECRET="your-secret-token"
+   export TF_VAR_proxmox_api_url="https://your-proxmox-host:8006/api2/json"
+   export TF_VAR_proxmox_api_token_id="root@pam!homelab"
+   export TF_VAR_proxmox_api_token_secret="your-secret-token"
    ```
 
 3. **Create cloud-init templates (one-time setup)**
@@ -161,7 +167,8 @@ This project demonstrates enterprise-grade infrastructure automation, showcasing
    # Option 3: Layer-by-layer deployment
    make layer1  # Infrastructure
    make layer2  # Configuration + Talos
-   make layer3  # GitOps
+   make layer3  # GitOps (ArgoCD)
+   make layer3a # GitOps (FluxCD)
    ```
 
 ### Deployment Time
@@ -180,7 +187,7 @@ This project demonstrates enterprise-grade infrastructure automation, showcasing
 | Component | IP Address | Description |
 |-----------|------------|-------------|
 | Control Plane | 10.20.0.40 | Talos master node (VM) |
-| Worker 4 | 10.20.0.45 | Talos worker node (Bare Metal, i5-8th gen, 32GB) |
+| Worker 1 | 10.20.0.41 | Talos worker node (VM, 16GB RAM) |
 | MetalLB Pool | 10.20.0.81-99 | Load balancer IP range |
 | Traefik LB | 10.20.0.81 | Ingress controller |
 | k8s-gateway DNS | 10.20.0.82 | Internal DNS server |
@@ -191,7 +198,7 @@ This project demonstrates enterprise-grade infrastructure automation, showcasing
 
 - **Type**: Node-local block storage
 - **StorageClass**: `local-path` (default, only StorageClass)
-- **Disk Path**: `/var/mnt/longhorn` on each node (extra disk mounted by Talos)
+- **Disk Path**: `/var/local-path-storage` on each node (OS disk)
 - **Reclaim Policy**: Retain
 - **Binding Mode**: WaitForFirstConsumer (provisions when pod is scheduled)
 - **Trade-off**: No replication — data lives on the node where the pod runs
@@ -200,27 +207,14 @@ This project demonstrates enterprise-grade infrastructure automation, showcasing
 
 ### Node Disk Configuration
 
-| Node | Install Disk | Data Disk | Mount Path |
-|------|--------------|-----------|------------|
-| talos-cp-01 (VM) | /dev/sda | /dev/sdb | /var/mnt/longhorn |
-| talos-wk-04 (Bare Metal) | /dev/nvme0n1 | /dev/sda | /var/mnt/longhorn |
-
-### Adding Bare Metal Workers
-
-```bash
-# Auto-detect disks on a new bare metal node
-./scripts/generate-ansible-inventory.py --baremetal-ip 10.20.0.45
-
-# Auto-detect disks on existing bare metal nodes in config
-./scripts/generate-ansible-inventory.py --detect-baremetal-disks
-
-# Specify custom hostname
-./scripts/generate-ansible-inventory.py --baremetal-ip 10.20.0.45 --baremetal-hostname talos-wk-05
-```
+| Node | Install Disk | Storage Path |
+|------|--------------|-------------|
+| talos-cp-01 (VM) | /dev/sda | /var/local-path-storage |
+| talos-wk-01 (VM) | /dev/sda | /var/local-path-storage |
 
 ### Talos Configuration
 
-- **Talos Version**: v1.11.5
+- **Talos Version**: v1.12.6
 - **Kubernetes Version**: v1.34.1
 - **Cluster Name**: homelab-cluster
 - **Cluster Endpoint**: https://10.20.0.40:6443
@@ -351,6 +345,7 @@ If cloudflared is in CrashLoopBackOff with `Unauthorized: Invalid tunnel secret`
 - `make layer1` - Deploy infrastructure (Terraform)
 - `make layer2` - Configure Talos cluster (Ansible)
 - `make layer3` - Deploy GitOps applications (ArgoCD)
+- `make layer3a` - Bootstrap Flux (FluxCD side-by-side)
 
 ### Management
 - `make status` - Check cluster status

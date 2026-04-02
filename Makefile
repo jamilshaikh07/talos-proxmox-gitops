@@ -41,7 +41,8 @@ help: ## Display this help message
 	@echo "  0. $(GREEN)make create-templates$(NC)  - Create cloud-init templates (run once)"
 	@echo "  1. $(GREEN)make layer1$(NC)  - Deploy Talos VMs (CP + workers)"
 	@echo "  2. $(GREEN)make layer2$(NC)  - Configure Talos Kubernetes cluster"
-	@echo "  3. $(GREEN)make layer3$(NC)  - Deploy ArgoCD + GitOps apps"
+	@echo "  3. $(GREEN)make layer3$(NC)   - Deploy ArgoCD + GitOps apps"
+	@echo "  3a. $(GREEN)make layer3a$(NC)  - Bootstrap Flux (side-by-side with ArgoCD)"
 	@echo ""
 	@echo ""
 
@@ -187,6 +188,16 @@ ansible-gitops: ## Deploy ArgoCD + app-of-apps using Ansible
 	@echo "$(GREEN)🚀 Deploying GitOps (ArgoCD + Applications)...$(NC)"
 	cd $(ANSIBLE_DIR) && ansible-playbook playbooks/layer3-gitops.yml
 	@echo "$(GREEN)✅ Layer 3 Complete!$(NC)"
+
+.PHONY: layer3a
+layer3a: ## Bootstrap Flux (Layer 3a — runs alongside ArgoCD)
+	@echo "$(GREEN)🚀 Bootstrapping Flux (Layer 3a)...$(NC)"
+	cd $(ANSIBLE_DIR) && ansible-playbook playbooks/layer3a-flux.yml
+	@echo "$(GREEN)✅ Layer 3a Complete!$(NC)"
+
+.PHONY: flux-status
+flux-status: ## Show Flux reconciliation status
+	@flux get all -n flux-system
 
 .PHONY: argocd-password
 argocd-password: ## Get ArgoCD admin password

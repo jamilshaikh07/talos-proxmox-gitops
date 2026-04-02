@@ -80,27 +80,16 @@
     dest: "{{ talos_config_dir }}/system-extensions.yaml"
     mode: '0644'
 
-- name: Create machine features and Longhorn support patch
+- name: Create machine features patch
   ansible.builtin.copy:
     content: |
-      # Machine features and Longhorn support (Talos v1.10+)
-      # For Talos v1.10+, use /var/mnt/longhorn instead of /var/lib/longhorn
+      # Machine features (Talos v1.10+)
       machine:
         features:
           # KubePrism: Local load balancer for Kubernetes API server
-          # Provides HA and automatic failover for API access
           kubePrism:
             enabled: true
             port: 7445
-        kubelet:
-          extraMounts:
-            - destination: /var/mnt/longhorn
-              type: bind
-              source: /var/mnt/longhorn
-              options:
-                - bind
-                - rshared
-                - rw
     dest: "{{ talos_config_dir }}/machine-features.yaml"
     mode: '0644'
 

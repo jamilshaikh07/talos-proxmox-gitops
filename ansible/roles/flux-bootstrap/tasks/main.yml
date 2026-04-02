@@ -28,25 +28,7 @@
     msg: "✓ flux CLI found: {{ flux_cli_check.stdout | trim }}"
   when: flux_cli_check.rc == 0
 
-# ── Install Flux controllers via Helm ────────────────────────────────────────
-
-- name: Add Flux Helm repository
-  ansible.builtin.command:
-    cmd: helm repo add fluxcd-community https://fluxcd-community.github.io/helm-charts
-  environment:
-    KUBECONFIG: "{{ kubeconfig_path }}"
-    PATH: "/home/linuxbrew/.linuxbrew/bin:{{ ansible_env.PATH }}"
-  register: flux_repo_add
-  changed_when: "'has been added' in flux_repo_add.stdout"
-  failed_when: false
-
-- name: Update Helm repositories
-  ansible.builtin.command:
-    cmd: helm repo update
-  environment:
-    KUBECONFIG: "{{ kubeconfig_path }}"
-    PATH: "/home/linuxbrew/.linuxbrew/bin:{{ ansible_env.PATH }}"
-  changed_when: false
+# ── Install Flux controllers via Helm (OCI) ──────────────────────────────────
 
 - name: Check if Flux is already installed
   ansible.builtin.command:
@@ -64,25 +46,14 @@
 
 - name: Display Flux installation status
   ansible.builtin.debug:
-    msg: "{{ '✓ Flux already installed, skipping installation' if flux_installed else '⚙️  Installing Flux controllers via Helm' }}"
+    msg: "{{ '✓ Flux already installed, skipping installation' if flux_installed else '⚙️  Installing Flux controllers via Helm OCI' }}"
 
-- name: Create flux-system namespace
-  ansible.builtin.command:
-    cmd: kubectl create namespace {{ flux_namespace }}
-  environment:
-    KUBECONFIG: "{{ kubeconfig_path }}"
-    PATH: "/home/linuxbrew/.linuxbrew/bin:{{ ansible_env.PATH }}"
-  when: not flux_installed
-  register: create_ns
-  changed_when: create_ns.rc == 0
-  failed_when: create_ns.rc != 0 and 'already exists' not in create_ns.stderr
-
-- name: Install Flux controllers via Helm
+- name: Install Flux controllers via Helm OCI
   ansible.builtin.command:
     cmd: >
-      helm install flux fluxcd-community/flux2
+      helm install flux oci://ghcr.io/fluxcd-community/charts/flux2
       --namespace {{ flux_namespace }}
-      --version {{ flux_version }}
+      --create-namespace
       --wait
       --timeout 5m
   environment:

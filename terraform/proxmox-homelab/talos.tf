@@ -3,21 +3,28 @@ locals {
   # Master nodes configuration
   master_nodes = {
     "talos-cp-01" = {
-      target_node        = "alif"
-      memory             = 8192 # 8GB
-      cores              = 2
-      storage            = "local-lvm"
-      disk_size          = "50G"
-      disk_cache         = "writethrough"
-      longhorn_disk_size = "500G" # Longhorn distributed storage
-      longhorn_storage   = "local-lvm"
-      mac_address        = "BC:24:11:00:00:01" # Static MAC for DHCP reservation
+      target_node = "alif"
+      memory      = 8192 # 8GB
+      cores       = 2
+      storage     = "local-lvm"
+      disk_size   = "100G"
+      disk_cache  = "writethrough"
+      mac_address = "BC:24:11:00:00:01" # Static MAC for DHCP reservation
     }
   }
 
   # Worker nodes configuration
-  # VM workers removed — bare metal worker (talos-wk-04, 32GB) handles all workloads
-  worker_nodes = {}
+  worker_nodes = {
+    "talos-wk-01" = {
+      target_node = "alif"
+      memory      = 16384 # 16GB
+      cores       = 4
+      storage     = "local-lvm"
+      disk_size   = "100G"
+      disk_cache  = "writethrough"
+      mac_address = "BC:24:11:00:00:02" # Static MAC for DHCP reservation (→ 10.20.0.41)
+    }
+  }
 
   # Combine all nodes
   all_nodes = merge(local.master_nodes, local.worker_nodes)
@@ -30,7 +37,7 @@ module "k8s_nodes" {
 
   vm_name            = each.key
   target_node        = each.value.target_node
-  iso                = "local:iso/metal-amd64-v1.11.5.iso"
+  iso                = "local:iso/metal-amd64-1.12.6.iso"
   memory             = each.value.memory
   cores              = each.value.cores
   storage            = each.value.storage

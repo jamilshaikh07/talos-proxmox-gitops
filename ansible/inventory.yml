@@ -1,6 +1,6 @@
 ---
 # Static Ansible Inventory
-# Talos K8s: CP: 10.20.0.40, Bare metal worker: 10.20.0.45
+# Talos K8s: CP: 10.20.0.40 (VM), Worker-01: 10.20.0.41 (VM) — all on Proxmox
 
 all:
   vars:
