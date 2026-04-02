@@ -10,7 +10,7 @@ talos_config_dir: "{{ playbook_dir }}/../../talos-{{ cluster_name }}"
 # Path to kubeconfig
 kubeconfig_path: "{{ talos_config_dir }}/rendered/kubeconfig"
 
-# Flux version to install (flux CLI + controllers)
+# Flux version to install (flux CLI — maps to flux install --version)
 flux_version: "2.5.1"
 
 # GitHub repository details

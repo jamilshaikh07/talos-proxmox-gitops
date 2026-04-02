@@ -23,12 +23,11 @@ spec:
           defaultClass: true
           reclaimPolicy: Retain
 
-        # Uses the dedicated extra disk mounted by Talos at /var/mnt/longhorn
-        # (path name is from Talos machine config, not related to Longhorn)
+        # Uses /var/local-path-storage on the main OS disk
         nodePathMap:
           - node: DEFAULT_PATH_FOR_NON_LISTED_NODES
             paths:
-              - /var/mnt/longhorn
+              - /var/local-path-storage
 
         resources:
           requests:
