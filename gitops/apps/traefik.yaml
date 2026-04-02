@@ -28,7 +28,7 @@ spec:
         service:
           type: LoadBalancer
           annotations:
-            metallb.universe.tf/loadBalancerIPs: 10.20.0.81
+            metallb.universe.tf/loadBalancerIPs: 192.168.60.81
 
         # Ports configuration
         ports:

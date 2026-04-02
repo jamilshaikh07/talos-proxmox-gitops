@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Talos Proxmox GitOps — a 3-layer IaC solution for deploying a Kubernetes homelab on Proxmox using Talos Linux, Terraform, Ansible, ArgoCD, and FluxCD.
 
-- **Layer 1 (Infrastructure):** Terraform provisions VMs on Proxmox (1 control plane VM + 1 worker VM)
+- **Layer 1 (Infrastructure):** Terraform provisions Talos VMs on Proxmox (1 control plane + 1 worker) on isolated `vmbr2` LAN. OPNsense VM (ID 102) acts as the router — provisioned manually, not via Terraform.
 - **Layer 2 (Configuration):** Ansible bootstraps a Talos Kubernetes cluster with Cilium CNI
 - **Layer 3 (GitOps):** ArgoCD deploys ~19 Helm-based applications via app-of-apps pattern
 - **Layer 3a (GitOps):** FluxCD runs side-by-side with ArgoCD, managing its own app set via HelmRelease + Kustomization
@@ -86,13 +86,17 @@ Run `make help` for the full list of targets.
 
 | Role | IP(s) |
 |------|-------|
-| Control plane (VM) | 10.20.0.40 |
-| Worker 1 (VM) | 10.20.0.41 |
-| MetalLB pool | 10.20.0.81-99 |
-| Traefik LB / services | 10.20.0.81 |
-| k8s-gateway DNS | 10.20.0.82 |
+| Proxmox host | 10.20.0.10 (vmbr0) |
+| OPNsense WAN | vmbr0 (shared with Proxmox mgmt → home router) |
+| OPNsense LAN | 192.168.60.1 (vmbr2 — internal, no NIC) |
+| Control plane (VM) | 192.168.60.40 |
+| Worker 1 (VM) | 192.168.60.41 |
+| MetalLB pool | 192.168.60.81-99 |
+| Traefik LB / services | 192.168.60.81 |
+| k8s-gateway DNS | 192.168.60.82 |
 
-Services are accessible at `*.lab.jamilshaikh.in` (resolved via `/etc/hosts` entries pointing to 10.20.0.81).
+All Talos VMs are on the internal `vmbr2` bridge (192.168.60.0/24), routed via OPNsense (VM 102).
+Services are accessible at `*.lab.jamilshaikh.in` (resolved via `/etc/hosts` entries pointing to 192.168.60.81).
 
 ## CI/CD
 
@@ -115,4 +119,5 @@ Examples: `fix(cloudflared): re-enable probes`, `feat(autofix-dojo): add SOPS-en
 - Version upgrades: update `talos_version` / `kubernetes_version` / `cilium_version` in `ansible/roles/talos-cluster/vars/main.yml`, then re-run Layer 2
 - Adding new ArgoCD apps: create a YAML in `gitops/apps/`, it's auto-discovered by app-of-apps
 - Adding new Flux apps: create a `HelmRelease` in `gitops/flux/apps/` and reference it in `gitops/flux/apps/kustomization.yaml`
+- **OPNsense VM (ID 102):** Router for the Talos cluster. WAN on `vmbr0` (gets DHCP from home router), LAN on `vmbr2` (`192.168.60.1/24`). Provides DHCP with static reservations for Talos nodes (MAC-based). Managed manually — not in Terraform.
 - **metrics-server** is managed by Flux (not ArgoCD) — see `gitops/flux/apps/metrics-server.yaml`
