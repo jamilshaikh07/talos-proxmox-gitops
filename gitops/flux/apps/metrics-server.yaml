@@ -1,0 +1,51 @@
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: metrics-server
+  namespace: flux-system
+spec:
+  interval: 24h
+  url: https://kubernetes-sigs.github.io/metrics-server/
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: metrics-server
+  namespace: kube-system
+spec:
+  interval: 5m
+  chart:
+    spec:
+      chart: metrics-server
+      version: 3.13.0
+      sourceRef:
+        kind: HelmRepository
+        name: metrics-server
+        namespace: flux-system
+      interval: 24h
+  values:
+    # Talos-compatible configuration
+    args:
+      - --cert-dir=/tmp
+      - --kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname
+      - --kubelet-use-node-status-port
+      - --metric-resolution=15s
+      # Required for Talos: kubelet certs don't include IP SANs
+      - --kubelet-insecure-tls
+
+    resources:
+      requests:
+        cpu: 100m
+        memory: 200Mi
+      limits:
+        cpu: 500m
+        memory: 500Mi
+
+    replicas: 1
+
+    updateStrategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxUnavailable: 0
+        maxSurge: 1

@@ -1,0 +1,5 @@
+---
+# Kustomize entry point for all Flux-managed apps
+# Add new app manifests/HelmReleases to this directory and reference them here
+resources:
+  - metrics-server.yaml

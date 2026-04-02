@@ -1,0 +1,12 @@
+---
+- name: Layer 3a - Flux Bootstrap
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  vars_files:
+    - ../roles/flux-bootstrap/defaults/main.yml
+
+  tasks:
+    - name: Bootstrap Flux
+      ansible.builtin.include_role:
+        name: flux-bootstrap
