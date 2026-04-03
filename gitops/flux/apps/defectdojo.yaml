@@ -76,8 +76,8 @@ spec:
           limits:
             memory: 512Mi
 
-    # --- Use built-in Redis
-    redis:
+    # --- Use built-in Valkey (Redis replacement since DefectDojo 2.x)
+    valkey:
       enabled: true
       master:
         persistence:
@@ -90,6 +90,10 @@ spec:
             memory: 64Mi
           limits:
             memory: 128Mi
+
+    # --- Disable legacy Redis
+    redis:
+      enabled: false
 
     # --- Initial admin credentials (change after first login)
     # Store real password in SOPS secret and reference via existingSecret
