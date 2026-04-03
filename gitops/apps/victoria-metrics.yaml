@@ -1,0 +1,116 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: victoria-metrics
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: monitoring
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    chart: victoria-metrics-k8s-stack
+    repoURL: https://victoriametrics.github.io/helm-charts/
+    targetRevision: 0.42.0
+    helm:
+      values: |
+        # --- Victoria Metrics k8s stack
+        # Drop-in replacement for kube-prometheus-stack, ~3x lighter
+
+        # Single-node storage (not HA - homelab)
+        vmsingle:
+          enabled: true
+          spec:
+            retentionPeriod: "7d"
+            storage:
+              resources:
+                requests:
+                  storage: 10Gi
+              storageClassName: local-path
+            resources:
+              requests:
+                cpu: 100m
+                memory: 256Mi
+              limits:
+                memory: 1Gi
+
+        # VMAgent scrapes all ServiceMonitors (replaces Prometheus scrape engine)
+        vmagent:
+          enabled: true
+          spec:
+            resources:
+              requests:
+                cpu: 50m
+                memory: 64Mi
+              limits:
+                memory: 256Mi
+
+        # Alertmanager - disabled for now
+        alertmanager:
+          enabled: false
+
+        # VMAlert - disabled (no alerting rules yet)
+        vmalert:
+          enabled: false
+
+        # Grafana
+        grafana:
+          enabled: true
+          adminPassword: "homelab"
+          ingress:
+            enabled: false    # exposed via Traefik IngressRoute
+          persistence:
+            enabled: true
+            storageClassName: local-path
+            size: 2Gi
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 256Mi
+          sidecar:
+            dashboards:
+              enabled: true
+              label: grafana_dashboard
+              labelValue: "1"
+              searchNamespace: ALL
+            datasources:
+              enabled: true
+              label: grafana_datasource
+              labelValue: "1"
+              searchNamespace: ALL
+
+        # Node Exporter - keep (lightweight, useful)
+        prometheus-node-exporter:
+          enabled: true
+
+        # kube-state-metrics - keep
+        kube-state-metrics:
+          enabled: true
+
+        # Talos doesn't expose these endpoints
+        kubeEtcd:
+          enabled: false
+        kubeProxy:
+          enabled: false
+        kubeScheduler:
+          enabled: false
+        kubeControllerManager:
+          enabled: false
+
+        # Scrape all ServiceMonitors cluster-wide
+        vmagent:
+          spec:
+            selectAllByDefault: true
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

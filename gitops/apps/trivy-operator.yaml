@@ -1,0 +1,60 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: trivy-operator
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: trivy-system
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    chart: trivy-operator
+    repoURL: https://aquasecurity.github.io/helm-charts
+    targetRevision: 0.24.0
+    helm:
+      values: |
+        # Scan all namespaces
+        targetNamespaces: ""
+
+        operator:
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+
+        trivy:
+          resources:
+            requests:
+              cpu: 100m
+              memory: 100Mi
+            limits:
+              memory: 500Mi
+          dbRegistry: "ghcr.io"
+          dbRepository: "aquasecurity/trivy-db"
+
+        # VulnerabilityReports scraped by Victoria Metrics via serviceMonitor
+        serviceMonitor:
+          enabled: true
+
+        vulnerabilityReports:
+          enabled: true
+        configAuditReports:
+          enabled: true
+        exposedSecretReports:
+          enabled: true
+        rbacAssessmentReports:
+          enabled: false
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
