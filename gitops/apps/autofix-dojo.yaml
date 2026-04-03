@@ -32,9 +32,11 @@ spec:
           controller:
             enabled: false
 
-          # DefectDojo - disabled for now (will enable when DefectDojo is deployed)
+          # DefectDojo - deployed via Flux in defectdojo namespace
           defectdojo:
-            enabled: false
+            enabled: true
+            url: "http://defectdojo-django.defectdojo.svc.cluster.local"
+            existingSecret: "autofix-dojo-defectdojo"   # key: api-key
 
           # Git Configuration for PR creation
           git:
@@ -48,6 +50,7 @@ spec:
           helm:
             enabled: true
             scanPath: "/gitops"
+            scanType: "gitops"          # argocd + flux HelmRelease support
             scanInterval: "24h"
             # Auto PR creation - like Dependabot but for Helm!
             autoPR:
@@ -56,7 +59,7 @@ spec:
               priority: "minor"       # Create PRs for minor+ (includes critical, major, minor)
               repoOwner: "jamilshaikh07"
               repoName: "talos-proxmox-gitops"
-              scanPath: "gitops/apps"
+              scanPath: "gitops/apps,gitops/flux/apps"
 
           # Scan Schedule
           schedule:
