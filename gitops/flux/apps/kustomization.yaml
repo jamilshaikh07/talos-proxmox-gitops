@@ -4,3 +4,5 @@
 resources:
   - metrics-server.yaml
   - kube-prometheus-stack.yaml
+  - defectdojo.yaml
+  - trivy-operator.yaml
