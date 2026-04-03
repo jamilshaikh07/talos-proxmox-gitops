@@ -1,0 +1,101 @@
+---
+apiVersion: source.toolkit.fluxcd.io/v1beta2
+kind: HelmRepository
+metadata:
+  name: defectdojo
+  namespace: flux-system
+spec:
+  interval: 24h
+  url: https://raw.githubusercontent.com/DefectDojo/django-DefectDojo/helm-charts
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: defectdojo
+  namespace: defectdojo
+spec:
+  interval: 1h
+  chart:
+    spec:
+      chart: defectdojo
+      version: ">=1.6.0 <2.0.0"
+      sourceRef:
+        kind: HelmRepository
+        name: defectdojo
+        namespace: flux-system
+      interval: 24h
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  values:
+    # --- Minimal homelab footprint
+    replicaCount: 1
+
+    django:
+      ingress:
+        enabled: false    # expose via Traefik IngressRoute separately
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          memory: 512Mi
+
+    celery:
+      worker:
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            memory: 512Mi
+      beat:
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+          limits:
+            memory: 256Mi
+
+    # --- Use built-in PostgreSQL (single-node homelab, no HA needed)
+    postgresql:
+      enabled: true
+      primary:
+        persistence:
+          enabled: true
+          storageClass: local-path
+          size: 5Gi
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            memory: 512Mi
+
+    # --- Use built-in Redis
+    redis:
+      enabled: true
+      master:
+        persistence:
+          enabled: true
+          storageClass: local-path
+          size: 1Gi
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            memory: 128Mi
+
+    # --- Initial admin credentials (change after first login)
+    # Store real password in SOPS secret and reference via existingSecret
+    initializer:
+      keepSecrets: true   # don't regenerate on every helm upgrade
+
+    # --- Disable RabbitMQ (use Redis as broker instead)
+    rabbitmq:
+      enabled: false
