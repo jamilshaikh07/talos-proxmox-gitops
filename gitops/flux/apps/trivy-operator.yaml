@@ -51,6 +51,11 @@ spec:
           memory: 100Mi
         limits:
           memory: 500Mi
+      # Offline DB — pull from ghcr, no internet hit per scan
+      dbRegistry: "ghcr.io"
+      dbRepository: "aquasecurity/trivy-db"
+      javaDbRegistry: "ghcr.io"
+      javaDbRepository: "aquasecurity/trivy-java-db"
 
     # --- Enable DefectDojo integration
     # Findings are exported as VulnerabilityReport CRDs in-cluster
@@ -67,10 +72,3 @@ spec:
       enabled: true
     rbacAssessmentReports:
       enabled: false   # enable later when hardening RBAC
-
-    # --- Offline DB (pull from ghcr, no internet hit per scan)
-    trivy:
-      dbRegistry: "ghcr.io"
-      dbRepository: "aquasecurity/trivy-db"
-      javaDbRegistry: "ghcr.io"
-      javaDbRepository: "aquasecurity/trivy-java-db"
