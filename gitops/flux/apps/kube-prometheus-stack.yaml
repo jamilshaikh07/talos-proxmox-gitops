@@ -1,0 +1,114 @@
+---
+apiVersion: source.toolkit.fluxcd.io/v1beta2
+kind: HelmRepository
+metadata:
+  name: prometheus-community
+  namespace: flux-system
+spec:
+  interval: 24h
+  url: https://prometheus-community.github.io/helm-charts
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: kube-prometheus-stack
+  namespace: monitoring
+spec:
+  interval: 1h
+  chart:
+    spec:
+      chart: kube-prometheus-stack
+      version: ">=69.0.0 <70.0.0"
+      sourceRef:
+        kind: HelmRepository
+        name: prometheus-community
+        namespace: flux-system
+      interval: 24h
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  values:
+    # --- Alertmanager: disabled (add back when you need Slack/email routing)
+    alertmanager:
+      enabled: false
+
+    # --- Prometheus
+    prometheus:
+      prometheusSpec:
+        retention: 7d
+        retentionSize: "5GB"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            memory: 1Gi
+        storageSpec:
+          volumeClaimTemplate:
+            spec:
+              storageClassName: local-path
+              accessModes: ["ReadWriteOnce"]
+              resources:
+                requests:
+                  storage: 10Gi
+        # Talos doesn't expose etcd/kube-proxy metrics endpoints
+        kubeEtcd:
+          enabled: false
+        kubeProxy:
+          enabled: false
+        kubeScheduler:
+          enabled: false
+        kubeControllerManager:
+          enabled: false
+
+    # --- Grafana
+    grafana:
+      enabled: true
+      adminPassword: "homelab"   # change via SOPS secret later
+      ingress:
+        enabled: false           # use Traefik IngressRoute separately
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          memory: 256Mi
+      persistence:
+        enabled: true
+        storageClassName: local-path
+        size: 2Gi
+      sidecar:
+        dashboards:
+          enabled: true
+          label: grafana_dashboard
+          labelValue: "1"
+          folder: /tmp/dashboards
+          folderAnnotation: grafana_folder
+          searchNamespace: ALL
+          provider:
+            foldersFromFilesStructure: true
+        datasources:
+          enabled: true
+          label: grafana_datasource
+          labelValue: "1"
+          searchNamespace: ALL
+
+    # --- Node Exporter + kube-state-metrics: keep enabled (lightweight)
+    nodeExporter:
+      enabled: true
+    kubeStateMetrics:
+      enabled: true
+
+    # --- Disable heavy default scrape configs for Talos
+    kubeEtcd:
+      enabled: false
+    kubeProxy:
+      enabled: false
+    kubeScheduler:
+      enabled: false
+    kubeControllerManager:
+      enabled: false

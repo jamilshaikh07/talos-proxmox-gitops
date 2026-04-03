@@ -3,3 +3,4 @@
 # Add new app manifests/HelmReleases to this directory and reference them here
 resources:
   - metrics-server.yaml
+  - kube-prometheus-stack.yaml
