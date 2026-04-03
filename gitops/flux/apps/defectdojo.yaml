@@ -77,9 +77,10 @@ spec:
             memory: 512Mi
 
     # --- Use built-in Valkey (Redis replacement since DefectDojo 2.x)
+    # cloudpirates-valkey chart uses primary.persistence (not master)
     valkey:
       enabled: true
-      master:
+      primary:
         persistence:
           enabled: true
           storageClass: local-path
