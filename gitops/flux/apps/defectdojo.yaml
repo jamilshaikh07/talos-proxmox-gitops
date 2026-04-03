@@ -91,15 +91,6 @@ spec:
           limits:
             memory: 128Mi
 
-    # --- Disable legacy Redis
-    redis:
-      enabled: false
-
-    # --- Initial admin credentials (change after first login)
-    # Store real password in SOPS secret and reference via existingSecret
-    initializer:
-      keepSecrets: true   # don't regenerate on every helm upgrade
-
-    # --- Disable RabbitMQ (use Redis as broker instead)
+    # --- Disable RabbitMQ (use Valkey as broker instead)
     rabbitmq:
       enabled: false
