@@ -34,7 +34,7 @@ variable "mac_address" {
 variable "firewall" {
   type        = bool
   description = "Enable firewall for the VM"
-  default     = true
+  default     = false
 }
 
 variable "cores" {
