@@ -39,6 +39,12 @@ spec:
     # --- Prometheus
     prometheus:
       prometheusSpec:
+        # local-path provisioner creates dirs owned by root; fsGroup lets
+        # Kubernetes chown the volume on mount so Prometheus can write to it
+        securityContext:
+          fsGroup: 2000
+          runAsNonRoot: true
+          runAsUser: 1000
         retention: 7d
         retentionSize: "5GB"
         resources:
