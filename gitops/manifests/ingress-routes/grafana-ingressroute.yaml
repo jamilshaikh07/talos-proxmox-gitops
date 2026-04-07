@@ -10,11 +10,10 @@ metadata:
     external-dns.alpha.kubernetes.io/target: ac018f25-b07f-4b4b-8c83-1f27b0f9a418.cfargotunnel.com
 spec:
   entryPoints:
-    - websecure
+    - web
   routes:
     - match: Host(`grafana.jamilshaikh.in`)
       kind: Rule
       services:
         - name: victoria-metrics-grafana
           port: 80
-  tls: {}  # TLS terminated by Cloudflare, passthrough to Traefik
