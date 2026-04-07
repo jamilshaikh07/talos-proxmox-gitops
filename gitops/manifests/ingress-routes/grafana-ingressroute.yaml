@@ -1,18 +1,20 @@
 ---
-# Grafana IngressRoute
+# Grafana IngressRoute — public via cloudflared tunnel
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
   name: grafana
   namespace: monitoring
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: grafana.jamilshaikh.in
+    external-dns.alpha.kubernetes.io/target: ac018f25-b07f-4b4b-8c83-1f27b0f9a418.cfargotunnel.com
 spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`grafana.lab.jamilshaikh.in`)
+    - match: Host(`grafana.jamilshaikh.in`)
       kind: Rule
       services:
-        - name: prometheus-stack-grafana
+        - name: victoria-metrics-grafana
           port: 80
-  tls:
-    secretName: wildcard-lab-tls  # Replicated wildcard certificate
+  tls: {}  # TLS terminated by Cloudflare, passthrough to Traefik
