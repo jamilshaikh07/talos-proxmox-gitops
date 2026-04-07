@@ -40,6 +40,7 @@ spec:
         # Cloudflare: proxy records (required for cfargotunnel.com CNAME targets)
         extraArgs:
           - --cloudflare-proxied
+          - --traefik-disable-legacy  # Only watch traefik.io/v1alpha1 (Traefik v3), not traefik.containo.us/v1alpha1
 
         # Policy: sync will create, update, and delete records
         policy: sync
