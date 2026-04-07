@@ -1,4 +1,26 @@
 ---
+# ConfigMap: cloudflared ingress rules (GitOps-managed, no Cloudflare dashboard needed)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cloudflared-config
+  namespace: cloudflared
+data:
+  config.yaml: |
+    tunnel: ac018f25-b07f-4b4b-8c83-1f27b0f9a418
+    credentials-file: /etc/cloudflared/creds/credentials.json
+    metrics: 0.0.0.0:2000
+    no-autoupdate: true
+    protocol: http2
+    ingress:
+      # Wildcard: all *.jamilshaikh.in → Traefik (TLS termination handled by Traefik)
+      - hostname: "*.jamilshaikh.in"
+        service: https://traefik.traefik-system.svc.cluster.local
+        originRequest:
+          noTLSVerify: true
+      # Required catch-all
+      - service: http_status:404
+---
 # Cloudflared Tunnel Deployment
 apiVersion: apps/v1
 kind: Deployment
@@ -22,18 +44,9 @@ spec:
           image: cloudflare/cloudflared:2025.2.1
           args:
             - tunnel
-            - --no-autoupdate
-            - --protocol
-            - http2
-            - --metrics
-            - 0.0.0.0:2000
+            - --config
+            - /etc/cloudflared/config/config.yaml
             - run
-          env:
-            - name: TUNNEL_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: cloudflared-tunnel-token
-                  key: token
           ports:
             - containerPort: 2000
               name: metrics
@@ -73,4 +86,18 @@ spec:
             periodSeconds: 10
             failureThreshold: 3
             timeoutSeconds: 5
+          volumeMounts:
+            - name: config
+              mountPath: /etc/cloudflared/config
+              readOnly: true
+            - name: creds
+              mountPath: /etc/cloudflared/creds
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: cloudflared-config
+        - name: creds
+          secret:
+            secretName: cloudflared-credentials
       restartPolicy: Always
