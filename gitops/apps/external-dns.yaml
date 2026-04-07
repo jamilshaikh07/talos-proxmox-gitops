@@ -35,12 +35,11 @@ spec:
         # Sources to watch for DNS records
         sources:
           - ingress
-          - crd  # Traefik IngressRoute
+          - traefik-proxy  # Traefik IngressRoute (reads Host() matchers + target annotation)
 
-        # Traefik IngressRoute CRD support
-        crd:
-          apiversion: traefik.io/v1alpha1
-          kind: IngressRoute
+        # Cloudflare: proxy records (required for cfargotunnel.com CNAME targets)
+        extraArgs:
+          - --cloudflare-proxied
 
         # Policy: sync will create, update, and delete records
         policy: sync
