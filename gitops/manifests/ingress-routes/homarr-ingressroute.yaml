@@ -7,12 +7,10 @@ metadata:
   namespace: homelab
 spec:
   entryPoints:
-    - websecure
+    - web
   routes:
     - match: Host(`homarr.lab.jamilshaikh.in`)
       kind: Rule
       services:
         - name: homarr
           port: 7575
-  tls:
-    secretName: wildcard-lab-tls  # Replicated wildcard certificate

@@ -7,12 +7,10 @@ metadata:
   namespace: monitoring
 spec:
   entryPoints:
-    - websecure
+    - web
   routes:
     - match: Host(`prometheus.lab.jamilshaikh.in`)
       kind: Rule
       services:
         - name: prometheus-stack-kube-prom-prometheus
           port: 9090
-  tls:
-    secretName: wildcard-lab-tls  # Replicated wildcard certificate

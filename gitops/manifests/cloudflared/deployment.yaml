@@ -13,11 +13,9 @@ data:
     no-autoupdate: true
     protocol: http2
     ingress:
-      # Wildcard: all *.jamilshaikh.in → Traefik (TLS termination handled by Traefik)
+      # Wildcard: all *.jamilshaikh.in → Traefik over plain HTTP (TLS handled by Cloudflare)
       - hostname: "*.jamilshaikh.in"
-        service: https://traefik.traefik-system.svc.cluster.local
-        originRequest:
-          noTLSVerify: true
+        service: http://traefik.traefik-system.svc.cluster.local
       # Required catch-all
       - service: http_status:404
 ---

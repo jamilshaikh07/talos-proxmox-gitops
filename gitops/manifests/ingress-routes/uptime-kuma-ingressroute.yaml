@@ -7,12 +7,10 @@ metadata:
   namespace: monitoring
 spec:
   entryPoints:
-    - websecure
+    - web
   routes:
     - match: Host(`uptime.lab.jamilshaikh.in`)
       kind: Rule
       services:
         - name: uptime-kuma
           port: 3001
-  tls:
-    secretName: wildcard-lab-tls  # Replicated wildcard certificate

@@ -7,12 +7,10 @@ metadata:
   namespace: argocd
 spec:
   entryPoints:
-    - websecure
+    - web
   routes:
     - match: Host(`argocd.lab.jamilshaikh.in`)
       kind: Rule
       services:
         - name: argocd-server
-          port: 80  # Use HTTP backend, Traefik handles HTTPS
-  tls:
-    secretName: wildcard-lab-tls  # Replicated wildcard certificate
+          port: 80

@@ -7,12 +7,10 @@ metadata:
   namespace: monitoring
 spec:
   entryPoints:
-    - websecure
+    - web
   routes:
     - match: Host(`grafana.lab.jamilshaikh.in`)
       kind: Rule
       services:
         - name: victoria-metrics-grafana
           port: 80
-  tls:
-    secretName: wildcard-lab-tls  # Replicated wildcard certificate

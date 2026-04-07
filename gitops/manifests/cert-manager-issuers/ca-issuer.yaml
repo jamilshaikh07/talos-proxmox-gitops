@@ -8,7 +8,10 @@ spec:
   ca:
     secretName: homelab-root-ca-secret
 ---
-# Wildcard Certificate for *.lab.jamilshaikh.in domain (Let's Encrypt Production)
+# Wildcard Certificate for *.lab.jamilshaikh.in domain (Internal CA)
+# Using homelab-ca-issuer instead of letsencrypt-prod because:
+# - Cloudflare tunnel connects to Traefik with noTLSVerify: true, so LE cert not required
+# - No static/public IP needed for DNS-01 challenge — eliminates external dependency
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
@@ -24,7 +27,7 @@ spec:
       reflector.v1.k8s.emberstack.com/reflection-auto-enabled: "true"
       reflector.v1.k8s.emberstack.com/reflection-auto-namespaces: "argocd,monitoring,homelab,traefik-system"
   issuerRef:
-    name: letsencrypt-prod
+    name: homelab-ca-issuer
     kind: ClusterIssuer
     group: cert-manager.io
   commonName: "*.lab.jamilshaikh.in"
@@ -34,5 +37,5 @@ spec:
   privateKey:
     algorithm: RSA
     size: 2048
-  duration: 2160h    # 90 days
+  duration: 87600h   # 10 years - internal CA cert, no need for short rotation
   renewBefore: 720h  # 30 days before expiry
