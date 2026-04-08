@@ -33,14 +33,14 @@ spec:
           - jamilshaikh.in
 
         # Sources to watch for DNS records
+        # traefik-proxy: reads Host() matchers from IngressRoute CRDs (traefik.io/v1alpha1)
+        # --traefik-disable-legacy flag was removed in external-dns v0.15+ (now default behaviour)
         sources:
-          - ingress
-          - traefik-proxy  # Traefik IngressRoute (reads Host() matchers + target annotation)
+          - traefik-proxy
 
-        # Cloudflare: proxy records (required for cfargotunnel.com CNAME targets)
+        # Cloudflare: proxy records through Cloudflare edge (required for cfargotunnel.com CNAMEs)
         extraArgs:
           - --cloudflare-proxied
-          - --traefik-disable-legacy  # Only watch traefik.io/v1alpha1 (Traefik v3), not traefik.containo.us/v1alpha1
 
         # Policy: sync will create, update, and delete records
         policy: sync

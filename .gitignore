@@ -97,4 +97,6 @@ velero-backups/
 .cache/
 node_modules/
 *.crt
-*.jsonsecrets.txt
+*.json
+secrets.txt
+ansible/terraform-inventory.json

@@ -5,11 +5,14 @@ kind: IngressRoute
 metadata:
   name: grafana
   namespace: monitoring
+  annotations:
+    # external-dns: create grafana.jamilshaikh.in CNAME → cloudflare tunnel
+    external-dns.alpha.kubernetes.io/target: "ac018f25-b07f-4b4b-8c83-1f27b0f9a418.cfargotunnel.com"
 spec:
   entryPoints:
     - web
   routes:
-    - match: Host(`grafana.lab.jamilshaikh.in`)
+    - match: Host(`grafana.jamilshaikh.in`) || Host(`grafana.lab.jamilshaikh.in`)
       kind: Rule
       services:
         - name: victoria-metrics-grafana

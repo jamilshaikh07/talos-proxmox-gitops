@@ -1,0 +1,66 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cert-manager
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  destination:
+    namespace: cert-manager
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    chart: cert-manager
+    repoURL: https://charts.jetstack.io
+    targetRevision: v1.20.1
+    helm:
+      values: |
+        # cert-manager — Internal CA only
+        # NOT used for ACME/Let's Encrypt (Cloudflare tunnel handles public TLS)
+        # Used for: self-signed internal CA, future service-to-service TLS
+
+        crds:
+          enabled: true
+
+        # Run on control plane to avoid worker restarts affecting CRD availability
+        replicaCount: 1
+
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+
+        webhook:
+          resources:
+            requests:
+              cpu: 20m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+
+        cainjector:
+          resources:
+            requests:
+              cpu: 20m
+              memory: 64Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+
+        # Prometheus metrics
+        prometheus:
+          enabled: true
+          servicemonitor:
+            enabled: false  # enable once monitoring is stable
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

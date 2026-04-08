@@ -1,16 +1,20 @@
 ---
-# Prometheus IngressRoute
+# Prometheus (VMSingle) IngressRoute
+# Service: vmsingle-victoria-metrics-victoria-metrics-k8s-stack (victor-metrics-k8s-stack chart)
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
   name: prometheus
   namespace: monitoring
+  annotations:
+    # external-dns: create prometheus.jamilshaikh.in CNAME → cloudflare tunnel
+    external-dns.alpha.kubernetes.io/target: "ac018f25-b07f-4b4b-8c83-1f27b0f9a418.cfargotunnel.com"
 spec:
   entryPoints:
     - web
   routes:
-    - match: Host(`prometheus.lab.jamilshaikh.in`)
+    - match: Host(`prometheus.jamilshaikh.in`) || Host(`prometheus.lab.jamilshaikh.in`)
       kind: Rule
       services:
-        - name: prometheus-stack-kube-prom-prometheus
-          port: 9090
+        - name: vmsingle-victoria-metrics-victoria-metrics-k8s-stack
+          port: 8428

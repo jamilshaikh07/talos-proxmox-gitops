@@ -5,11 +5,14 @@ kind: IngressRoute
 metadata:
   name: argocd-server
   namespace: argocd
+  annotations:
+    # external-dns: create argocd.jamilshaikh.in CNAME → cloudflare tunnel
+    external-dns.alpha.kubernetes.io/target: "ac018f25-b07f-4b4b-8c83-1f27b0f9a418.cfargotunnel.com"
 spec:
   entryPoints:
     - web
   routes:
-    - match: Host(`argocd.lab.jamilshaikh.in`)
+    - match: Host(`argocd.jamilshaikh.in`) || Host(`argocd.lab.jamilshaikh.in`)
       kind: Rule
       services:
         - name: argocd-server
