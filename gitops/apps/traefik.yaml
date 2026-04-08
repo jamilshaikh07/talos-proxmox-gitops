@@ -30,14 +30,12 @@ spec:
 
         # Ports configuration
         ports:
-          # HTTP (redirect to HTTPS via middleware)
+          # HTTP
           web:
             port: 80
             exposedPort: 80
             expose:
               default: true
-            middlewares:
-              - traefik-system-https-redirect@kubernetescrd
 
           # HTTPS
           websecure:
@@ -72,8 +70,7 @@ spec:
             enabled: true
             matchRule: Host(`traefik.lab.jamilshaikh.in`)
             entryPoints:
-              - websecure
-            tls: {}
+              - web
 
         # Prometheus metrics
         metrics:

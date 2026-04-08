@@ -16,15 +16,15 @@ spec:
     targetRevision: 2.4.0
     helm:
       values: |
-        # CoreDNS with k8s_gateway - Internal DNS for *.lab.jamilshaikh.in domain
+        # CoreDNS - Internal wildcard DNS for *.lab.jamilshaikh.in → Traefik VIP
+        # Uses template plugin: all *.lab.jamilshaikh.in → 192.168.60.81 (Traefik LoadBalancer)
+        # k8s_gateway plugin removed - it can't watch Traefik IngressRoute CRDs
 
-        # Domain configuration
+        # Domain configuration (used for apex record)
         domain: lab.jamilshaikh.in
 
-        # Watch all namespaces for Ingress/Service resources
-        watchedResources:
-          - Ingress
-          - Service
+        # Disable k8s_gateway resource watching (replaced by template plugin below)
+        watchedResources: []
 
         # Service configuration - MetalLB LoadBalancer
         service:
@@ -33,29 +33,25 @@ spec:
           annotations:
             metallb.universe.tf/loadBalancerIPs: 192.168.60.82
 
-          # DNS requires both TCP and UDP
-          # MetalLB IP sharing for same IP on both protocols
-          tcp:
-            enabled: true
-            port: 53
-          udp:
-            enabled: true
-            port: 53
-
-        # Fallthrough - forward non-.lab.jamilshaikh.in queries to upstream DNS
-        fallthrough:
-          enabled: true
-          zones:
-            - .
-
-        # Forward configuration - use Google DNS as upstream
-        forward:
-          enabled: true
-          options:
-            - name: forward
-              parameters: . 8.8.8.8 8.8.4.4
-            - name: cache
-              parameters: 30
+        # Add template plugin as wildcard catch-all BEFORE the standard zone plugins
+        extraZonePlugins:
+          - name: template
+            parameters: IN A lab.jamilshaikh.in
+            configBlock: |-
+              answer "{{ .Name }} 300 IN A 192.168.60.81"
+          - name: log
+          - name: errors
+          - name: health
+            configBlock: |-
+              lameduck 5s
+          - name: ready
+          - name: prometheus
+            parameters: 0.0.0.0:9153
+          - name: forward
+            parameters: . /etc/resolv.conf
+          - name: loop
+          - name: reload
+          - name: loadbalance
 
         # Resource limits
         resources:
