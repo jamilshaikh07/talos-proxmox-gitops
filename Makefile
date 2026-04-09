@@ -201,6 +201,27 @@ argocd-port-forward: ## Port forward to ArgoCD UI
 	@echo "$(YELLOW)Password: Run 'make argocd-password'$(NC)"
 	kubectl port-forward svc/argocd-server -n argocd 8080:443
 
+.PHONY: tunnel
+tunnel: ## SSH tunnel via Proxmox for cluster access when on 10.20.0.0/24 network
+	@echo "$(BLUE)🔌 Starting SSH tunnel: localhost:16443 → 192.168.60.40:6443 via Proxmox$(NC)"
+	@if ss -tlnp 2>/dev/null | grep -q ':16443'; then \
+		echo "$(GREEN)✓ Tunnel already running on port 16443$(NC)"; \
+	else \
+		ssh -L 16443:192.168.60.40:6443 -N -f root@10.20.0.10 && \
+		echo "$(GREEN)✅ Tunnel started$(NC)"; \
+	fi
+	@echo "$(YELLOW)Use: KUBECONFIG=~/.kube/config-homelab kubectl --server=https://localhost:16443 --insecure-skip-tls-verify get nodes$(NC)"
+	@echo "$(YELLOW)Stop: kill \$$(ss -tlnp | grep 16443 | grep -oP 'pid=\K[0-9]+')$(NC)"
+
+.PHONY: tunnel-stop
+tunnel-stop: ## Stop the Proxmox SSH tunnel
+	@PID=$$(ss -tlnp 2>/dev/null | grep ':16443' | grep -oP 'pid=\K[0-9]+' | head -1); \
+	if [ -n "$$PID" ]; then \
+		kill $$PID && echo "$(GREEN)✅ Tunnel stopped (pid $$PID)$(NC)"; \
+	else \
+		echo "$(YELLOW)No tunnel running on port 16443$(NC)"; \
+	fi
+
 # ============================================================================
 # CLUSTER MANAGEMENT
 # ============================================================================
