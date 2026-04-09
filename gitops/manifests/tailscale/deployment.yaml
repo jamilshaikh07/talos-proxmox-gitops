@@ -19,7 +19,13 @@ spec:
       # Run on host network so Tailscale can advertise the node subnet (192.168.60.0/24)
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
+      # Run only on the control plane to avoid polluting worker kubelet nodeIP
+      # (hostNetwork on workers overwrites their registered INTERNAL-IP with Tailscale IP)
+      nodeSelector:
+        node-role.kubernetes.io/control-plane: ""
       tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          effect: NoSchedule
         - operator: Exists
       initContainers:
         - name: enable-ip-forward
