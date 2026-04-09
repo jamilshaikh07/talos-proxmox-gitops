@@ -334,30 +334,31 @@ logs: ## View all system logs
 # ============================================================================
 
 .PHONY: setup-dns
-setup-dns: ## Add *.lab.jamilshaikh.in domains to /etc/hosts
-	@echo "$(YELLOW)📝 Adding *.lab.jamilshaikh.in domains to /etc/hosts...$(NC)"
-	@if grep -q "argocd.lab.jamilshaikh.in" /etc/hosts 2>/dev/null; then \
+setup-dns: ## Add internal *.lab.jamilshaikh.in domains to /etc/hosts
+	@echo "$(YELLOW)📝 Adding internal *.lab.jamilshaikh.in domains to /etc/hosts...$(NC)"
+	@if grep -q "prometheus.lab.jamilshaikh.in" /etc/hosts 2>/dev/null; then \
 		echo "$(GREEN)✓$(NC) Domains already configured in /etc/hosts"; \
 	else \
-		echo "$(YELLOW)Adding homelab domains...$(NC)"; \
+		echo "$(YELLOW)Adding internal homelab domains...$(NC)"; \
 		echo "" | sudo tee -a /etc/hosts; \
-		echo "# Homelab Services (*.lab.jamilshaikh.in)" | sudo tee -a /etc/hosts; \
-		echo "192.168.60.81 argocd.lab.jamilshaikh.in grafana.lab.jamilshaikh.in prometheus.lab.jamilshaikh.in traefik.lab.jamilshaikh.in uptime.lab.jamilshaikh.in homarr.lab.jamilshaikh.in" | sudo tee -a /etc/hosts; \
+		echo "# Homelab Internal Services (*.lab.jamilshaikh.in)" | sudo tee -a /etc/hosts; \
+		echo "192.168.60.81 prometheus.lab.jamilshaikh.in traefik.lab.jamilshaikh.in" | sudo tee -a /etc/hosts; \
 		echo "$(GREEN)✅ DNS configuration added to /etc/hosts$(NC)"; \
 	fi
 	@echo ""
-	@echo "$(BLUE)🌐 Access your services:$(NC)"
-	@echo "  https://argocd.lab.jamilshaikh.in       - ArgoCD UI"
-	@echo "  https://grafana.lab.jamilshaikh.in      - Grafana dashboards"
-	@echo "  https://prometheus.lab.jamilshaikh.in   - Prometheus UI"
-	@echo "  https://traefik.lab.jamilshaikh.in      - Traefik dashboard"
-	@echo "  https://uptime.lab.jamilshaikh.in       - Uptime Kuma monitoring"
-	@echo "  https://homarr.lab.jamilshaikh.in       - Homarr dashboard"
+	@echo "$(BLUE)🌐 Internal services (LAN only):$(NC)"
+	@echo "  http://prometheus.lab.jamilshaikh.in    - Prometheus/VictoriaMetrics UI"
+	@echo "  http://traefik.lab.jamilshaikh.in       - Traefik dashboard"
+	@echo ""
+	@echo "$(BLUE)🌍 Public services (via Cloudflare):$(NC)"
+	@echo "  https://argocd.jamilshaikh.in           - ArgoCD UI"
+	@echo "  https://grafana.jamilshaikh.in          - Grafana dashboards"
+	@echo "  https://uptime.jamilshaikh.in           - Uptime Kuma monitoring"
 
 .PHONY: remove-dns
 remove-dns: ## Remove *.lab.jamilshaikh.in domains from /etc/hosts
 	@echo "$(YELLOW)🗑️  Removing *.lab.jamilshaikh.in domains from /etc/hosts...$(NC)"
-	@sudo sed -i '/# Homelab Services/,+1d' /etc/hosts 2>/dev/null || true
+	@sudo sed -i '/# Homelab Internal Services/,+1d' /etc/hosts 2>/dev/null || true
 	@echo "$(GREEN)✅ DNS configuration removed$(NC)"
 
 .PHONY: extract-ca
@@ -395,13 +396,9 @@ trust-ca: extract-ca ## Trust homelab CA certificate (Linux)
 		echo "For Windows: certutil -addstore -f \"ROOT\" homelab-ca.crt"; \
 	fi
 	@echo ""
-	@echo "$(BLUE)🌐 You can now access services with valid HTTPS:$(NC)"
-	@echo "  https://argocd.lab.jamilshaikh.in"
-	@echo "  https://grafana.lab.jamilshaikh.in"
-	@echo "  https://prometheus.lab.jamilshaikh.in"
-	@echo "  https://traefik.lab.jamilshaikh.in"
-	@echo "  https://uptime.lab.jamilshaikh.in"
-	@echo "  https://homarr.lab.jamilshaikh.in"
+	@echo "$(BLUE)🌐 Internal services with trusted CA (future HTTPS):$(NC)"
+	@echo "  http://prometheus.lab.jamilshaikh.in"
+	@echo "  http://traefik.lab.jamilshaikh.in"
 
 .PHONY: untrust-ca
 untrust-ca: ## Remove homelab CA certificate
@@ -427,9 +424,11 @@ setup-homelab-access: setup-dns trust-ca ## Complete setup: DNS + CA trust
 	@echo "$(BLUE)🎉 You can now access all services via HTTPS with valid certificates!$(NC)"
 	@echo ""
 	@echo "$(CYAN)Next steps:$(NC)"
-	@echo "  1. Open your browser to: $(GREEN)https://argocd.lab$(NC)"
-	@echo "  2. Get ArgoCD password: $(GREEN)make argocd-password$(NC)"
-	@echo "  3. Check cluster status: $(GREEN)make status$(NC)"
+	@echo "  1. ArgoCD (public):  $(GREEN)https://argocd.jamilshaikh.in$(NC)"
+	@echo "  2. Grafana (public): $(GREEN)https://grafana.jamilshaikh.in$(NC)"
+	@echo "  3. Prometheus (LAN): $(GREEN)http://prometheus.lab.jamilshaikh.in$(NC)"
+	@echo "  4. Get ArgoCD password: $(GREEN)make argocd-password$(NC)"
+	@echo "  5. Check cluster status: $(GREEN)make status$(NC)"
 
 # ============================================================================
 # VERSION INFO
