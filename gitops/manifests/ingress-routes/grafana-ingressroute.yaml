@@ -12,7 +12,7 @@ spec:
   entryPoints:
     - web
   routes:
-    - match: Host(`grafana.jamilshaikh.in`) || Host(`grafana.lab.jamilshaikh.in`)
+    - match: Host(`grafana.jamilshaikh.in`)
       kind: Rule
       services:
         - name: victoria-metrics-grafana

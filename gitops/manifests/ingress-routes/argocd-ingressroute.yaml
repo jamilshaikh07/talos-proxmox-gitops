@@ -12,7 +12,7 @@ spec:
   entryPoints:
     - web
   routes:
-    - match: Host(`argocd.jamilshaikh.in`) || Host(`argocd.lab.jamilshaikh.in`)
+    - match: Host(`argocd.jamilshaikh.in`)
       kind: Rule
       services:
         - name: argocd-server

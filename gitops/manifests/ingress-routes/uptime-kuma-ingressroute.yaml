@@ -12,7 +12,7 @@ spec:
   entryPoints:
     - web
   routes:
-    - match: Host(`uptime.jamilshaikh.in`) || Host(`uptime.lab.jamilshaikh.in`)
+    - match: Host(`uptime.jamilshaikh.in`)
       kind: Rule
       services:
         - name: uptime-kuma

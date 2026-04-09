@@ -13,7 +13,7 @@ spec:
   entryPoints:
     - web
   routes:
-    - match: Host(`prometheus.jamilshaikh.in`) || Host(`prometheus.lab.jamilshaikh.in`)
+    - match: Host(`prometheus.jamilshaikh.in`)
       kind: Rule
       services:
         - name: vmsingle-victoria-metrics-victoria-metrics-k8s-stack
