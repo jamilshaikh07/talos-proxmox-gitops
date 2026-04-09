@@ -1,0 +1,7 @@
+# Machine features (Talos v1.10+)
+machine:
+  features:
+    # KubePrism: Local load balancer for Kubernetes API server
+    kubePrism:
+      enabled: true
+      port: 7445

@@ -7,7 +7,7 @@ metadata:
   namespace: monitoring
   annotations:
     # external-dns: create uptime.jamilshaikh.in CNAME → cloudflare tunnel
-    external-dns.alpha.kubernetes.io/target: "ac018f25-b07f-4b4b-8c83-1f27b0f9a418.cfargotunnel.com"
+    external-dns.alpha.kubernetes.io/target: "3a067db9-77b1-49c9-a3d4-30f86d16c80d.cfargotunnel.com"
 spec:
   entryPoints:
     - web

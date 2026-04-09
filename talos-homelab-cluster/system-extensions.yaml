@@ -1,0 +1,5 @@
+# System extensions using Talos Image Factory
+# Extensions: qemu-guest-agent, iscsi-tools, util-linux-tools for Longhorn
+machine:
+  install:
+    image: factory.talos.dev/installer/613e1592b2da41ae5e265e8789429f22e121aab91cb4deb6bc3c0b6262961245:v1.12.6
