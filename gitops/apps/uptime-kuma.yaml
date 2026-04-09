@@ -1,0 +1,36 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: uptime-kuma
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+spec:
+  destination:
+    namespace: monitoring
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    chart: uptime-kuma
+    repoURL: https://dirsigler.github.io/uptime-kuma-helm
+    targetRevision: 2.22.0
+    helm:
+      values: |
+        ingress:
+          enabled: false    # exposed via Traefik IngressRoute
+        persistence:
+          enabled: true
+          storageClass: local-path
+          size: 1Gi
+        resources:
+          requests:
+            cpu: 25m
+            memory: 64Mi
+          limits:
+            memory: 256Mi
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
