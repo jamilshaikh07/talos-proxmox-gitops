@@ -8,7 +8,10 @@ talos/rendered-*/
 talos/*.yaml
 !talos/setup-talos-cluster.sh
 /tmp/talos-*
-talos-homelab-cluster/
+# Talos: ignore rendered configs (contain secrets) but track machine patch files
+talos-homelab-cluster/secrets.yaml
+talos-homelab-cluster/rendered/
+talos-homelab-cluster/rendered-*/
 
 # Terraform
 terraform/.terraform/

@@ -1,0 +1,5 @@
+machine:
+  network:
+    hostname: talos-wk-01
+  install:
+    disk: /dev/sda
