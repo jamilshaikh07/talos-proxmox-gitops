@@ -12,18 +12,10 @@ data:
     metrics: 0.0.0.0:2000
     no-autoupdate: true
     protocol: http2
-    # Global origin settings — applied to all ingress rules including those
-    # pushed remotely from the Cloudflare dashboard.
-    # noTLSVerify: needed because the Cloudflare dashboard-managed route may
-    # connect via https; cert is Traefik's internal self-signed cert.
-    originRequest:
-      noTLSVerify: true
     ingress:
       # Wildcard: all *.jamilshaikh.in → Traefik (Cloudflare handles public TLS)
       - hostname: "*.jamilshaikh.in"
         service: http://traefik.traefik-system.svc.cluster.local
-        originRequest:
-          noTLSVerify: true
       # Required catch-all
       - service: http_status:404
 ---

@@ -59,6 +59,8 @@ spec:
         grafana:
           enabled: true
           adminPassword: "homelab"
+          initChownData:
+            enabled: false
           ingress:
             enabled: false    # exposed via Traefik IngressRoute
           persistence:
