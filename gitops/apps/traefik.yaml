@@ -37,14 +37,12 @@ spec:
             expose:
               default: true
 
-          # HTTPS
+          # HTTPS (port kept open; TLS termination handled by Cloudflare edge, not Traefik)
           websecure:
             port: 443
             exposedPort: 443
             expose:
               default: true
-            tls:
-              enabled: true
 
           # Metrics
           metrics:
