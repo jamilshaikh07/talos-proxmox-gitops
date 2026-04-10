@@ -57,9 +57,6 @@
         kubelet:
           extraArgs:
             rotate-server-certificates: "true"
-          nodeIP:
-            validSubnets:
-              - 192.168.60.0/24
     dest: "{{ talos_config_dir }}/kubelet-certs.yaml"
     mode: '0644'
 
