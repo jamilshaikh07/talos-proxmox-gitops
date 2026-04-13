@@ -109,6 +109,7 @@ Browser → /etc/hosts → 192.168.60.81 (Traefik) → backend
 - **Idempotent**: Safe to run multiple times
 - **Self-Healing**: ArgoCD auto-syncs with prune + self-heal enabled
 - **CI/CD**: GitHub Actions workflow with layer-level skip inputs (self-hosted runner)
+- **Scale Workflow**: Terraform-driven worker count and VM sizing with inventory regeneration helpers
 
 ## Quick Start
 
@@ -237,6 +238,48 @@ kubectl create secret generic cloudflared-credentials \
 | talos-cp-01 | /dev/sda | /var/local-path-storage |
 | talos-wk-01 | /dev/sda | /var/local-path-storage |
 
+## Scaling and Resize
+
+The cluster now supports two Terraform-driven scale paths:
+
+- Horizontal scaling by changing the number of Talos worker VMs.
+- Vertical scaling by changing the CPU, memory, or disk size assigned to the control plane or workers.
+
+### Important constraints
+
+- Talos node IPs are still DHCP-based. Terraform now emits deterministic MAC and planned IP pairs, but you must keep the matching OPNsense DHCP reservations intact.
+- Scale-down is not automatic for stateful workloads. Because the cluster uses `local-path`, any PVC bound to a node being removed must be migrated or deleted first.
+- Shrinking `WORKER_COUNT` removes the highest-numbered worker first. Drain that node before applying Terraform.
+
+### Plan a scale change
+
+```bash
+# Add a second worker with a smaller footprint than the current default
+make scale-plan WORKER_COUNT=2 WORKER_MEMORY=8192 WORKER_CORES=2
+
+# Resize the existing control plane and worker shapes
+make scale-plan CONTROL_PLANE_MEMORY=12288 WORKER_MEMORY=12288 WORKER_CORES=4
+```
+
+### Apply a scale change
+
+```bash
+make scale-apply WORKER_COUNT=2 WORKER_MEMORY=8192 WORKER_CORES=2
+make planned-dhcp
+make layer2
+```
+
+`make planned-dhcp` prints the MAC/IP reservations that should exist on OPNsense for each Talos VM.
+
+### Safe worker scale-down
+
+```bash
+make drain-node NODE=talos-wk-02
+make scale-apply WORKER_COUNT=1
+```
+
+If the node still hosts pods backed by `local-path` PVCs, move or retire that workload first. Draining alone does not preserve node-local data.
+
 ## Talos Configuration
 
 - **Version**: v1.12.6 | **Kubernetes**: v1.34.1 | **CNI**: Cilium v1.16.5
@@ -292,10 +335,47 @@ make destroy-all           # Destroy VMs + remove Talos config dir
 ### Utilities
 ```bash
 make help                  # Full command list with descriptions
+make help-when             # Scenario runbook (what to run when)
 make version               # Tool versions
 make terraform-plan        # Preview infrastructure changes
 make sync-inventory        # Regenerate Ansible inventory from Terraform outputs
 ```
+
+### What To Run When
+
+```bash
+# I want a full clean deployment
+make deploy
+
+# I changed Terraform and want infra updates only
+make terraform-plan
+make layer1
+make sync-inventory
+
+# I changed Talos/Ansible and want to reconcile cluster config
+make layer2
+
+# I changed GitOps manifests/apps and want app reconciliation
+make layer3
+
+# I want to scale workers or resize VM resources
+make scale-plan WORKER_COUNT=2 WORKER_MEMORY=8192 WORKER_CORES=2
+make scale-apply WORKER_COUNT=2 WORKER_MEMORY=8192 WORKER_CORES=2
+make planned-dhcp
+make layer2
+
+# I want a safe worker scale-down
+make drain-node NODE=talos-wk-02
+make scale-apply WORKER_COUNT=1
+make layer2
+
+# I just need health and sync checks
+make status
+make status-apps
+make talos-health
+```
+
+`make --help` shows GNU Make's built-in help, not project runbooks. Use `make help` and `make help-when` for homelab-specific guidance.
 
 ## Troubleshooting
 

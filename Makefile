@@ -7,6 +7,14 @@ ANSIBLE_DIR = ansible
 GITOPS_DIR = gitops
 TALOS_CONFIG_DIR = talos-homelab-cluster
 KUBECONFIG_PATH = $(TALOS_CONFIG_DIR)/rendered/kubeconfig
+SCALE_TERRAFORM_ARGS = \
+	$(if $(WORKER_COUNT),-var="worker_count=$(WORKER_COUNT)") \
+	$(if $(WORKER_MEMORY),-var="worker_memory=$(WORKER_MEMORY)") \
+	$(if $(WORKER_CORES),-var="worker_cores=$(WORKER_CORES)") \
+	$(if $(WORKER_DISK_SIZE),-var="worker_disk_size=$(WORKER_DISK_SIZE)") \
+	$(if $(CONTROL_PLANE_MEMORY),-var="control_plane_memory=$(CONTROL_PLANE_MEMORY)") \
+	$(if $(CONTROL_PLANE_CORES),-var="control_plane_cores=$(CONTROL_PLANE_CORES)") \
+	$(if $(CONTROL_PLANE_DISK_SIZE),-var="control_plane_disk_size=$(CONTROL_PLANE_DISK_SIZE)")
 
 # Colors for output
 GREEN = \033[0;32m
@@ -43,7 +51,56 @@ help: ## Display this help message
 	@echo "  2. $(GREEN)make layer2$(NC)  - Configure Talos Kubernetes cluster"
 	@echo "  3. $(GREEN)make layer3$(NC)   - Deploy ArgoCD + GitOps apps"
 	@echo ""
+	@echo "$(YELLOW)Runbook Help:$(NC)"
+	@echo "  $(GREEN)make help-when$(NC)              - Scenario-based commands (what to run when)"
 	@echo ""
+	@echo ""
+
+.PHONY: help-when
+help-when: ## Scenario runbook - what to run when
+	@echo "$(CYAN)╔═══════════════════════════════════════════════════════════════╗$(NC)"
+	@echo "$(CYAN)║                   HOMELAB RUNBOOK (WHEN)                      ║$(NC)"
+	@echo "$(CYAN)╚═══════════════════════════════════════════════════════════════╝$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Fresh deploy (all layers):$(NC)"
+	@echo "  1) make deploy"
+	@echo ""
+	@echo "$(YELLOW)VM infrastructure only (Terraform):$(NC)"
+	@echo "  1) make terraform-plan"
+	@echo "  2) make layer1"
+	@echo "  3) make sync-inventory"
+	@echo ""
+	@echo "$(YELLOW)Configure/reconcile Talos only:$(NC)"
+	@echo "  1) make layer2"
+	@echo ""
+	@echo "$(YELLOW)Deploy/reconcile GitOps apps only:$(NC)"
+	@echo "  1) make layer3"
+	@echo ""
+	@echo "$(YELLOW)Scale up/down or resize nodes:$(NC)"
+	@echo "  1) make scale-plan WORKER_COUNT=2 WORKER_MEMORY=8192 WORKER_CORES=2"
+	@echo "  2) make scale-apply WORKER_COUNT=2 WORKER_MEMORY=8192 WORKER_CORES=2"
+	@echo "  3) make planned-dhcp"
+	@echo "  4) make layer2"
+	@echo ""
+	@echo "$(YELLOW)Safe worker scale-down:$(NC)"
+	@echo "  1) make drain-node NODE=talos-wk-02"
+	@echo "  2) make scale-apply WORKER_COUNT=1"
+	@echo "  3) make layer2"
+	@echo ""
+	@echo "$(YELLOW)Daily status checks:$(NC)"
+	@echo "  - make status"
+	@echo "  - make status-apps"
+	@echo "  - make talos-health"
+	@echo ""
+	@echo "$(YELLOW)Remote cluster access over Proxmox tunnel:$(NC)"
+	@echo "  - make tunnel"
+	@echo "  - kubectl get nodes"
+	@echo "  - make tunnel-stop"
+	@echo ""
+	@echo "$(YELLOW)Emergency cleanup:$(NC)"
+	@echo "  - make destroy"
+	@echo ""
+	@echo "$(BLUE)Tip:$(NC) use 'make help' for the full target list."
 
 # ============================================================================
 # LAYER 0 - TEMPLATES
@@ -110,6 +167,11 @@ terraform-plan: terraform-init ## Plan Terraform changes
 	@echo "$(BLUE)📋 Planning infrastructure changes...$(NC)"
 	cd $(TERRAFORM_DIR) && terraform plan
 
+.PHONY: scale-plan
+scale-plan: terraform-init terraform-validate ## Plan worker count or VM sizing changes. Example: make scale-plan WORKER_COUNT=2 WORKER_MEMORY=8192
+	@echo "$(BLUE)📋 Planning scale changes...$(NC)"
+	cd $(TERRAFORM_DIR) && terraform plan $(SCALE_TERRAFORM_ARGS)
+
 .PHONY: terraform-apply
 terraform-apply: terraform-init terraform-validate ## Apply Terraform configuration
 	@echo "$(GREEN)🚀 Deploying infrastructure...$(NC)"
@@ -127,6 +189,19 @@ terraform-apply: terraform-init terraform-validate ## Apply Terraform configurat
 		fi \
 	done
 
+.PHONY: scale-apply
+scale-apply: terraform-init terraform-validate ## Apply worker count or VM sizing changes and refresh inventory
+	@echo "$(GREEN)🚀 Applying scale changes...$(NC)"
+	@echo "$(YELLOW)⚠️  This can create, restart, or destroy Talos VMs. Drain any worker you are removing and verify local-path PVC data has been handled before continuing.$(NC)"
+	@read -p "Type 'scale' to continue: " confirm && [ "$$confirm" = "scale" ] || { echo "$(GREEN)Scale cancelled.$(NC)"; exit 1; }
+	cd $(TERRAFORM_DIR) && terraform apply -auto-approve $(SCALE_TERRAFORM_ARGS)
+	@$(MAKE) sync-inventory
+	@echo "$(GREEN)✅ Scale changes applied$(NC)"
+	@echo "$(YELLOW)Next steps:$(NC)"
+	@echo "  1. If you added workers, create or verify DHCP reservations from 'terraform output planned_dhcp_reservations'"
+	@echo "  2. Run 'make layer2' to generate/apply Talos config for new workers"
+	@echo "  3. If you removed workers, drain them first and verify no local-path PVC data is still pinned there"
+
 .PHONY: terraform-destroy
 terraform-destroy: ## Destroy Terraform infrastructure (use 'make destroy' for safety)
 	@echo "$(RED)⚠️  Destroying infrastructure (no confirmation)...$(NC)"
@@ -142,6 +217,11 @@ sync-inventory: ## Generate Ansible inventory from Terraform outputs
 	@cd $(TERRAFORM_DIR) && terraform output -json > ../../ansible/terraform-inventory.json
 	@python3 scripts/generate-ansible-inventory.py
 	@echo "$(GREEN)✅ Ansible inventory synced from Terraform$(NC)"
+
+.PHONY: planned-dhcp
+planned-dhcp: terraform-init ## Show planned Talos DHCP reservations from Terraform state
+	@echo "$(BLUE)📡 Planned DHCP reservations:$(NC)"
+	@cd $(TERRAFORM_DIR) && terraform output planned_dhcp_reservations
 
 # ============================================================================
 # LAYER 2 - CONFIGURATION (Ansible + Talos)
@@ -258,9 +338,21 @@ set-kubeconfig: ## Export KUBECONFIG environment variable
 .PHONY: label-nodes
 label-nodes: ## Label Kubernetes nodes with roles and topology
 	@echo "$(BLUE)🏷️  Labeling Kubernetes nodes...$(NC)"
-	@cd $(ANSIBLE_DIR) && ansible-playbook -i inventory/hosts.yml playbooks/talos-cluster.yml --tags labels
+	@cd $(ANSIBLE_DIR) && ansible-playbook -i inventory.yml playbooks/label-nodes.yml
 	@echo "$(GREEN)✅ Nodes labeled$(NC)"
 	@kubectl get nodes --show-labels
+
+.PHONY: drain-node
+drain-node: ## Cordon and drain a worker node before scaling down. Usage: make drain-node NODE=talos-wk-02
+	@test -n "$(NODE)" || (echo "$(RED)NODE is required. Example: make drain-node NODE=talos-wk-02$(NC)" && exit 1)
+	@echo "$(YELLOW)⚠️  Draining $(NODE). Verify local-path PVC data is not still pinned to this node before continuing.$(NC)"
+	@kubectl cordon $(NODE)
+	@kubectl drain $(NODE) --ignore-daemonsets --delete-emptydir-data --force --grace-period=30 --timeout=10m
+
+.PHONY: uncordon-node
+uncordon-node: ## Uncordon a previously drained node. Usage: make uncordon-node NODE=talos-wk-01
+	@test -n "$(NODE)" || (echo "$(RED)NODE is required. Example: make uncordon-node NODE=talos-wk-01$(NC)" && exit 1)
+	@kubectl uncordon $(NODE)
 
 # ============================================================================
 # TALOS MANAGEMENT

@@ -1,0 +1,10 @@
+---
+- name: Label Talos Kubernetes nodes
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Label Kubernetes nodes
+      ansible.builtin.include_role:
+        name: talos-cluster
+        tasks_from: label-nodes.yml
