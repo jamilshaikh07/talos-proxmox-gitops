@@ -1,0 +1,72 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: pnl-postgresql
+  namespace: flux-system
+spec:
+  interval: 10m
+  targetNamespace: pnl-postgres
+  chart:
+    spec:
+      chart: ./k8s/charts/postgresql-cnpg
+      sourceRef:
+        kind: GitRepository
+        name: oee-source
+        namespace: flux-system
+      interval: 1m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+      remediateLastFailure: true
+    cleanupOnFail: true
+  values:
+    nameOverride: "pg"
+    fullnameOverride: "pnl-postgresql"
+    global:
+      siteCode: pnl
+    image:
+      repository: ghcr.io/cloudnative-pg/postgresql
+      tag: "17.5"
+    replicaCount: 1
+    persistence:
+      data:
+        storageClass: "local-path"
+        size: "5Gi"
+      wal:
+        storageClass: "local-path"
+        size: "1Gi"
+    postgresql:
+      database: oee_historian
+      owner: app
+      parameters:
+        max_connections: "100"
+        shared_buffers: "256MB"
+        effective_cache_size: "1GB"
+        maintenance_work_mem: "64MB"
+        checkpoint_completion_target: "0.9"
+        wal_buffers: "16MB"
+        min_wal_size: "80MB"
+        max_wal_size: "512MB"
+    barman:
+      serverName: "pnl-postgresql"
+      s3:
+        endpoint: "http://minio.minio-system.svc.cluster.local:9000"
+        bucket: "cnpg-backups"
+        region: "us-east-1"
+      backup:
+        schedule: "*/5 * * * *"
+        retention: "7d"
+        compress: "gzip"
+    resources:
+      requests:
+        cpu: "500m"
+        memory: "1Gi"
+      limits:
+        cpu: "1000m"
+        memory: "2Gi"
+    monitoring:
+      enablePodMonitor: false
