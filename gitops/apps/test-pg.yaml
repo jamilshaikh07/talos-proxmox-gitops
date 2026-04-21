@@ -13,7 +13,7 @@ spec:
   source:
     path: gitops/manifests/test-pg
     repoURL: https://github.com/jamilshaikh07/talos-proxmox-gitops
-    targetRevision: main
+    targetRevision: master
   syncPolicy:
     automated:
       prune: true
