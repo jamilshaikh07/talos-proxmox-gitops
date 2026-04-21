@@ -24,6 +24,8 @@ spec:
       remediateLastFailure: true
     cleanupOnFail: true
   values:
+    nameOverride: "pg"
+    fullnameOverride: "homelab-postgresql"
     global:
       siteCode: homelab
     image:
