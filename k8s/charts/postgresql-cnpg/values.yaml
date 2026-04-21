@@ -1,0 +1,58 @@
+global:
+  siteCode: homelab
+
+image:
+  repository: ghcr.io/cloudnative-pg/postgresql
+  tag: "17.5"
+
+replicaCount: 1
+
+persistence:
+  data:
+    storageClass: "local-path"
+    size: "5Gi"
+  wal:
+    storageClass: "local-path"
+    size: "1Gi"
+
+postgresql:
+  database: oee_test
+  owner: app
+  parameters:
+    max_connections: "100"
+    shared_buffers: "256MB"
+    effective_cache_size: "1GB"
+    maintenance_work_mem: "64MB"
+    checkpoint_completion_target: "0.9"
+    wal_buffers: "16MB"
+    default_statistics_target: "100"
+    random_page_cost: "1.1"
+    effective_io_concurrency: "200"
+    work_mem: "2621kB"
+    min_wal_size: "80MB"
+    max_wal_size: "512MB"
+
+barman:
+  serverName: "homelab-postgresql"
+  s3:
+    endpoint: "http://minio.minio-system.svc.cluster.local:9000"
+    bucket: "cnpg-backups"
+    region: "us-east-1"
+    credentials:
+      accessKeyId: "minioadmin"
+      secretAccessKey: "minioadmin123"
+  backup:
+    schedule: "*/5 * * * *"
+    retention: "RECOVERY WINDOW OF 7 DAYS"
+    compress: "gzip"
+
+resources:
+  requests:
+    cpu: "500m"
+    memory: "1Gi"
+  limits:
+    cpu: "1000m"
+    memory: "2Gi"
+
+monitoring:
+  enablePodMonitor: false

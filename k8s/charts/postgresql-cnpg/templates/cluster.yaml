@@ -1,0 +1,60 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: {{ include "postgresql-cnpg.fullname" . }}
+  namespace: {{ include "postgresql-cnpg.namespace" . }}
+  labels:
+    {{- include "postgresql-cnpg.labels" . | nindent 4 }}
+spec:
+  instances: {{ .Values.replicaCount }}
+
+  imageName: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+
+  storage:
+    storageClass: {{ .Values.persistence.data.storageClass }}
+    size: {{ .Values.persistence.data.size }}
+
+  walStorage:
+    storageClass: {{ .Values.persistence.wal.storageClass }}
+    size: {{ .Values.persistence.wal.size }}
+
+  bootstrap:
+    initdb:
+      database: {{ .Values.postgresql.database }}
+      owner: {{ .Values.postgresql.owner }}
+
+  postgresql:
+    parameters:
+      {{- range $key, $value := .Values.postgresql.parameters }}
+      {{ $key }}: {{ $value | quote }}
+      {{- end }}
+
+  monitoring:
+    enablePodMonitor: {{ .Values.monitoring.enablePodMonitor }}
+
+  backup:
+    barmanObjectStore:
+      destinationPath: s3://{{ .Values.barman.s3.bucket }}/{{ .Values.barman.serverName }}
+      endpointURL: {{ .Values.barman.s3.endpoint }}
+      s3Credentials:
+        accessKeyId:
+          name: minio-credentials
+          key: ACCESS_KEY_ID
+        secretAccessKey:
+          name: minio-credentials
+          key: ACCESS_SECRET_KEY
+      wal:
+        compression: {{ .Values.barman.backup.compress }}
+        maxParallel: 2
+      data:
+        compression: {{ .Values.barman.backup.compress }}
+        jobs: 2
+    retentionPolicy: {{ .Values.barman.backup.retention | quote }}
+
+  resources:
+    requests:
+      cpu: {{ .Values.resources.requests.cpu }}
+      memory: {{ .Values.resources.requests.memory }}
+    limits:
+      cpu: {{ .Values.resources.limits.cpu }}
+      memory: {{ .Values.resources.limits.memory }}

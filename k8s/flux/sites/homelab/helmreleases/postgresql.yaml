@@ -1,0 +1,47 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: homelab-postgresql
+  namespace: flux-system
+spec:
+  interval: 10m
+  targetNamespace: homelab-postgres
+  chart:
+    spec:
+      chart: ./k8s/charts/postgresql-cnpg
+      sourceRef:
+        kind: GitRepository
+        name: oee-source
+        namespace: flux-system
+      interval: 1m
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+      remediateLastFailure: true
+    cleanupOnFail: true
+  values:
+    global:
+      siteCode: homelab
+    image:
+      tag: "17.5"
+    replicaCount: 1
+    persistence:
+      data:
+        storageClass: "local-path"
+        size: "5Gi"
+      wal:
+        storageClass: "local-path"
+        size: "1Gi"
+    barman:
+      serverName: "homelab-postgresql"
+      s3:
+        endpoint: "http://minio.minio-system.svc.cluster.local:9000"
+        bucket: "cnpg-backups"
+        region: "us-east-1"
+      backup:
+        schedule: "*/5 * * * *"
+        retention: "RECOVERY WINDOW OF 7 DAYS"

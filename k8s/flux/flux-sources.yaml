@@ -1,0 +1,11 @@
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: oee-source
+  namespace: flux-system
+spec:
+  interval: 1m
+  url: https://github.com/jamilshaikh07/talos-proxmox-gitops
+  ref:
+    branch: master

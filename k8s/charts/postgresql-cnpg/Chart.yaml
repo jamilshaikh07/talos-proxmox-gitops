@@ -1,0 +1,6 @@
+apiVersion: v2
+name: postgresql-cnpg
+description: CloudNativePG PostgreSQL cluster with Barman backup
+type: application
+version: 0.1.0
+appVersion: "17.5"

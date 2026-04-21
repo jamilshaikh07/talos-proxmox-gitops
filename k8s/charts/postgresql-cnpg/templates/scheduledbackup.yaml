@@ -1,0 +1,14 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: {{ include "postgresql-cnpg.fullname" . }}-scheduled
+  namespace: {{ include "postgresql-cnpg.namespace" . }}
+  labels:
+    {{- include "postgresql-cnpg.labels" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.barman.backup.schedule | quote }}
+  backupOwnerReference: self
+  cluster:
+    name: {{ include "postgresql-cnpg.fullname" . }}
+  immediate: true
+  method: barmanObjectStore

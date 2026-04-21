@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: site-config
+  namespace: flux-system
+data:
+  SITE_ID: "homelab"
+  SITE_TIMEZONE: "Asia/Kolkata"
+  SITE_STORAGE_CLASS: "local-path"
+  BARMAN_S3_ENDPOINT: "http://minio.minio-system.svc.cluster.local:9000"
+  BARMAN_S3_BUCKET: "cnpg-backups"
+  BARMAN_S3_REGION: "us-east-1"
