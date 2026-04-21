@@ -39,8 +39,8 @@ spec:
       random_page_cost: "1.1"
       effective_io_concurrency: "200"
       work_mem: "2621kB"
-      min_wal_size: "1GB"
-      max_wal_size: "4GB"
+      min_wal_size: "80MB"
+      max_wal_size: "512MB"
 
   # Monitoring
   monitoring:
