@@ -13,7 +13,7 @@ spec:
   source:
     chart: cloudnative-pg
     repoURL: https://cloudnative-pg.github.io/charts
-    targetRevision: 1.0.11  # CNPG operator v1.26.1 (latest stable)
+    targetRevision: 0.27.1  # CNPG operator v1.28.1
     helm:
       values: |
         # CloudNativePG Operator
