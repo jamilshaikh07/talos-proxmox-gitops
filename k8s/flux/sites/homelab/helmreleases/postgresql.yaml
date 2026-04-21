@@ -44,4 +44,4 @@ spec:
         region: "us-east-1"
       backup:
         schedule: "*/5 * * * *"
-        retention: "RECOVERY WINDOW OF 7 DAYS"
+        retention: "7d"
