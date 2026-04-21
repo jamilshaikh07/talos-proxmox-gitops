@@ -1,0 +1,67 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cloudnative-pg
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+spec:
+  destination:
+    namespace: cnpg-system
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    chart: cloudnative-pg
+    repoURL: https://cloudnative-pg.github.io/charts
+    targetRevision: 0.22.2  # CNPG operator v1.28.1
+    helm:
+      values: |
+        # CloudNativePG Operator
+        # Manages PostgreSQL clusters with built-in Barman backup/recovery
+
+        crds:
+          create: true
+
+        replicaCount: 1
+
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+
+        # Webhook configuration
+        webhook:
+          port: 9443
+          mutating:
+            create: true
+          validating:
+            create: true
+
+        # Monitoring
+        monitoring:
+          podMonitorEnabled: false
+          grafanaDashboard:
+            create: false
+
+        # Security
+        containerSecurityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 10001
+          seccompProfile:
+            type: RuntimeDefault
+          capabilities:
+            drop:
+              - ALL
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

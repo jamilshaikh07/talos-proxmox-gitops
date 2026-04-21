@@ -1,0 +1,13 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: oee-test-backup
+  namespace: test-pg
+spec:
+  # Every 5 minutes for testing
+  schedule: "*/5 * * * *"
+  backupOwnerReference: self
+  cluster:
+    name: oee-test-cluster
+  immediate: true
+  method: barmanObjectStore

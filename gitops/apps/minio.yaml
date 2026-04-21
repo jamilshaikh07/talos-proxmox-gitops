@@ -1,0 +1,75 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: minio
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  destination:
+    namespace: minio-system
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    chart: minio
+    repoURL: https://charts.min.io
+    targetRevision: 5.3.0
+    helm:
+      values: |
+        # MinIO — S3-compatible object storage for CNPG Barman backups
+        # Homelab test environment — NOT production-grade
+
+        mode: standalone
+        replicas: 1
+
+        persistence:
+          enabled: true
+          storageClass: "local-path"
+          size: 20Gi
+
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+
+        # MinIO credentials (test environment — plain secret)
+        rootUser: minioadmin
+        rootPassword: minioadmin123
+
+        # Service configuration
+        service:
+          type: ClusterIP
+          port: 9000
+
+        consoleService:
+          type: ClusterIP
+          port: 9001
+
+        # Create bucket for CNPG backups on startup
+        buckets:
+          - name: cnpg-backups
+            policy: none
+            purge: false
+
+        # Prometheus metrics
+        metrics:
+          serviceMonitor:
+            enabled: false
+
+        # Security context
+        securityContext:
+          enabled: true
+          runAsUser: 1000
+          runAsGroup: 1000
+          fsGroup: 1000
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

@@ -1,0 +1,9 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Backup
+metadata:
+  name: manual-backup-test
+  namespace: test-pg
+spec:
+  method: barmanObjectStore
+  cluster:
+    name: oee-test-cluster

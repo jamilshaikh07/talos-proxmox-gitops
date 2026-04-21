@@ -1,0 +1,52 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: oee-test-restore
+  namespace: test-pg
+spec:
+  instances: 1
+
+  # Same PostgreSQL version as source
+  imageName: ghcr.io/cloudnative-pg/postgresql:17.5
+
+  # Storage configuration
+  storage:
+    storageClass: local-path
+    size: 5Gi
+
+  walStorage:
+    storageClass: local-path
+    size: 1Gi
+
+  # Bootstrap from backup
+  bootstrap:
+    recovery:
+      source: oee-test-cluster
+      # Optional: uncomment to restore to specific point in time
+      # recoveryTarget:
+      #   targetTime: "2026-04-21 15:30:00.00000+00"
+
+  # External cluster reference for recovery
+  externalClusters:
+    - name: oee-test-cluster
+      barmanObjectStore:
+        destinationPath: s3://cnpg-backups/oee-test-cluster
+        endpointURL: http://minio.minio-system.svc.cluster.local:9000
+        s3Credentials:
+          accessKeyId:
+            name: minio-credentials
+            key: ACCESS_KEY_ID
+          secretAccessKey:
+            name: minio-credentials
+            key: ACCESS_SECRET_KEY
+        wal:
+          maxParallel: 2
+
+  # Resources
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+    limits:
+      cpu: "1000m"
+      memory: "2Gi"
