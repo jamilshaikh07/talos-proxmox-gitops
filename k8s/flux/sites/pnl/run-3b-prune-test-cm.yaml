@@ -1,9 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: run-3b-prune-test
-  namespace: flux-system
-  labels:
-    test: run-3b-prune
-data:
-  note: "Disposable ConfigMap created to validate Flux prune behavior."
