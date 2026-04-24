@@ -70,3 +70,4 @@ spec:
         memory: "2Gi"
     monitoring:
       enablePodMonitor: false
+# Run 3b.2 marker: 20260424T125831Z
