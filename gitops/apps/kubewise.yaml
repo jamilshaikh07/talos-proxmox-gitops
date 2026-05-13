@@ -1,0 +1,46 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kubewise
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+spec:
+  destination:
+    namespace: kubewise
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    repoURL: https://github.com/jamilshaikh07/kubewise.git
+    targetRevision: main
+    path: charts/kubewise
+    helm:
+      parameters:
+        - name: api.image.tag
+          value: "sha-c398d78"  # bumped automatically by CI
+        - name: dashboard.image.tag
+          value: "sha-c398d78"  # bumped automatically by CI
+        - name: agent.image.tag
+          value: "sha-c398d78"  # bumped automatically by CI
+      values: |
+        agent:
+          enabled: true
+          clusterName: talos-homelab
+          pollIntervalSeconds: 300
+        api:
+          persistence:
+            storageClass: local-path
+          env:
+            SEED_DEMO_DATA: "false"
+            DEFAULT_NODE_HOURLY_RATE: "0.096"
+        global:
+          imagePullSecrets:
+            - name: ghcr-kubewise
+        ingress:
+          enabled: false
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
