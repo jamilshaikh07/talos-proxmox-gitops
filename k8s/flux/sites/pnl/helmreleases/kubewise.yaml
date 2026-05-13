@@ -16,6 +16,9 @@ spec:
   type: oci
   secretRef:
     name: ghcr-kubewise
+  chart:
+    spec:
+      version: 0.1.6
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
@@ -28,7 +31,7 @@ spec:
   chart:
     spec:
       chart: kubewise
-      version: "0.1.0"  # bumped automatically by CI — do not edit
+      version: "0.1.6" # bumped automatically by CI — do not edit
       sourceRef:
         kind: HelmRepository
         name: kubewise-charts
