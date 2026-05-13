@@ -1,0 +1,57 @@
+---
+# KubeWise — Kubernetes cost & performance advisor
+# Images: ghcr.io/jamilshaikh07/kubewise-{api,dashboard,agent}
+# Chart:  oci://ghcr.io/jamilshaikh07/charts/kubewise
+#
+# NOTE: After the first CI push, go to https://github.com/jamilshaikh07?tab=packages
+# and set all three kubewise-* packages to PUBLIC so the cluster can pull them
+# without an imagePullSecret.
+#
+# The chart version below is bumped automatically by the KubeWise release workflow
+# on every push to main. Do not edit the version field manually.
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: kubewise-charts
+  namespace: flux-system
+spec:
+  interval: 1h
+  url: oci://ghcr.io/jamilshaikh07/charts
+  type: oci
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: kubewise
+  namespace: kubewise
+spec:
+  interval: 5m
+  chart:
+    spec:
+      chart: kubewise
+      version: "0.1.0"  # bumped automatically by CI — do not edit
+      sourceRef:
+        kind: HelmRepository
+        name: kubewise-charts
+        namespace: flux-system
+      interval: 1h
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  values:
+    agent:
+      enabled: true
+      clusterName: talos-homelab
+      pollIntervalSeconds: 300
+    api:
+      persistence:
+        storageClass: local-path
+      env:
+        SEED_DEMO_DATA: "false"
+        DEFAULT_NODE_HOURLY_RATE: "0.096"
+    ingress:
+      enabled: false  # expose via Traefik IngressRoute separately if needed

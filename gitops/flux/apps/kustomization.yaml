@@ -7,3 +7,4 @@ resources:
   - kube-prometheus-stack.yaml
   - defectdojo.yaml
   - trivy-operator.yaml
+  - kubewise.yaml
