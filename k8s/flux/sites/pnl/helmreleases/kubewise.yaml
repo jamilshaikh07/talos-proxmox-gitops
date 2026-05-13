@@ -14,6 +14,8 @@ spec:
   interval: 1h
   url: oci://ghcr.io/jamilshaikh07/charts
   type: oci
+  secretRef:
+    name: ghcr-kubewise
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
@@ -51,5 +53,8 @@ spec:
       env:
         SEED_DEMO_DATA: "false"
         DEFAULT_NODE_HOURLY_RATE: "0.096"
+    global:
+      imagePullSecrets:
+        - name: ghcr-kubewise
     ingress:
       enabled: false
