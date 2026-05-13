@@ -18,6 +18,9 @@ spec:
   interval: 1h
   url: oci://ghcr.io/jamilshaikh07/charts
   type: oci
+  chart:
+    spec:
+      version: 0.1.5
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
@@ -29,7 +32,7 @@ spec:
   chart:
     spec:
       chart: kubewise
-      version: "0.1.0"  # bumped automatically by CI — do not edit
+      version: "0.1.5" # bumped automatically by CI — do not edit
       sourceRef:
         kind: HelmRepository
         name: kubewise-charts
@@ -54,4 +57,4 @@ spec:
         SEED_DEMO_DATA: "false"
         DEFAULT_NODE_HOURLY_RATE: "0.096"
     ingress:
-      enabled: false  # expose via Traefik IngressRoute separately if needed
+      enabled: false # expose via Traefik IngressRoute separately if needed
