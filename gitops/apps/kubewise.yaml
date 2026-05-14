@@ -17,11 +17,11 @@ spec:
     helm:
       parameters:
         - name: api.image.tag
-          value: "sha-b257ae9" # bumped automatically by CI
+          value: "sha-caf342e" # bumped automatically by CI
         - name: dashboard.image.tag
-          value: "sha-b257ae9" # bumped automatically by CI
+          value: "sha-caf342e" # bumped automatically by CI
         - name: agent.image.tag
-          value: "sha-b257ae9" # bumped automatically by CI
+          value: "sha-caf342e" # bumped automatically by CI
       values: |
         agent:
           enabled: true
