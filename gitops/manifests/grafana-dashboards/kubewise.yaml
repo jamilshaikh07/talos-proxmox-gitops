@@ -242,7 +242,7 @@ data:
             },
             "overrides": [
               {
-                "matcher": { "id": "byNamePattern", "options": "requested:.*" },
+                "matcher": { "id": "byFrameRefID", "options": "B" },
                 "properties": [
                   { "id": "custom.lineStyle", "value": { "dash": [10, 10], "fill": "dash" } },
                   { "id": "custom.lineWidth", "value": 1 }
@@ -310,7 +310,7 @@ data:
             },
             "overrides": [
               {
-                "matcher": { "id": "byNamePattern", "options": "requested:.*" },
+                "matcher": { "id": "byFrameRefID", "options": "B" },
                 "properties": [
                   { "id": "custom.lineStyle", "value": { "dash": [10, 10], "fill": "dash" } },
                   { "id": "custom.lineWidth", "value": 1 }
