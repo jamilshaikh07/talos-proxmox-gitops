@@ -13,6 +13,11 @@ data:
     no-autoupdate: true
     protocol: http2
     ingress:
+      # Wildcard: PaaS deployments *.apps.jamilshaikh.in → Traefik
+      # (Cloudflare wildcards only match a single label, so this needs to be
+      # declared separately from *.jamilshaikh.in below)
+      - hostname: "*.apps.jamilshaikh.in"
+        service: http://traefik.traefik-system.svc.cluster.local
       # Wildcard: all *.jamilshaikh.in → Traefik (Cloudflare handles public TLS)
       - hostname: "*.jamilshaikh.in"
         service: http://traefik.traefik-system.svc.cluster.local
