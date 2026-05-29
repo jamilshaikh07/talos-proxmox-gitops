@@ -1,7 +1,7 @@
 ---
-# Smoke test for the *.apps.jamilshaikh.in wildcard subdomain pattern
+# Smoke test for the flat <id>.jamilshaikh.in subdomain pattern
 # that the self-hosted PaaS (vercel-clone) will use for tenant deployments.
-# Reachable at: https://hello.apps.jamilshaikh.in
+# Reachable at: https://hello-paas.jamilshaikh.in
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -81,13 +81,13 @@ metadata:
   namespace: paas-deployments
   annotations:
     # external-dns picks this up from --source=traefik-proxy and creates
-    # a proxied CNAME hello.apps.jamilshaikh.in → tunnel hostname
+    # a proxied CNAME hello-paas.jamilshaikh.in → tunnel hostname
     external-dns.alpha.kubernetes.io/target: "3a067db9-77b1-49c9-a3d4-30f86d16c80d.cfargotunnel.com"
 spec:
   entryPoints:
     - web
   routes:
-    - match: Host(`hello.apps.jamilshaikh.in`)
+    - match: Host(`hello-paas.jamilshaikh.in`)
       kind: Rule
       services:
         - name: hello
