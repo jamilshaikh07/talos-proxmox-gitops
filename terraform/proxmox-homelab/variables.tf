@@ -198,8 +198,8 @@ variable "worker_memory" {
 
 variable "worker_cores" {
   type        = number
-  default     = 4
-  description = "Default vCPU cores assigned to each Talos worker VM"
+  default     = 6
+  description = "Default vCPU cores assigned to each Talos worker VM. Sized for the alif host (i7-4770, 4C/8T): 2 vCPU on talos-cp-01 + 6 here = 8 of 8 logical CPUs (CPU overcommit is fine on Proxmox; observed host CPU was 12% with the prior 4-core default). Memory stays at 16 GiB because the host RAM is the actual scarce resource (74% used at 8+16 GiB)."
 }
 
 variable "worker_storage" {
