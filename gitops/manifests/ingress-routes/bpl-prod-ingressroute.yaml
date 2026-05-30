@@ -16,17 +16,30 @@ spec:
   entryPoints:
     - web
   routes:
-    # API + websocket -> backend
+    # API + websocket -> backend.  Explicit `priority` ensures these
+    # rules win over the SPA catch-all below regardless of how Traefik
+    # weighs match-string length.  Apex + www each get their own rule —
+    # mirrors the stage IngressRoute's working single-line shape.
     - kind: Rule
-      match: |
-        (Host(`belapurpremierleague.com`) || Host(`www.belapurpremierleague.com`))
-        && (PathPrefix(`/api`) || PathPrefix(`/socket.io`) || PathPrefix(`/healthz`) || PathPrefix(`/readyz`))
+      match: Host(`belapurpremierleague.com`) && (PathPrefix(`/api`) || PathPrefix(`/socket.io`) || PathPrefix(`/healthz`) || PathPrefix(`/readyz`))
+      priority: 100
+      services:
+        - name: bpl-backend
+          port: 4000
+    - kind: Rule
+      match: Host(`www.belapurpremierleague.com`) && (PathPrefix(`/api`) || PathPrefix(`/socket.io`) || PathPrefix(`/healthz`) || PathPrefix(`/readyz`))
+      priority: 100
       services:
         - name: bpl-backend
           port: 4000
     # Everything else -> SPA
     - kind: Rule
-      match: Host(`belapurpremierleague.com`) || Host(`www.belapurpremierleague.com`)
+      match: Host(`belapurpremierleague.com`)
+      services:
+        - name: bpl-frontend
+          port: 80
+    - kind: Rule
+      match: Host(`www.belapurpremierleague.com`)
       services:
         - name: bpl-frontend
           port: 80
