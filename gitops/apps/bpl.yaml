@@ -1,0 +1,31 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: bpl
+  namespace: argocd
+  annotations:
+    # Apply after core infra (traefik, cnpg, cloudflared, ingress-routes).
+    argocd.argoproj.io/sync-wave: "10"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: bpl
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    repoURL: https://github.com/jamilshaikh07/cfl-season2
+    path: k8s
+    targetRevision: main
+    directory:
+      recurse: false
+      # Ignore the IngressRoute that ships in the app repo — this homelab
+      # repo owns the cluster ingress (mirrors argocd/grafana/uptime).
+      exclude: '40-ingressroute.yaml'
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
