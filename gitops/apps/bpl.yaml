@@ -17,11 +17,11 @@ spec:
     repoURL: https://github.com/jamilshaikh07/cfl-season2
     path: k8s
     targetRevision: main
+    # Cluster ingress is owned by this repo (gitops/manifests/ingress-routes/),
+    # mirroring argocd/grafana/uptime. The app repo only ships namespace, DB,
+    # backend, frontend, and migrate Job manifests.
     directory:
       recurse: false
-      # Ignore the IngressRoute that ships in the app repo — this homelab
-      # repo owns the cluster ingress (mirrors argocd/grafana/uptime).
-      exclude: '40-ingressroute.yaml'
   syncPolicy:
     automated:
       prune: true
