@@ -1,10 +1,10 @@
 ---
-# Belapur Premier League (BPL) IngressRoute
+# BPL stage IngressRoute — bpl.jamilshaikh.in
 # Same Cloudflare-tunnel pattern as argocd / grafana / uptime.
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: bpl
+  name: bpl-stage
   namespace: bpl
   annotations:
     # external-dns: create bpl.jamilshaikh.in CNAME → cloudflare tunnel

@@ -1,0 +1,32 @@
+---
+# BPL prod IngressRoute — belapurpremierleague.com
+#
+# Routes the apex (and www.) through Traefik to the bpl-prod namespace
+# services. external-dns picks up the Host() matchers and creates the
+# Cloudflare CNAMEs pointing at the existing tunnel.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: bpl-prod
+  namespace: bpl-prod
+  annotations:
+    # external-dns: create belapurpremierleague.com + www CNAME → tunnel
+    external-dns.alpha.kubernetes.io/target: "3a067db9-77b1-49c9-a3d4-30f86d16c80d.cfargotunnel.com"
+spec:
+  entryPoints:
+    - web
+  routes:
+    # API + websocket -> backend
+    - kind: Rule
+      match: |
+        (Host(`belapurpremierleague.com`) || Host(`www.belapurpremierleague.com`))
+        && (PathPrefix(`/api`) || PathPrefix(`/socket.io`) || PathPrefix(`/healthz`) || PathPrefix(`/readyz`))
+      services:
+        - name: bpl-backend
+          port: 4000
+    # Everything else -> SPA
+    - kind: Rule
+      match: Host(`belapurpremierleague.com`) || Host(`www.belapurpremierleague.com`)
+      services:
+        - name: bpl-frontend
+          port: 80

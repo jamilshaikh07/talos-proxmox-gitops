@@ -1,0 +1,29 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  # bpl-stage = bpl.jamilshaikh.in (namespace `bpl`). Tracks main HEAD.
+  name: bpl-stage
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: bpl
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    repoURL: https://github.com/jamilshaikh07/cfl-season2
+    # Kustomize overlay drives namespace, CORS, image tag. Cluster ingress
+    # is owned by this homelab repo's ingress-routes/ folder (mirrors
+    # argocd/grafana/uptime).
+    path: k8s/overlays/stage
+    targetRevision: main
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

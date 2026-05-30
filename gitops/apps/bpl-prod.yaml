@@ -1,27 +1,24 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: bpl
+  # bpl-prod = belapurpremierleague.com (namespace `bpl-prod`).
+  # Tracks main HEAD via the prod Kustomize overlay, which pins image tags
+  # to released versions (NEVER `:latest`).
+  name: bpl-prod
   namespace: argocd
   annotations:
-    # Apply after core infra (traefik, cnpg, cloudflared, ingress-routes).
     argocd.argoproj.io/sync-wave: "10"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
   destination:
-    namespace: bpl
+    namespace: bpl-prod
     server: https://kubernetes.default.svc
   project: default
   source:
     repoURL: https://github.com/jamilshaikh07/cfl-season2
-    path: k8s
+    path: k8s/overlays/prod
     targetRevision: main
-    # Cluster ingress is owned by this repo (gitops/manifests/ingress-routes/),
-    # mirroring argocd/grafana/uptime. The app repo only ships namespace, DB,
-    # backend, frontend, and migrate Job manifests.
-    directory:
-      recurse: false
   syncPolicy:
     automated:
       prune: true

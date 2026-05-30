@@ -16,6 +16,11 @@ data:
       # Wildcard: all *.jamilshaikh.in → Traefik (Cloudflare handles public TLS)
       - hostname: "*.jamilshaikh.in"
         service: http://traefik.traefik-system.svc.cluster.local
+      # belapurpremierleague.com (prod for BPL Season 2) → Traefik
+      - hostname: "belapurpremierleague.com"
+        service: http://traefik.traefik-system.svc.cluster.local
+      - hostname: "*.belapurpremierleague.com"
+        service: http://traefik.traefik-system.svc.cluster.local
       # Required catch-all
       - service: http_status:404
 ---
