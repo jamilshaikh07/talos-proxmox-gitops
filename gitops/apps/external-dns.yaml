@@ -47,6 +47,20 @@ spec:
         # Policy: sync will create, update, and delete records
         policy: sync
 
+        # Reconciliation interval — how often external-dns scans
+        # IngressRoutes for changes and pushes diffs to Cloudflare.
+        # Default is 1m, which means brand-new tenant URLs can sit at
+        # NXDOMAIN for up to ~60s after Spinup creates the IngressRoute
+        # — long enough that users click their freshly-deployed URL,
+        # hit NXDOMAIN, the negative answer gets cached by their
+        # resolver, and the page stays "broken" in their browser
+        # minutes after the record actually exists. Drop to 15s so
+        # newly-created records appear in Cloudflare within a single
+        # human-perceivable beat. Cloudflare's API quota is generous
+        # (1200 req/5 min/account) and we only push when the diff is
+        # non-empty, so 4x more polling costs us ~nothing.
+        interval: 15s
+
         # Registry to track ownership of DNS records
         registry: txt
         txtOwnerId: homelab-cluster
