@@ -21,6 +21,13 @@ data:
         service: http://traefik.traefik-system.svc.cluster.local
       - hostname: "*.belapurpremierleague.com"
         service: http://traefik.traefik-system.svc.cluster.local
+      # spinup.in (Spinup PaaS — control-plane at apex, tenants at *.spinup.in)
+      # Both apex and wildcard needed: cloudflared's single-label wildcard
+      # does NOT cover the bare apex, and the dashboard lives at the apex.
+      - hostname: "spinup.in"
+        service: http://traefik.traefik-system.svc.cluster.local
+      - hostname: "*.spinup.in"
+        service: http://traefik.traefik-system.svc.cluster.local
       # Required catch-all
       - service: http_status:404
 ---
