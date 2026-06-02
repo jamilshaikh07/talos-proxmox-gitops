@@ -16,8 +16,13 @@ spec:
     targetRevision: 5.3.0
     helm:
       values: |
-        # MinIO — S3-compatible object storage for CNPG Barman backups
-        # Homelab test environment — NOT production-grade
+        # MinIO — S3-compatible object storage. Backs two consumers:
+        #   1. CNPG Barman backups (the original reason this was added).
+        #   2. The paas container registry (registry.paas-system.svc)
+        #      via its s3aws storage driver — every successful kaniko
+        #      build writes its image blobs here before the runtime
+        #      pulls them.
+        # Homelab test environment — NOT production-grade.
 
         mode: standalone
         replicas: 1
@@ -27,13 +32,23 @@ spec:
           storageClass: "local-path"
           size: 20Gi
 
+        # Memory sized for the registry-blob-push workload, not for
+        # MinIO's idle steady-state. A single kaniko push of a Node-
+        # heavy image (react + node_modules ≈ 200 MB compressed) can
+        # spike RSS past 512Mi while MinIO buffers the multipart
+        # upload from the registry; the previous 512Mi cap was
+        # producing chronic OOMKills (exit 137) mid-push, surfacing
+        # to users as "UNAVAILABLE: service unavailable" / "UNKNOWN:
+        # unknown error; DriverName:s3aws" from the registry. 2Gi
+        # gives ~4x headroom for the worst burst we've seen; the
+        # worker has another ~7Gi free if we ever need to raise it.
         resources:
           requests:
             cpu: 100m
-            memory: 256Mi
+            memory: 512Mi
           limits:
             cpu: 500m
-            memory: 512Mi
+            memory: 2Gi
 
         # MinIO credentials (test environment — plain secret)
         rootUser: minioadmin
