@@ -1,0 +1,93 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: loki
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+spec:
+  destination:
+    namespace: monitoring
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    chart: loki
+    repoURL: https://grafana.github.io/helm-charts
+    targetRevision: 6.30.0
+    helm:
+      values: |
+        deploymentMode: SingleBinary
+
+        loki:
+          auth_enabled: false
+          commonConfig:
+            replication_factor: 1
+          storage:
+            type: s3
+            bucketNames:
+              chunks: loki-chunks
+              ruler: loki-ruler
+              admin: loki-chunks
+            s3:
+              endpoint: http://minio.minio-system.svc:9000
+              region: us-east-1
+              accessKeyId: minioadmin
+              secretAccessKey: minioadmin123
+              insecure: true
+              s3ForcePathStyle: true
+          schemaConfig:
+            configs:
+              - from: "2024-01-01"
+                store: tsdb
+                object_store: s3
+                schema: v13
+                index:
+                  prefix: loki_index_
+                  period: 24h
+          limits_config:
+            retention_period: 7d
+            ingestion_rate_mb: 16
+            ingestion_burst_size_mb: 32
+            max_query_lookback: 168h
+
+        singleBinary:
+          replicas: 1
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 384Mi
+          persistence:
+            enabled: true
+            storageClass: local-path
+            size: 2Gi
+
+        # Disable scalable-mode components
+        read:
+          replicas: 0
+        write:
+          replicas: 0
+        backend:
+          replicas: 0
+
+        # No gateway or built-in minio — using cluster Minio
+        gateway:
+          enabled: false
+        minio:
+          enabled: false
+
+        # Disable test pod
+        test:
+          enabled: false
+        lokiCanary:
+          enabled: false
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false
+      - ServerSideApply=true
