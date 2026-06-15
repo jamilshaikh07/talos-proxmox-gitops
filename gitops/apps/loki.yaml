@@ -78,6 +78,13 @@ spec:
         minio:
           enabled: false
 
+        # Disable memcached caches — default requests 9.8Gi which exhausts
+        # the worker node. Homelab doesn't need query caching.
+        chunksCache:
+          enabled: false
+        resultsCache:
+          enabled: false
+
         # Disable test pod
         test:
           enabled: false
