@@ -84,19 +84,49 @@ Run `make help` for the full list of targets.
 
 ### Network Layout
 
+**Proxmox is physically hosted at a remote location (friend's office), accessible only via Tailscale.**
+
 | Role | IP(s) |
 |------|-------|
-| Proxmox host | 10.20.0.10 (vmbr0) |
-| OPNsense WAN | vmbr0 (shared with Proxmox mgmt → home router) |
-| OPNsense LAN | 192.168.60.1 (vmbr2 — internal, no NIC) |
+| Proxmox host | 10.20.0.10 (vmbr0, office LAN) · **100.127.198.7** (Tailscale) |
+| Proxmox on cluster bridge | 192.168.60.2 (vmbr2) |
+| OPNsense WAN | vmbr0 (office LAN, DHCP) |
+| OPNsense LAN | 192.168.60.1 (vmbr2 — internal bridge) |
 | Control plane (VM) | 192.168.60.40 |
 | Worker 1 (VM) | 192.168.60.41 |
 | MetalLB pool | 192.168.60.81-99 |
 | Traefik LB / services | 192.168.60.81 |
 | k8s-gateway DNS | 192.168.60.82 |
+| TrueNAS (home, backup) | 10.20.0.45 (home LAN) · **100.124.83.72** (Tailscale) |
 
 All Talos VMs are on the internal `vmbr2` bridge (192.168.60.0/24), routed via OPNsense (VM 102).
 Services are accessible at `*.lab.jamilshaikh.in` (resolved via `/etc/hosts` entries pointing to 192.168.60.81).
+
+#### Remote access
+
+```bash
+make tunnel   # SSH port-forward localhost:16443 → 192.168.60.40:6443 via Proxmox Tailscale
+              # Required before using kubectl / talosctl from a non-office machine
+```
+
+`prox` SSH alias in `~/.ssh/config` targets `100.127.198.7` (Tailscale). Tailscale must be active on both
+your local machine and Proxmox for any cluster access.
+
+#### Backup path (Velero → TrueNAS MinIO)
+
+Cluster pods cannot reach TrueNAS directly (different physical networks). Traffic routes via a socat
+proxy running on Proxmox at `192.168.60.2:9900`, which forwards over Tailscale to TrueNAS MinIO at
+`100.124.83.72:9900`. The proxy is a systemd service (`minio-proxy.service`) on Proxmox and starts
+automatically on boot.
+
+```
+velero pod → 192.168.60.2:9900 (socat, Proxmox vmbr2)
+           → 100.124.83.72:9900 (TrueNAS, Tailscale)
+           → MinIO bucket: velero / backups/
+```
+
+Velero BackupStorageLocation `default` is configured with `s3Url: http://192.168.60.2:9900`.
+Daily backups run at 02:30 UTC via the `daily-full` schedule.
 
 ## CI/CD
 
@@ -119,5 +149,7 @@ Examples: `fix(cloudflared): re-enable probes`, `feat(autofix-dojo): add SOPS-en
 - Version upgrades: update `talos_version` / `kubernetes_version` / `cilium_version` in `ansible/roles/talos-cluster/vars/main.yml`, then re-run Layer 2
 - Adding new ArgoCD apps: create a YAML in `gitops/apps/`, it's auto-discovered by app-of-apps
 - Adding new Flux apps: create a `HelmRelease` in `gitops/flux/apps/` and reference it in `gitops/flux/apps/kustomization.yaml`
-- **OPNsense VM (ID 102):** Router for the Talos cluster. WAN on `vmbr0` (gets DHCP from home router), LAN on `vmbr2` (`192.168.60.1/24`). Provides DHCP with static reservations for Talos nodes (MAC-based). Managed manually — not in Terraform.
-- **metrics-server** is managed by Flux (not ArgoCD) — see `gitops/flux/apps/metrics-server.yaml`
+- **OPNsense VM (ID 102):** Router for the Talos cluster. WAN on `vmbr0` (gets DHCP from office router), LAN on `vmbr2` (`192.168.60.1/24`). Provides DHCP with static reservations for Talos nodes (MAC-based). Managed manually — not in Terraform.
+- **Flux kustomization `oee-sites-pnl`** is suspended — it managed pnl-postgres and homelab-postgres DR clusters which have been removed. Do not resume unless intentionally restoring those workloads.
+- **Velero** is deployed out-of-band (not in ArgoCD/Flux). BSL points to `http://192.168.60.2:9900`. If the proxy goes down, SSH into `prox` and `systemctl restart minio-proxy`.
+- **metrics-server** is managed by ArgoCD (`gitops/apps/` was removed — if you need `kubectl top`, re-add it)
