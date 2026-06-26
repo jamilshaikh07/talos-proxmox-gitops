@@ -140,6 +140,24 @@ type(scope): description
 
 Examples: `fix(cloudflared): re-enable probes`, `feat(autofix-dojo): add SOPS-encrypted secret`, `chore(helm): critical upgrades`. Main branch is `master`.
 
+## spinup.in — Hosted PaaS (DO NOT TOUCH)
+
+**[spinup.in](https://spinup.in)** is a live, multi-tenant PaaS running on this cluster — a self-hosted Vercel clone.
+
+- **Source code:** `~/workspace/homelab/100k/mvp/vercel-clone` — **never modify this via gitops repo tooling**
+- **How it works:** GitHub webhook → Cloudflare Tunnel → Traefik → `control-plane` Go service → Kaniko build job → deploy to `paas-tenant-<username>` namespace
+- **Self-healing CI:** push to `vercel-clone` main branch → control-plane redeploys itself within ~3 min
+
+**Cluster namespaces (never delete any of these):**
+
+| Namespace | Contents |
+|-----------|----------|
+| `paas-system` | `control-plane` Go service, `registry` (image push), `paas-db` CNPG cluster |
+| `paas-deployments` | Kaniko build jobs + sample/test apps |
+| `paas-tenant-<user>` | Live tenant app deployments (one namespace per user) |
+
+The `paas-db` CNPG cluster in `paas-system` is the operational database for the control-plane. Deleting it = losing all tenant metadata.
+
 ## Important Notes
 
 - Talos configs in `talos-homelab-cluster/` are generated and gitignored — never commit them
@@ -152,4 +170,4 @@ Examples: `fix(cloudflared): re-enable probes`, `feat(autofix-dojo): add SOPS-en
 - **OPNsense VM (ID 102):** Router for the Talos cluster. WAN on `vmbr0` (gets DHCP from office router), LAN on `vmbr2` (`192.168.60.1/24`). Provides DHCP with static reservations for Talos nodes (MAC-based). Managed manually — not in Terraform.
 - **Flux kustomization `oee-sites-pnl`** is suspended — it managed pnl-postgres and homelab-postgres DR clusters which have been removed. Do not resume unless intentionally restoring those workloads.
 - **Velero** is deployed out-of-band (not in ArgoCD/Flux). BSL points to `http://192.168.60.2:9900`. If the proxy goes down, SSH into `prox` and `systemctl restart minio-proxy`.
-- **metrics-server** is managed by ArgoCD (`gitops/apps/` was removed — if you need `kubectl top`, re-add it)
+- **metrics-server** was removed from ArgoCD (`gitops/apps/metrics-server.yaml` deleted) — re-add if `kubectl top` is needed again.

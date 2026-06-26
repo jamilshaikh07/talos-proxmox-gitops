@@ -84,7 +84,7 @@ Browser → /etc/hosts → 192.168.60.81 (Traefik) → backend
   - Single default StorageClass: `local-path`
 - **Failure Recovery**: Automatic Talos VM cleanup on configuration failure
 
-### GitOps Applications (all managed by ArgoCD)
+### GitOps Applications (ArgoCD — app-of-apps)
 
 | App | Version | Purpose |
 |-----|---------|-------|
@@ -93,15 +93,39 @@ Browser → /etc/hosts → 192.168.60.81 (Traefik) → backend
 | Traefik | v39.x | Ingress controller (VIP: `192.168.60.81`) |
 | Cilium | v1.16.5 | eBPF CNI + network policy |
 | cert-manager | v1.20.1 | Internal CA + TLS automation |
-| trust-manager | latest | CA bundle distribution |
 | CoreDNS k8s-gateway | latest | Internal DNS (`*.lab.jamilshaikh.in → 192.168.60.81`) |
 | external-dns | v0.20.0 | Auto-manage Cloudflare DNS records |
 | Cloudflared | latest | Cloudflare Zero Trust tunnel |
+| CloudNativePG | latest | PostgreSQL operator |
 | VictoriaMetrics stack | v0.72.6 | Prometheus-compatible metrics + Grafana |
+| Loki + Promtail | v6.30.0 | Log aggregation (backed by MinIO) |
 | Uptime Kuma | v2.22.0 | Service uptime monitoring |
 | Trivy Operator | latest | In-cluster security scanning |
+| MinIO | latest | S3-compatible object storage (loki logs, etcd backups) |
 | local-path-provisioner | latest | Default StorageClass (`local-path`) |
-| metrics-server | 3.13.0 | Kubernetes resource metrics (HPA/VPA) |
+| KubeWise | custom | K8s cost & performance advisor (https://github.com/jamilshaikh08/kubewise) |
+| bpl-stage / bpl-prod | custom | BPL app (stage + prod environments) |
+
+### Out-of-band (not in ArgoCD)
+
+| Component | Namespace | Purpose |
+|-----------|-----------|---------|
+| Velero | `velero` | Cluster backups → TrueNAS MinIO via Tailscale proxy |
+| Flux | `flux-system` | Manages `homelab-postgres` CNPG cluster |
+| homelab-postgres | `homelab-postgres` | Shared CNPG cluster for homelab apps |
+| spinup.in (PaaS) | `paas-system`, `paas-deployments`, `paas-tenant-*` | See below |
+
+### spinup.in — Self-hosted PaaS
+
+**[spinup.in](https://spinup.in)** is a self-hosted Vercel clone running on this cluster. Connect a GitHub repo, `git push`, get a live URL — backed by Talos Kubernetes.
+
+- **Source:** `~/workspace/homelab/100k/mvp/vercel-clone` — **do not touch via this repo's tooling**
+- **Namespace:** `paas-system` (control-plane Go service + CNPG DB + container registry)
+- **Tenant workloads:** `paas-deployments` (builds), `paas-tenant-<username>` (live apps)
+- **Deployment:** self-rebuilding — push to vercel-clone `main` → control-plane redeploys within ~3 min
+- **CI path:** GitHub webhook → Cloudflare Tunnel → Traefik → `control-plane` → Kaniko build → deploy
+
+> **Never delete `paas-*` namespaces or the `paas-db` CNPG cluster.** These are live production workloads for spinup.in tenants.
 
 ### Automation
 
@@ -194,16 +218,20 @@ kubectl create secret generic cloudflared-credentials \
 
 ## Network Configuration
 
+> **Note:** Proxmox is physically hosted at a remote location (friend's office). Cluster access requires Tailscale to be active. Use `make tunnel` to set up kubectl access.
+
 | Component | IP Address | Description |
 |-----------|------------|-------------|
-| Proxmox host | 10.20.0.10 | Proxmox management (vmbr0) |
-| OPNsense WAN | 10.20.0.x (DHCP) | Shared vmbr0 → home router |
+| Proxmox host | 10.20.0.10 (LAN) · 100.127.198.7 (Tailscale) | Proxmox management — **remote, Tailscale only** |
+| Proxmox vmbr2 | 192.168.60.2 | Proxmox on cluster bridge (used by MinIO proxy) |
+| OPNsense WAN | 10.20.0.x (DHCP) | Shared vmbr0 → office router |
 | OPNsense LAN | 192.168.60.1 | Internal gateway (vmbr2) |
 | Control Plane | 192.168.60.40 | Talos master node |
 | Worker 1 | 192.168.60.41 | Talos worker node |
 | MetalLB Pool | 192.168.60.81–99 | Load balancer IP range |
 | Traefik VIP | 192.168.60.81 | Ingress controller |
 | k8s-gateway VIP | 192.168.60.82 | Internal DNS server |
+| TrueNAS (home) | 10.20.0.45 (LAN) · 100.124.83.72 (Tailscale) | Backup target — MinIO on port 9900 |
 
 ## Service Access
 
