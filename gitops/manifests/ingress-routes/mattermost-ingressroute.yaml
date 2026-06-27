@@ -1,0 +1,14 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: mattermost
+  namespace: mattermost
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: Host(`mattermost.lab.jamilshaikh.in`)
+      kind: Rule
+      services:
+        - name: mattermost-mattermost
+          port: 8065

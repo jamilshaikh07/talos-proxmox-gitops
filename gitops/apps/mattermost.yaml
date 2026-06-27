@@ -1,0 +1,60 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: mattermost
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/instance: app-of-apps
+  annotations:
+    argocd.argoproj.io/sync-wave: "6"
+spec:
+  project: default
+  source:
+    chart: mattermost
+    repoURL: https://helm.mattermost.com
+    targetRevision: 2.8.0
+    helm:
+      values: |
+        global:
+          siteUrl: "http://mattermost.lab.jamilshaikh.in"
+
+        features:
+          database:
+            driver: "postgres"
+            existingDatabaseSecret:
+              name: mattermost-db-app
+              key: uri
+          fileStore:
+            driver: "amazons3"
+            url: "http://minio.minio-system.svc.cluster.local:9000"
+            bucket: "mattermost"
+            region: "us-east-1"
+            existingSecret:
+              name: mattermost-s3-creds
+              accessKeyIdKey: accessKeyId
+              secretAccessKeyKey: secretAccessKey
+
+        mattermostApp:
+          replicaCount: 1
+          resources:
+            requests:
+              cpu: 100m
+              memory: 512Mi
+            limits:
+              cpu: 500m
+              memory: 1Gi
+          service:
+            type: ClusterIP
+
+        serviceAccount:
+          create: false
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: mattermost
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
