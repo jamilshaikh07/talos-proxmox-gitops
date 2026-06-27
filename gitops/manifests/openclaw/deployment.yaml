@@ -30,9 +30,11 @@ spec:
             - sh
             - -c
             - |
+              mkdir -p /data/.openclaw/logs /data/.openclaw/workspace
+              chown -R 1000:1000 /data/.openclaw
               if [ ! -f /data/.openclaw/openclaw.json ]; then
-                mkdir -p /data/.openclaw
                 cp /config/openclaw.json /data/.openclaw/openclaw.json
+                chown 1000:1000 /data/.openclaw/openclaw.json
                 echo "Config seeded from secret."
               else
                 echo "Config already exists, skipping seed."
