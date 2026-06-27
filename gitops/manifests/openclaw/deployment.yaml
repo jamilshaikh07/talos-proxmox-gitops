@@ -16,6 +16,8 @@ spec:
       serviceAccountName: openclaw
       securityContext:
         fsGroup: 1000
+      imagePullSecrets:
+        - name: ghcr-pull-secret
       # Worker node — leave control plane alone
       nodeSelector:
         kubernetes.io/hostname: talos-wk-01
