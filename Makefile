@@ -453,7 +453,7 @@ setup-dns: ## Add internal *.lab.jamilshaikh.in domains to /etc/hosts
 		echo "$(YELLOW)Adding internal homelab domains...$(NC)"; \
 		echo "" | sudo tee -a /etc/hosts; \
 		echo "# Homelab Internal Services (*.lab.jamilshaikh.in)" | sudo tee -a /etc/hosts; \
-		echo "192.168.60.81 prometheus.lab.jamilshaikh.in traefik.lab.jamilshaikh.in" | sudo tee -a /etc/hosts; \
+		echo "192.168.60.81 prometheus.lab.jamilshaikh.in traefik.lab.jamilshaikh.in mattermost.lab.jamilshaikh.in" | sudo tee -a /etc/hosts; \
 		echo "$(GREEN)✅ DNS configuration added to /etc/hosts$(NC)"; \
 	fi
 	@echo ""
