@@ -14,6 +14,8 @@ spec:
         app: openclaw
     spec:
       serviceAccountName: openclaw
+      securityContext:
+        fsGroup: 1000
       # Worker node — leave control plane alone
       nodeSelector:
         kubernetes.io/hostname: talos-wk-01
@@ -48,12 +50,13 @@ spec:
           env:
             - name: HOME
               value: /home/node
-            # Anthropic API key for news digests + prospect-hunter
+            # Anthropic API key for news digests + prospect-hunter (update secret when key is ready)
             - name: ANTHROPIC_API_KEY
               valueFrom:
                 secretKeyRef:
                   name: openclaw-tokens
                   key: ANTHROPIC_API_KEY
+                  optional: true
             # Gemini API key (free tier for fallback)
             - name: GOOGLE_GENERATIVE_AI_API_KEY
               valueFrom:
@@ -87,7 +90,7 @@ spec:
           secret:
             secretName: openclaw-talosconfig
             items:
-              - key: talosconfig
+              - key: config
                 path: config
         - name: config-template
           secret:
