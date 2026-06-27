@@ -129,17 +129,33 @@ Migrated `jobs.json` from noon machine, applied these changes:
 | `talos-health-check` | model → `ollama/qwen2.5:7b`, IPs: `192.168.60.40/41`, `talos-wk-04` → `talos-wk-01`, enabled |
 | `argocd-sync-check` | model → `ollama/qwen2.5:7b`, enabled |
 | `tech-news-digest` | model → `anthropic/claude-haiku-4-5-20251001`, prompt rewritten to inline Node.js RSS fetch (no Python dependency) |
-| `prospect-hunter` | model → `anthropic/claude-sonnet-4-6`, **disabled** (needs Anthropic API key) |
+| `prospect-hunter` | model → `anthropic/claude-sonnet-4-6`, initially disabled pending API key |
 
-The `jobs.json` was copied to the PVC. On next restart, openclaw auto-migrated it from JSON to SQLite (`~/.openclaw/cron/jobs.json` is now a SQLite DB).
+The `jobs.json` was injected via `kubectl cp` to the live pod's PVC. On next restart, openclaw auto-migrated it from JSON to SQLite at `~/.openclaw/state/openclaw.sqlite` and renamed the original to `jobs.json.migrated`.
 
-**Noon machine cleanup:** The `openclaw-gateway.service` user systemd service on `noon` was stopped and disabled to prevent Telegram polling conflicts.
+**SQLite WAL gotcha:** The cron_jobs data landed in the WAL (Write-Ahead Log), not the main DB file. Direct `kubectl cp` of `openclaw.sqlite` returned an empty `cron_jobs` table until the WAL was checkpointed. Fix: copy all three files (`openclaw.sqlite`, `.sqlite-shm`, `.sqlite-wal`), checkpoint locally with `PRAGMA wal_checkpoint(FULL)`, edit, copy back.
+
+**Noon machine cleanup:** The `openclaw-gateway.service` user systemd service on `noon` (`100.123.217.1`) was confirmed stopped before migration to avoid Telegram polling conflicts.
+
+## Step 5: Anthropic API Key + Full Activation (2026-06-27)
+
+1. Created Anthropic API key at console.anthropic.com (spending cap set), wrote to `/tmp/ant-key`
+2. Updated `openclaw-tokens` Secret preserving existing `GEMINI_API_KEY`:
+   ```bash
+   kubectl create secret generic openclaw-tokens -n openclaw \
+     --from-literal=ANTHROPIC_API_KEY=$(cat /tmp/ant-key) \
+     --from-literal=GEMINI_API_KEY=<existing> \
+     --dry-run=client -o yaml | kubectl apply -f -
+   shred -u /tmp/ant-key
+   ```
+3. Re-enabled `prospect-hunter` in SQLite: copied WAL-checkpointed DB, set `enabled=1`, copied back
+4. Restarted pod — both `ollama/qwen2.5:7b` and `anthropic/claude-haiku-4-5-20251001` auto-detected, Telegram up, all 6 crons active
 
 ## Known Gaps
 
-- **Anthropic API key missing:** `openclaw-tokens` Secret has `ANTHROPIC_API_KEY: REPLACE_ME`. Until set, `tech-news-digest` and `prospect-hunter` will fail. Fix: create key at console.anthropic.com (set a spending cap), then run `kubectl create secret generic openclaw-tokens -n openclaw --from-literal=ANTHROPIC_API_KEY=sk-ant-... --from-literal=GEMINI_API_KEY=<existing> --dry-run=client -o yaml | kubectl apply -f -`. Then re-enable `prospect-hunter` in the SQLite DB.
 - **Slack not connecting:** `channels.slack` shows `mode: socket` and valid tokens, but no Slack startup log entries. Likely the Slack app-level token (`xapp-...`) has expired or the Socket Mode configuration changed. Investigate via Slack App settings → Socket Mode. Telegram is working fine in the meantime.
 - **GitHub Actions for image builds:** `.github/workflows/build-openclaw.yml` exists locally (untracked). Needs `workflow` token scope: `gh auth refresh -s workflow`. Until then, build and push manually.
+- **PodSecurity warnings:** `allowPrivilegeEscalation != false`, `capabilities.drop != ALL`, `runAsNonRoot != true`. Not blocking (warnings only) — address in a future hardening pass.
 
 ---
 
@@ -152,4 +168,4 @@ The `jobs.json` was copied to the PVC. On next restart, openclaw auto-migrated i
 | `talos-health-check` | every 1h | `ollama/qwen2.5:7b` | `#devops` | etcd, node memory/disk |
 | `argocd-sync-check` | every 30m | `ollama/qwen2.5:7b` | `#devops` | App sync drift |
 | `tech-news-digest` | 8:10 AM IST | `claude-haiku-4-5-20251001` | Telegram DM | K8s/DevOps/AI digest (inline Node.js RSS) |
-| `prospect-hunter` | Mon 9:00 AM IST | `claude-sonnet-4-6` | `#business` | Maharashtra pharma/chemical leads **(disabled — needs API key)** |
+| `prospect-hunter` | Mon 9:00 AM IST | `claude-sonnet-4-6` | `#business` | Maharashtra pharma/chemical leads |
