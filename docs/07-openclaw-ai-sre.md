@@ -43,8 +43,8 @@ Monitoring crons run every 15-30 minutes. 96 runs/day × Sonnet pricing = expens
 **Why qwen2.5:7b specifically?**
 - Reliable tool calling (monitoring agents need to exec kubectl/talosctl)
 - 4.7GB model weight — fits comfortably on worker node (9GB free RAM)
-- 128k context window (openclaw requires 64k minimum for agentic loops)
-- Fast enough on CPU for non-realtime crons (30-60s per run is fine)
+- 128k context window natively; openclaw configured at 16384 (covers system prompt ~8-10K + 3-5 kubectl tool call results + response)
+- `OLLAMA_KEEP_ALIVE=2h` — model stays warm across cron runs, eliminates 30-60s cold load penalty
 
 ## Step 1: Ollama on Kubernetes
 

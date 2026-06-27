@@ -39,7 +39,7 @@ spec:
             - name: OLLAMA_HOST
               value: "0.0.0.0:11434"
             - name: OLLAMA_KEEP_ALIVE
-              value: "15m"
+              value: "2h"
             - name: OLLAMA_NUM_PARALLEL
               value: "1"
           resources:

@@ -104,5 +104,6 @@ secrets/
 node_modules/
 *.crt
 *.json
+!gitops/manifests/openclaw/openclaw-config.json
 secrets.txt
 ansible/terraform-inventory.json

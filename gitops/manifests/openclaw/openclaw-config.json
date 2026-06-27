@@ -1,0 +1,91 @@
+{
+    "meta": {
+        "lastTouchedVersion": "2026.6.10"
+    },
+    "gateway": {
+        "port": 18789,
+        "mode": "local",
+        "bind": "auto",
+        "auth": {
+            "mode": "token",
+            "token": "REPLACE_WITH_GATEWAY_TOKEN"
+        },
+        "tailscale": {
+            "mode": "off",
+            "resetOnExit": false
+        }
+    },
+    "agents": {
+        "defaults": {
+            "model": {
+                "primary": "ollama/qwen2.5:7b",
+                "fallbacks": [
+                    "anthropic/claude-haiku-4-5-20251001"
+                ]
+            },
+            "models": {
+                "ollama/qwen2.5:7b": {},
+                "anthropic/claude-haiku-4-5-20251001": {},
+                "anthropic/claude-sonnet-4-6": {}
+            },
+            "workspace": "/home/node/.openclaw/workspace",
+            "compaction": {
+                "mode": "safeguard"
+            },
+            "maxConcurrent": 4,
+            "subagents": {
+                "maxConcurrent": 8
+            }
+        }
+    },
+    "models": {
+        "providers": {
+            "ollama": {
+                "baseUrl": "http://ollama.ollama.svc.cluster.local:11434",
+                "apiKey": "ollama-local",
+                "api": "ollama",
+                "timeoutSeconds": 300,
+                "contextWindow": 16384,
+                "models": [
+                    {
+                        "id": "qwen2.5:7b",
+                        "name": "qwen2.5:7b",
+                        "contextWindow": 16384,
+                        "params": {
+                            "num_ctx": 16384,
+                            "keep_alive": "2h"
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    "messages": {
+        "ackReactionScope": "group-mentions"
+    },
+    "commands": {
+        "native": "auto",
+        "nativeSkills": "auto",
+        "restart": true,
+        "ownerDisplay": "raw"
+    },
+    "hooks": {
+        "internal": {
+            "enabled": true,
+            "entries": {
+                "session-memory": {
+                    "enabled": true
+                }
+            }
+        }
+    },
+    "channels": {
+        "mattermost": {
+            "enabled": true,
+            "baseUrl": "https://mattermost.jamilshaikh.in",
+            "botToken": "REPLACE_WITH_MATTERMOST_BOT_TOKEN",
+            "chatmode": "oncall",
+            "dmPolicy": "pairing"
+        }
+    }
+}
