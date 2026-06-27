@@ -124,14 +124,12 @@ Migrated `jobs.json` from noon machine, applied these changes:
 
 | Job | Change |
 |---|---|
-| `cluster-health-check` | model → `ollama/qwen2.5:7b`, IPs updated, enabled |
+| `cluster-health-check` | model → `ollama/qwen2.5:7b`, IPs updated to `192.168.60.40/41`, enabled |
 | `critical-alert-check` | model → `ollama/qwen2.5:7b`, enabled |
 | `talos-health-check` | model → `ollama/qwen2.5:7b`, IPs: `192.168.60.40/41`, `talos-wk-04` → `talos-wk-01`, enabled |
 | `argocd-sync-check` | model → `ollama/qwen2.5:7b`, enabled |
-| `tech-news-digest` | kept `google/gemini-2.5-flash-lite` (free tier) |
-| `daily-ai-news` | kept `google/gemini-2.5-flash-lite` (free tier) |
-| `prospect-hunter` | model → `anthropic/claude-sonnet-4-6` |
-| `test-minimal` | disabled |
+| `tech-news-digest` | model → `anthropic/claude-haiku-4-5-20251001`, prompt rewritten to inline Node.js RSS fetch (no Python dependency) |
+| `prospect-hunter` | model → `anthropic/claude-sonnet-4-6`, **disabled** (needs Anthropic API key) |
 
 The `jobs.json` was copied to the PVC. On next restart, openclaw auto-migrated it from JSON to SQLite (`~/.openclaw/cron/jobs.json` is now a SQLite DB).
 
@@ -139,6 +137,7 @@ The `jobs.json` was copied to the PVC. On next restart, openclaw auto-migrated i
 
 ## Known Gaps
 
+- **Anthropic API key missing:** `openclaw-tokens` Secret has `ANTHROPIC_API_KEY: REPLACE_ME`. Until set, `tech-news-digest` and `prospect-hunter` will fail. Fix: create key at console.anthropic.com (set a spending cap), then run `kubectl create secret generic openclaw-tokens -n openclaw --from-literal=ANTHROPIC_API_KEY=sk-ant-... --from-literal=GEMINI_API_KEY=<existing> --dry-run=client -o yaml | kubectl apply -f -`. Then re-enable `prospect-hunter` in the SQLite DB.
 - **Slack not connecting:** `channels.slack` shows `mode: socket` and valid tokens, but no Slack startup log entries. Likely the Slack app-level token (`xapp-...`) has expired or the Socket Mode configuration changed. Investigate via Slack App settings → Socket Mode. Telegram is working fine in the meantime.
 - **GitHub Actions for image builds:** `.github/workflows/build-openclaw.yml` exists locally (untracked). Needs `workflow` token scope: `gh auth refresh -s workflow`. Until then, build and push manually.
 
@@ -152,6 +151,5 @@ The `jobs.json` was copied to the PVC. On next restart, openclaw auto-migrated i
 | `critical-alert-check` | every 30m | `ollama/qwen2.5:7b` | `#alerts` | CrashLoop, OOMKill, node NotReady |
 | `talos-health-check` | every 1h | `ollama/qwen2.5:7b` | `#devops` | etcd, node memory/disk |
 | `argocd-sync-check` | every 30m | `ollama/qwen2.5:7b` | `#devops` | App sync drift |
-| `daily-ai-news` | 8:00 AM IST | `claude-haiku-4-5` | Telegram DM | AI industry digest |
-| `tech-news-digest` | 8:15 AM IST | `claude-haiku-4-5` | Telegram DM | K8s/DevOps/security digest |
-| `prospect-hunter` | Mon 9:00 AM IST | `claude-sonnet-4-6` | `#business` | Maharashtra pharma/chemical leads |
+| `tech-news-digest` | 8:10 AM IST | `claude-haiku-4-5-20251001` | Telegram DM | K8s/DevOps/AI digest (inline Node.js RSS) |
+| `prospect-hunter` | Mon 9:00 AM IST | `claude-sonnet-4-6` | `#business` | Maharashtra pharma/chemical leads **(disabled — needs API key)** |
