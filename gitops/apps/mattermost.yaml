@@ -45,6 +45,14 @@ spec:
               memory: 1Gi
           service:
             type: ClusterIP
+          extraEnv:
+            - name: MM_SQLSETTINGS_DRIVERNAME
+              value: postgres
+            - name: MM_SQLSETTINGS_DATASOURCE
+              valueFrom:
+                secretKeyRef:
+                  name: mattermost-db-app
+                  key: uri
 
         serviceAccount:
           create: false
