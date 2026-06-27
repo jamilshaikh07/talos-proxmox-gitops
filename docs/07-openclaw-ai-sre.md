@@ -1,6 +1,6 @@
 # BTS: openclaw AI SRE — K8s Deployment
 
-> Started: 2026-06-27 | Status: In Progress
+> Started: 2026-06-27 | Status: Done (Steps 1–4 complete)
 
 ## What is openclaw?
 
@@ -118,18 +118,29 @@ Key design decisions:
 
 ## Step 4: Cron Model Routing
 
-> Status: Planned
+> Status: Done
 
-Update `jobs.json` model references:
-- All 4 monitoring crons: `google/gemini-2.5-flash` → `ollama/qwen2.5:7b`
-- News digests: stay on a cloud model (Haiku)
-- Prospect hunter: Sonnet
+Migrated `jobs.json` from noon machine, applied these changes:
 
-Re-enable all 4 monitoring crons pointing at the new cluster IPs:
-- Control plane: `192.168.60.40`
-- Worker: `192.168.60.41`
-- kubectl via in-cluster ServiceAccount (no kubeconfig needed for in-cluster)
-- talosctl via mounted talosconfig
+| Job | Change |
+|---|---|
+| `cluster-health-check` | model → `ollama/qwen2.5:7b`, IPs updated, enabled |
+| `critical-alert-check` | model → `ollama/qwen2.5:7b`, enabled |
+| `talos-health-check` | model → `ollama/qwen2.5:7b`, IPs: `192.168.60.40/41`, `talos-wk-04` → `talos-wk-01`, enabled |
+| `argocd-sync-check` | model → `ollama/qwen2.5:7b`, enabled |
+| `tech-news-digest` | kept `google/gemini-2.5-flash-lite` (free tier) |
+| `daily-ai-news` | kept `google/gemini-2.5-flash-lite` (free tier) |
+| `prospect-hunter` | model → `anthropic/claude-sonnet-4-6` |
+| `test-minimal` | disabled |
+
+The `jobs.json` was copied to the PVC. On next restart, openclaw auto-migrated it from JSON to SQLite (`~/.openclaw/cron/jobs.json` is now a SQLite DB).
+
+**Noon machine cleanup:** The `openclaw-gateway.service` user systemd service on `noon` was stopped and disabled to prevent Telegram polling conflicts.
+
+## Known Gaps
+
+- **Slack not connecting:** `channels.slack` shows `mode: socket` and valid tokens, but no Slack startup log entries. Likely the Slack app-level token (`xapp-...`) has expired or the Socket Mode configuration changed. Investigate via Slack App settings → Socket Mode. Telegram is working fine in the meantime.
+- **GitHub Actions for image builds:** `.github/workflows/build-openclaw.yml` exists locally (untracked). Needs `workflow` token scope: `gh auth refresh -s workflow`. Until then, build and push manually.
 
 ---
 
