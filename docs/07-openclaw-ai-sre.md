@@ -82,27 +82,37 @@ No GPU on these VMs — CPU inference only. 4 CPU limit prevents Ollama from sta
 
 ## Step 2: openclaw Container Image
 
-> Status: Planned
+> Status: Done — `ghcr.io/jamilshaikh07/openclaw-sre:latest`
 
-Custom image needed because openclaw requires:
-- Node.js 20 runtime
-- `kubectl` (for cluster agents)
-- `talosctl` (for Talos node health agents)
-- `openclaw` npm package
+Base: `node:22-slim` (openclaw requires Node ≥22.19.0). Tools installed at build time:
+- `kubectl v1.34.1` — matches cluster version
+- `talosctl v1.12.6` — matches Talos version
+- `openclaw@latest` — npm install -g
 
-Base: `node:20-slim` + install tools at build time. Image pushed to GHCR.
+Runs as the built-in `node` user (uid 1000). Built and pushed manually to GHCR with `write:packages` scope. A GitHub Actions workflow file exists in the repo but needs the `workflow` token scope to auto-trigger — add via `gh auth refresh -s workflow` when ready.
+
+**Why not `registry.spinup.in`?** That registry uses bcrypt htpasswd auth — we had the hash but not the plaintext password to `docker login`. GHCR worked cleanly with the existing gh token.
 
 ---
 
 ## Step 3: openclaw Deployment
 
-> Status: Planned
+> Status: Done
 
 Key design decisions:
-- PVC mounts at `/home/openclaw/.openclaw` — persists config, cron jobs, workspace across restarts
-- `talosconfig` and `kubeconfig` mounted from Secrets (not baked into image)
-- ServiceAccount with read-only RBAC — agents can observe but never modify cluster state
-- Anthropic API key + Slack/Telegram tokens in a single Secret
+
+**In-cluster kubectl auth:** No kubeconfig mounted. Pod uses its ServiceAccount token (`/var/run/secrets/kubernetes.io/serviceaccount/`) — kubectl auto-detects it via `KUBERNETES_SERVICE_HOST`. Cleaner than mounting an external kubeconfig that can go stale.
+
+**talosctl:** Needs a talosconfig file (cluster CA + endpoints). Mounted from `openclaw-talosconfig` Secret at `/home/node/.talos/config`. The talosconfig is gitignored (contains cluster CA) — recreated from `talos-homelab-cluster/rendered/talosconfig` on rebuild.
+
+**Config seeding:** openclaw.json (with Ollama provider, channel tokens) is stored in a Secret (`openclaw-config`). An init container copies it to the PVC on first boot, then leaves it alone on subsequent starts — so live config changes on the PVC survive pod restarts.
+
+**Secrets required before first deploy (see `README-secrets.md`):**
+1. `openclaw-tokens` — ANTHROPIC_API_KEY + GEMINI_API_KEY
+2. `openclaw-config` — openclaw.json with Slack/Telegram tokens
+3. `openclaw-talosconfig` — already created by `make deploy`
+
+**RBAC:** ClusterRole `openclaw-readonly` — get/list/watch on pods, nodes, events, deployments, statefulsets, daemonsets, ArgoCD applications, metrics. No write permissions anywhere.
 
 ---
 
