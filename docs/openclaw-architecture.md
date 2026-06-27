@@ -6,7 +6,7 @@ flowchart TB
         GH["GitHub\ntalos-proxmox-gitops"]
         GHCR["GHCR\nopenclaw-sre:latest"]
         ANT["Anthropic API\nhaiku-4-5 · sonnet-4-6"]
-        MM["Mattermost\n#devops #alerts #business"]
+        MM["Mattermost\nhttps://mattermost.jamilshaikh.in\n#devops #alerts #business"]
         TG["Telegram\nDM → 6790056175"]
     end
 
@@ -52,7 +52,7 @@ flowchart TB
     OC -->|"kubectl / SA token"| CP
     OC -->|"kubectl + talosctl"| WK
 
-    OC -->|"alerts + health reports"| MM
+    OC -->|"Mattermost Bot API\n(bot token + baseUrl)\nalerts + health reports"| MM
     OC -->|"daily digest"| TG
 ```
 
