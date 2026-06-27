@@ -149,7 +149,7 @@ The `jobs.json` was injected via `kubectl cp` to the live pod's PVC. On next res
    shred -u /tmp/ant-key
    ```
 3. Re-enabled `prospect-hunter` in SQLite: copied WAL-checkpointed DB, set `enabled=1`, copied back
-4. Restarted pod — both `ollama/qwen2.5:7b` and `anthropic/claude-haiku-4-5-20251001` auto-detected, Telegram up, all 6 crons active
+4. Restarted pod — both `ollama/qwen2.5:7b` and `anthropic/claude-haiku-4-5-20251001` auto-detected, all 6 crons active
 
 ## Step 6: Mattermost Migration + Hardening (2026-06-27)
 
@@ -160,7 +160,7 @@ The `jobs.json` was injected via `kubectl cp` to the live pod's PVC. On next res
 
 ## Known Gaps
 
-- **GitHub Actions for image builds:** `.github/workflows/build-openclaw.yml` exists locally (untracked). Needs `workflow` token scope: `gh auth refresh -s workflow`. Until then, build and push manually.
+- **GitHub Actions for image builds:** `.github/workflows/build-openclaw.yml` is committed and auto-triggers on changes to `gitops/manifests/openclaw/`. Uses `GHCR_TOKEN` secret if set, falls back to `GITHUB_TOKEN`.
 
 ## Client Onboarding
 
@@ -176,5 +176,5 @@ The `jobs.json` was injected via `kubectl cp` to the live pod's PVC. On next res
 | `critical-alert-check` | every 30m | `ollama/qwen2.5:7b` | `#alerts` | CrashLoop, OOMKill, node NotReady |
 | `talos-health-check` | every 1h | `ollama/qwen2.5:7b` | `#devops` | etcd, node memory/disk |
 | `argocd-sync-check` | every 30m | `ollama/qwen2.5:7b` | `#devops` | App sync drift |
-| `tech-news-digest` | 8:10 AM IST | `claude-haiku-4-5-20251001` | Telegram DM | K8s/DevOps/AI digest (inline Node.js RSS) |
+| `tech-news-digest` | 8:10 AM IST | `claude-haiku-4-5-20251001` | `#news` | K8s/DevOps/AI digest (inline Node.js RSS) |
 | `prospect-hunter` | Mon 9:00 AM IST | `claude-sonnet-4-6` | `#business` | Maharashtra pharma/chemical leads |

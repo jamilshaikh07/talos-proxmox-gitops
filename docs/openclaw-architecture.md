@@ -6,8 +6,7 @@ flowchart TB
         GH["GitHub\ntalos-proxmox-gitops"]
         GHCR["GHCR\nopenclaw-sre:latest"]
         ANT["Anthropic API\nhaiku-4-5 · sonnet-4-6"]
-        MM["Mattermost\nhttps://mattermost.jamilshaikh.in\n#devops #alerts #business"]
-        TG["Telegram\nDM → 6790056175"]
+        MM["Mattermost\nhttps://mattermost.jamilshaikh.in\n#devops #alerts #business #news"]
     end
 
     subgraph cluster ["Talos K8s Cluster · 192.168.60.0/24"]
@@ -52,8 +51,7 @@ flowchart TB
     OC -->|"kubectl / SA token"| CP
     OC -->|"kubectl + talosctl"| WK
 
-    OC -->|"Mattermost Bot API\n(bot token + baseUrl)\nalerts + health reports"| MM
-    OC -->|"daily digest"| TG
+    OC -->|"Mattermost Bot API\n(bot token + baseUrl)\nalerts + health reports + digest"| MM
 ```
 
 ## Cron → Model Routing
@@ -64,7 +62,7 @@ flowchart TB
 | critical-alert-check | every 30m | `ollama/qwen2.5:7b` | Mattermost #alerts (silent if OK) |
 | talos-health-check | every 1h | `ollama/qwen2.5:7b` | Mattermost #devops |
 | argocd-sync-check | every 30m | `ollama/qwen2.5:7b` | Mattermost #devops |
-| tech-news-digest | daily 8:10 IST | `anthropic/claude-haiku-4-5-20251001` | Telegram DM |
+| tech-news-digest | daily 8:10 IST | `anthropic/claude-haiku-4-5-20251001` | Mattermost #news |
 | prospect-hunter | Mon 9:00 IST | `anthropic/claude-sonnet-4-6` | Mattermost #business |
 
 ## Secret Inventory (imperative — never in git)
