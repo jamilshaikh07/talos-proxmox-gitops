@@ -3,11 +3,13 @@ kind: IngressRoute
 metadata:
   name: mattermost
   namespace: mattermost
+  annotations:
+    external-dns.alpha.kubernetes.io/target: "3a067db9-77b1-49c9-a3d4-30f86d16c80d.cfargotunnel.com"
 spec:
   entryPoints:
     - web
   routes:
-    - match: Host(`mattermost.lab.jamilshaikh.in`)
+    - match: Host(`mattermost.jamilshaikh.in`)
       kind: Rule
       middlewares:
         - name: https-redirect
@@ -30,14 +32,16 @@ kind: IngressRoute
 metadata:
   name: mattermost-tls
   namespace: mattermost
+  annotations:
+    external-dns.alpha.kubernetes.io/target: "3a067db9-77b1-49c9-a3d4-30f86d16c80d.cfargotunnel.com"
 spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`mattermost.lab.jamilshaikh.in`)
+    - match: Host(`mattermost.jamilshaikh.in`)
       kind: Rule
       services:
         - name: mattermost
           port: 8065
   tls:
-    secretName: mattermost-lab-tls
+    secretName: mattermost-tls
