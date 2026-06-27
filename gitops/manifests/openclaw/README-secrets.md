@@ -31,3 +31,15 @@ Token sources:
 kubectl create secret generic openclaw-talosconfig -n openclaw \
   --from-file=talosconfig=talos-homelab-cluster/rendered/talosconfig
 ```
+
+## 4. ghcr-pull-secret (GHCR image pull, private registry)
+
+```bash
+kubectl create secret docker-registry ghcr-pull-secret \
+  -n openclaw \
+  --docker-server=ghcr.io \
+  --docker-username=jamilshaikh07 \
+  --docker-password="$(gh auth token)"
+```
+
+Note: image stays private on GHCR. Recreate this secret if the gh token is rotated.

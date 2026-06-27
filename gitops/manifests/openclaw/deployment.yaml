@@ -92,7 +92,7 @@ spec:
           secret:
             secretName: openclaw-talosconfig
             items:
-              - key: config
+              - key: talosconfig
                 path: config
         - name: config-template
           secret:
