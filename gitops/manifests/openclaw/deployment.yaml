@@ -81,11 +81,6 @@ spec:
             - name: talosconfig
               mountPath: /home/node/.talos
               readOnly: true
-          readinessProbe:
-            tcpSocket:
-              port: 18789
-            initialDelaySeconds: 15
-            periodSeconds: 10
       volumes:
         - name: data
           persistentVolumeClaim:
