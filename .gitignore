@@ -96,6 +96,9 @@ gitops/argocd-apps-backup/
 # Velero backups (local)
 velero-backups/
 
+# Secrets directory — real tokens, configs, keys (never commit)
+secrets/
+
 # Other
 .cache/
 node_modules/
