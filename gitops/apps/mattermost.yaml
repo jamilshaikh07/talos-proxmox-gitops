@@ -16,7 +16,7 @@ spec:
     helm:
       values: |
         global:
-          siteUrl: "http://mattermost.lab.jamilshaikh.in"
+          siteUrl: "https://mattermost.lab.jamilshaikh.in"
 
         features:
           database:

@@ -13,7 +13,7 @@ RUN curl -fsSL https://github.com/siderolabs/talos/releases/download/${TALOS_VER
 
 # openclaw
 ARG OPENCLAW_VERSION=latest
-RUN npm install -g openclaw@${OPENCLAW_VERSION}
+RUN npm install -g openclaw@${OPENCLAW_VERSION} @openclaw/mattermost@latest
 
 # node:22-slim already has a 'node' user at uid 1000 — reuse it
 USER node

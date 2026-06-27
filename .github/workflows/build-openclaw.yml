@@ -1,0 +1,49 @@
+name: Build openclaw image
+
+on:
+  push:
+    paths:
+      - 'gitops/manifests/openclaw/**'
+      - '.github/workflows/build-openclaw.yml'
+    branches: [master]
+  workflow_dispatch:
+    inputs:
+      openclaw_version:
+        description: 'openclaw npm version (default: latest)'
+        default: 'latest'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE: ${{ github.repository_owner }}/openclaw-sre
+
+concurrency:
+  group: build-openclaw-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: gitops/manifests/openclaw
+          file: gitops/manifests/openclaw/Dockerfile
+          push: true
+          build-args: |
+            OPENCLAW_VERSION=${{ inputs.openclaw_version || 'latest' }}
+          tags: |
+            ghcr.io/${{ env.IMAGE }}:latest
+            ghcr.io/${{ env.IMAGE }}:${{ github.sha }}

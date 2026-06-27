@@ -9,6 +9,26 @@ spec:
   routes:
     - match: Host(`mattermost.lab.jamilshaikh.in`)
       kind: Rule
+      middlewares:
+        - name: https-redirect
+          namespace: traefik-system
       services:
         - name: mattermost-mattermost
           port: 8065
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: mattermost-tls
+  namespace: mattermost
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`mattermost.lab.jamilshaikh.in`)
+      kind: Rule
+      services:
+        - name: mattermost-mattermost
+          port: 8065
+  tls:
+    secretName: mattermost-lab-tls

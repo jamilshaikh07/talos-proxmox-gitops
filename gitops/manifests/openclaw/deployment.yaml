@@ -16,6 +16,8 @@ spec:
       serviceAccountName: openclaw
       securityContext:
         fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       imagePullSecrets:
         - name: ghcr-pull-secret
       # Worker node — leave control plane alone
@@ -48,6 +50,12 @@ spec:
         - name: openclaw
           image: ghcr.io/jamilshaikh07/openclaw-sre:latest
           imagePullPolicy: Always
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           ports:
             - containerPort: 18789
               name: gateway

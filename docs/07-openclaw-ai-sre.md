@@ -1,10 +1,10 @@
 # BTS: openclaw AI SRE — K8s Deployment
 
-> Started: 2026-06-27 | Status: Done (Steps 1–4 complete)
+> Started: 2026-06-27 | Status: Done (Steps 1–6 complete)
 
 ## What is openclaw?
 
-[openclaw](https://openclaw.dev) is an AI agent platform (npm SaaS package) that runs scheduled and interactive agents via Slack and Telegram. We use it as an AI SRE — automated agents that watch the cluster and push notifications without needing a human on-call.
+[openclaw](https://openclaw.dev) is an AI agent platform (npm SaaS package) that runs scheduled and interactive agents via Mattermost and Telegram. We use it as an AI SRE — automated agents that watch the cluster and push notifications without needing a human on-call.
 
 Originally ran on a bare-metal Intel i3 Debian machine (`noon`, `100.123.217.1` Tailscale). Moving it to the cluster eliminates the dependency on that machine and brings it under GitOps.
 
@@ -109,7 +109,7 @@ Key design decisions:
 
 **Secrets required before first deploy (see `README-secrets.md`):**
 1. `openclaw-tokens` — ANTHROPIC_API_KEY + GEMINI_API_KEY
-2. `openclaw-config` — openclaw.json with Slack/Telegram tokens
+2. `openclaw-config` — openclaw.json with Mattermost/Telegram tokens
 3. `openclaw-talosconfig` — already created by `make deploy`
 
 **RBAC:** ClusterRole `openclaw-readonly` — get/list/watch on pods, nodes, events, deployments, statefulsets, daemonsets, ArgoCD applications, metrics. No write permissions anywhere.
@@ -151,17 +151,26 @@ The `jobs.json` was injected via `kubectl cp` to the live pod's PVC. On next res
 3. Re-enabled `prospect-hunter` in SQLite: copied WAL-checkpointed DB, set `enabled=1`, copied back
 4. Restarted pod — both `ollama/qwen2.5:7b` and `anthropic/claude-haiku-4-5-20251001` auto-detected, Telegram up, all 6 crons active
 
+## Step 6: Mattermost Migration + Hardening (2026-06-27)
+
+1. Switched OpenClaw channel config template from `channels.slack` (socket mode) to `channels.mattermost` (bot token + base URL).
+2. Added Mattermost plugin install in image build (`@openclaw/mattermost`) alongside `openclaw` CLI.
+3. Updated secrets runbook to source `MATTERMOST_BOT_TOKEN` from Mattermost Bot Accounts.
+4. Applied small pod hardening in deployment: `seccompProfile: RuntimeDefault`, `runAsNonRoot: true`, `allowPrivilegeEscalation: false`, `capabilities.drop: [ALL]`.
+
 ## Known Gaps
 
-- **Slack not connecting:** `channels.slack` shows `mode: socket` and valid tokens, but no Slack startup log entries. Likely the Slack app-level token (`xapp-...`) has expired or the Socket Mode configuration changed. Investigate via Slack App settings → Socket Mode. Telegram is working fine in the meantime.
 - **GitHub Actions for image builds:** `.github/workflows/build-openclaw.yml` exists locally (untracked). Needs `workflow` token scope: `gh auth refresh -s workflow`. Until then, build and push manually.
-- **PodSecurity warnings:** `allowPrivilegeEscalation != false`, `capabilities.drop != ALL`, `runAsNonRoot != true`. Not blocking (warnings only) — address in a future hardening pass.
+
+## Client Onboarding
+
+- Mattermost desktop + iPhone setup guide: `docs/mattermost-client-setup.md`
 
 ---
 
 ## Cron Job Reference
 
-| Job | Schedule | Model | Slack Channel | Purpose |
+| Job | Schedule | Model | Mattermost Channel | Purpose |
 |---|---|---|---|---|
 | `cluster-health-check` | every 15m | `ollama/qwen2.5:7b` | `#devops` | Node + pod health, resource usage |
 | `critical-alert-check` | every 30m | `ollama/qwen2.5:7b` | `#alerts` | CrashLoop, OOMKill, node NotReady |

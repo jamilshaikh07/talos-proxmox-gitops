@@ -6,7 +6,7 @@ flowchart TB
         GH["GitHub\ntalos-proxmox-gitops"]
         GHCR["GHCR\nopenclaw-sre:latest"]
         ANT["Anthropic API\nhaiku-4-5 · sonnet-4-6"]
-        SLACK["Slack\n#devops #alerts #news #ai #business"]
+        MM["Mattermost\n#devops #alerts #business"]
         TG["Telegram\nDM → 6790056175"]
     end
 
@@ -52,7 +52,7 @@ flowchart TB
     OC -->|"kubectl / SA token"| CP
     OC -->|"kubectl + talosctl"| WK
 
-    OC -->|"alerts + health reports"| SLACK
+    OC -->|"alerts + health reports"| MM
     OC -->|"daily digest"| TG
 ```
 
@@ -60,18 +60,18 @@ flowchart TB
 
 | Cron | Schedule | Model | Delivery |
 |---|---|---|---|
-| cluster-health-check | every 15m | `ollama/qwen2.5:7b` | Slack #devops |
-| critical-alert-check | every 30m | `ollama/qwen2.5:7b` | Slack #alerts (silent if OK) |
-| talos-health-check | every 1h | `ollama/qwen2.5:7b` | Slack #devops |
-| argocd-sync-check | every 30m | `ollama/qwen2.5:7b` | Slack #devops |
+| cluster-health-check | every 15m | `ollama/qwen2.5:7b` | Mattermost #devops |
+| critical-alert-check | every 30m | `ollama/qwen2.5:7b` | Mattermost #alerts (silent if OK) |
+| talos-health-check | every 1h | `ollama/qwen2.5:7b` | Mattermost #devops |
+| argocd-sync-check | every 30m | `ollama/qwen2.5:7b` | Mattermost #devops |
 | tech-news-digest | daily 8:10 IST | `anthropic/claude-haiku-4-5-20251001` | Telegram DM |
-| prospect-hunter | Mon 9:00 IST | `anthropic/claude-sonnet-4-6` | Slack #business |
+| prospect-hunter | Mon 9:00 IST | `anthropic/claude-sonnet-4-6` | Mattermost #business |
 
 ## Secret Inventory (imperative — never in git)
 
 | Secret | Namespace | Contents |
 |---|---|---|
-| `openclaw-config` | openclaw | Full `openclaw.json` — gateway token, Slack/Telegram tokens, model config |
+| `openclaw-config` | openclaw | Full `openclaw.json` — gateway token, Mattermost token, model config |
 | `openclaw-tokens` | openclaw | `ANTHROPIC_API_KEY`, `GEMINI_API_KEY` |
 | `openclaw-talosconfig` | openclaw | `talosconfig` file for talosctl |
 
