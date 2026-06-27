@@ -1,4 +1,4 @@
-FROM node:20-slim
+FROM node:22-slim
 
 # kubectl
 ARG KUBECTL_VERSION=v1.34.1
@@ -15,12 +15,11 @@ RUN curl -fsSL https://github.com/siderolabs/talos/releases/download/${TALOS_VER
 ARG OPENCLAW_VERSION=latest
 RUN npm install -g openclaw@${OPENCLAW_VERSION}
 
-# Non-root user for the gateway process
-RUN useradd -m -u 1000 openclaw
-USER openclaw
-WORKDIR /home/openclaw
+# node:22-slim already has a 'node' user at uid 1000 — reuse it
+USER node
+WORKDIR /home/node
 
-ENV HOME=/home/openclaw
+ENV HOME=/home/node
 
 EXPOSE 18789
 

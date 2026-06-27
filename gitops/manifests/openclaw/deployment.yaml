@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: openclaw
+  namespace: openclaw
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: openclaw
+  template:
+    metadata:
+      labels:
+        app: openclaw
+    spec:
+      serviceAccountName: openclaw
+      # Worker node — leave control plane alone
+      nodeSelector:
+        kubernetes.io/hostname: talos-wk-01
+      initContainers:
+        # Seed ~/.openclaw/openclaw.json from the secret on first run.
+        # On subsequent runs the file already exists on the PVC and is left alone.
+        - name: init-config
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              if [ ! -f /data/.openclaw/openclaw.json ]; then
+                mkdir -p /data/.openclaw
+                cp /config/openclaw.json /data/.openclaw/openclaw.json
+                echo "Config seeded from secret."
+              else
+                echo "Config already exists, skipping seed."
+              fi
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: config-template
+              mountPath: /config
+      containers:
+        - name: openclaw
+          image: ghcr.io/jamilshaikh07/openclaw-sre:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 18789
+              name: gateway
+          env:
+            - name: HOME
+              value: /home/node
+            # Anthropic API key for news digests + prospect-hunter
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: openclaw-tokens
+                  key: ANTHROPIC_API_KEY
+            # Gemini API key (free tier for fallback)
+            - name: GOOGLE_GENERATIVE_AI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: openclaw-tokens
+                  key: GEMINI_API_KEY
+                  optional: true
+          resources:
+            requests:
+              cpu: 50m
+              memory: 512Mi
+            limits:
+              cpu: 500m
+              memory: 1Gi
+          volumeMounts:
+            - name: data
+              mountPath: /home/node
+            - name: talosconfig
+              mountPath: /home/node/.talos
+              readOnly: true
+          readinessProbe:
+            tcpSocket:
+              port: 18789
+            initialDelaySeconds: 15
+            periodSeconds: 10
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: openclaw-data
+        - name: talosconfig
+          secret:
+            secretName: openclaw-talosconfig
+            items:
+              - key: talosconfig
+                path: config
+        - name: config-template
+          secret:
+            secretName: openclaw-config
