@@ -11,21 +11,9 @@ spec:
   routes:
     - match: Host(`mattermost.jamilshaikh.in`)
       kind: Rule
-      middlewares:
-        - name: https-redirect
       services:
         - name: mattermost
           port: 8065
----
-apiVersion: traefik.io/v1alpha1
-kind: Middleware
-metadata:
-  name: https-redirect
-  namespace: mattermost
-spec:
-  redirectScheme:
-    scheme: https
-    permanent: true
 ---
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
