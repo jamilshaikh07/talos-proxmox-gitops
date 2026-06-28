@@ -13,7 +13,7 @@ Not a tutorial — a running record of what was built, why it was built that way
 | [Observability](./04-observability.md) | Victoria Metrics, Loki, Promtail, Grafana, Uptime Kuma |
 | [Storage & Backups](./05-storage-backups.md) | local-path, MinIO, Velero, CNPG barman — the full backup chain |
 | [spinup.in PaaS](./06-spinup-paas.md) | Self-hosted Vercel clone — architecture, live tenant workloads |
-| [openclaw AI SRE](./07-openclaw-ai-sre.md) | AI agent system — Ollama + Anthropic, K8s deployment, cron architecture |
+| [openclaw AI SRE](./07-openclaw-ai-sre.md) | AI SRE agent — Phase 1–3, Haiku model chain, Mattermost delivery, cron architecture |
 
 ---
 

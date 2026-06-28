@@ -1,514 +1,243 @@
 # Talos Proxmox GitOps
 
-> **Production-Ready Homelab Infrastructure with Single-Click Deployment**
+> **Production homelab running real workloads — GitOps-managed, AI SRE-monitored.**
 
-A complete Infrastructure-as-Code solution for deploying a Kubernetes homelab on Proxmox using Talos Linux, Terraform, Ansible, and ArgoCD GitOps with zero-maintenance local storage.
+A 3-layer IaC stack (Terraform + Ansible + ArgoCD) on Proxmox running Talos Linux Kubernetes. This isn't a demo — it hosts live products: [spinup.in](https://spinup.in) (self-hosted PaaS), [KubeWise](https://github.com/jamilshaikh08/kubewise) (K8s cost advisor), openclaw AI SRE, and Mattermost for team comms.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Talos](https://img.shields.io/badge/Talos-v1.12.6-blue.svg)](https://www.talos.dev/)
-[![Terraform](https://img.shields.io/badge/Terraform-1.9+-purple.svg)](https://www.terraform.io/)
 [![Kubernetes](https://img.shields.io/badge/Kubernetes-v1.34.1-green.svg)](https://kubernetes.io/)
+[![Terraform](https://img.shields.io/badge/Terraform-1.9+-purple.svg)](https://www.terraform.io/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## Overview
+---
 
-This project demonstrates enterprise-grade infrastructure automation, showcasing skills in:
+## What runs here
 
-- **Infrastructure as Code** (Terraform)
-- **Configuration Management** (Ansible)
-- **Kubernetes** (Talos Linux v1.12.6 with Kubernetes v1.34.1)
-- **GitOps** (ArgoCD — app-of-apps pattern)
-- **Local Storage** (Rancher local-path-provisioner)
-- **CI/CD** (GitHub Actions)
-- **Cloud Native Technologies** (Cilium, cert-manager, VictoriaMetrics, Cloudflare Tunnel, etc.)
+### Live products
 
-### Architecture
+| Product | URL | What it is |
+|---|---|---|
+| **spinup.in** | [spinup.in](https://spinup.in) | Self-hosted Vercel clone — push to GitHub, get a live URL |
+| **KubeWise** | [github.com/jamilshaikh08/kubewise](https://github.com/jamilshaikh08/kubewise) | K8s cost & performance advisor |
+| **BPL** | bpl-prod.jamilshaikh.in | Production app deployment |
+| **Mattermost** | [mattermost.jamilshaikh.in](https://mattermost.jamilshaikh.in) | Self-hosted team comms — openclaw bot delivery target |
+
+### Platform stack (ArgoCD app-of-apps, 27 apps)
+
+| App | Purpose |
+|---|---|
+| ArgoCD | GitOps controller (self-managed) |
+| MetalLB + Traefik | Bare-metal LB + ingress (VIP: `192.168.60.81`) |
+| Cilium v1.16.5 | eBPF CNI + network policy |
+| cert-manager + trust-manager | Internal CA + TLS automation |
+| CoreDNS k8s-gateway | Internal DNS (`*.lab.jamilshaikh.in`) |
+| external-dns + Cloudflared | Cloudflare DNS automation + Zero Trust tunnel |
+| CloudNativePG | PostgreSQL operator (mattermost-db, paas-db) |
+| VictoriaMetrics + Grafana | Metrics stack |
+| Loki + Promtail | Log aggregation → MinIO |
+| MinIO | S3-compatible object storage (logs, backups) |
+| Uptime Kuma | Service uptime monitoring |
+| Trivy Operator | In-cluster security scanning |
+| local-path-provisioner | Default StorageClass (`local-path`) |
+| Mattermost | Self-hosted team chat |
+| openclaw | AI SRE agent (see below) |
+| KubeWise | K8s cost advisor |
+| bpl-prod | BPL production environment |
+
+### Out-of-band (not in ArgoCD)
+
+| Component | Purpose |
+|---|---|
+| Velero | Cluster backups → TrueNAS MinIO via Tailscale proxy |
+| spinup.in PaaS | `paas-system` / `paas-deployments` / `paas-tenant-*` — self-rebuilding, see below |
+
+---
+
+## AI SRE — openclaw
+
+The cluster watches itself. openclaw runs as a pod in the `openclaw` namespace, posts to Mattermost `#devops`, and handles both automated remediation and interactive runbooks.
+
+**Phase 1 — Monitoring:** crons every 10–30 min watching pods, ArgoCD apps, PaaS health, BPL prod  
+**Phase 2 — Remediation:** auto-deletes Pending/CrashLoop pods, approval-gated ArgoCD sync + rollout restart  
+**Phase 3 — Runbook Intelligence:** incident correlation, capacity forecasting, automated postmortems, drain/sync/log runbooks, spinup.in PaaS awareness
+
+Model: `anthropic/claude-haiku-4-5-20251001` (primary, always warm via env var). Full architecture in [`docs/07-openclaw-ai-sre.md`](docs/07-openclaw-ai-sre.md).
+
+**Active crons:**
+
+| Cron | Fires | Behaviour |
+|---|---|---|
+| `critical-alert-check` | every 15m | Auto-deletes CrashLoop pods |
+| `paas-health-check` | every 10m | spinup.in PaaS health — report only |
+| `bpl-health-check` | every 10m | BPL prod health — report only |
+| `argocd-sync-check` | every 30m | ArgoCD drift → approval-gated sync |
+| `incident-correlator` | every 30m | Correlates multi-signal incidents |
+| `cluster-health-check` | every 1h | Pending pod auto-fix + postmortem |
+| `capacity-forecast` | Mon 8am IST | Weekly CPU/memory/PVC risk report |
+
+---
+
+## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                    TALOS PROXMOX GITOPS                         │
-│                   3-Layer Architecture                          │
-└─────────────────────────────────────────────────────────────────┘
-
 ┌──────────────────┐
-│  Layer 1         │  Terraform Infrastructure
-│  Infrastructure  │  ├─ 1x Talos Control Plane VM (100GB, 8GB RAM)
-│                  │  └─ 1x Talos Worker VM (100GB, 16GB RAM)
-│                  │  (OPNsense router provisioned manually)
-└─────────┬────────┘
+│  Layer 1         │  Terraform → Proxmox
+│  Infrastructure  │  ├─ 1× Control Plane VM (talos-cp-01, 192.168.60.40)
+│                  │  └─ 1× Worker VM (talos-wk-01, 192.168.60.41)
+└─────────┬────────┘  OPNsense router (VM 102) — provisioned manually
           │
 ┌─────────▼────────┐
-│  Layer 2         │  Ansible Configuration + Talos Setup
-│  Configuration   │  ├─ Talos Cluster Bootstrap (v1.12.6)
-│                  │  ├─ Cilium CNI Installation (v1.16.5)
+│  Layer 2         │  Ansible → Talos
+│  Configuration   │  ├─ Talos cluster bootstrap (v1.12.6)
+│                  │  ├─ Cilium CNI (v1.16.5)
 │                  │  └─ KubePrism + kubelet cert rotation
 └─────────┬────────┘
           │
 ┌─────────▼────────┐
-│  Layer 3         │  GitOps Applications (ArgoCD app-of-apps)
-│  GitOps          │  ├─ ArgoCD (self-managed via Helm)
-│  (ArgoCD)        │  ├─ MetalLB + Traefik (load balancing + ingress)
-│                  │  ├─ cert-manager + trust-manager (internal CA)
-│                  │  ├─ Cilium (day-2 config)
-│                  │  ├─ CoreDNS k8s-gateway (internal DNS)
-│                  │  ├─ external-dns (Cloudflare DNS automation)
-│                  │  ├─ Cloudflared (Zero Trust tunnel)
-│                  │  ├─ VictoriaMetrics stack (Grafana + metrics)
-│                  │  ├─ Uptime Kuma (service monitoring)
-│                  │  ├─ Trivy Operator (security scanning)
-│                  │  ├─ local-path-provisioner (default StorageClass)
-│                  │  └─ metrics-server
+│  Layer 3         │  ArgoCD app-of-apps → gitops/apps/
+│  GitOps          │  └─ 27 apps, auto-sync, prune + self-heal
 └──────────────────┘
-
-### External Access Flow
-
-```
-Internet → Cloudflare Edge (TLS) → cloudflared pods → http://Traefik:80 → backend
 ```
 
-### Internal Access Flow (LAN only)
+**GitOps rule:** All manifest changes go through git → push → ArgoCD. No manual `kubectl apply` on anything in `gitops/`. Exceptions: imperative secrets (never in git) and openclaw cron SQLite edits.
+
+### Network
+
+| Role | IP |
+|---|---|
+| Proxmox host | 10.20.0.10 (LAN) · 100.127.198.7 (Tailscale) |
+| OPNsense LAN | 192.168.60.1 (vmbr2 gateway) |
+| Control Plane | 192.168.60.40 |
+| Worker | 192.168.60.41 |
+| Traefik VIP | 192.168.60.81 |
+| k8s-gateway DNS | 192.168.60.82 |
+| MetalLB pool | 192.168.60.81–99 |
+
+> Proxmox is at a remote location (friend's office). All cluster access requires Tailscale + `make tunnel`.
+
+### Access flows
 
 ```
+# Public (anywhere)
+Internet → Cloudflare Edge → cloudflared pod → Traefik → backend
+
+# Internal (LAN / tunnel)
 Browser → /etc/hosts → 192.168.60.81 (Traefik) → backend
 ```
-```
 
-## Features
+---
 
-### Core Infrastructure
+## spinup.in — Production PaaS
 
-- **Talos Linux Kubernetes**: Immutable, secure Kubernetes OS (v1.12.6)
-- **Kubernetes v1.34.1**: Latest stable release
-- **All-Proxmox Cluster**: Control plane VM + worker VM, both on Proxmox
-- **Zero-Maintenance Storage**: Rancher local-path-provisioner using `/var/local-path-storage` on the OS disk
-  - No extra disk required
-  - Single default StorageClass: `local-path`
-- **Failure Recovery**: Automatic Talos VM cleanup on configuration failure
+**[spinup.in](https://spinup.in)** is a self-hosted Vercel clone running on this cluster.
 
-### GitOps Applications (ArgoCD — app-of-apps)
+- **Source:** `~/workspace/homelab/100k/mvp/vercel-clone` — never touch via this repo's tooling
+- **Flow:** GitHub webhook → Cloudflare Tunnel → Traefik → `control-plane` Go service → Kaniko build → `paas-tenant-<user>` namespace
+- **Self-healing:** push to vercel-clone `main` → control-plane redeploys in ~3 min
+- **Database:** `paas-db` CNPG cluster in `paas-system` — losing it = losing all tenant metadata
 
-| App | Version | Purpose |
-|-----|---------|-------|
-| ArgoCD | Helm v7.7.12 | GitOps controller (self-managed) |
-| MetalLB | latest | Bare-metal load balancer |
-| Traefik | v39.x | Ingress controller (VIP: `192.168.60.81`) |
-| Cilium | v1.16.5 | eBPF CNI + network policy |
-| cert-manager | v1.20.1 | Internal CA + TLS automation |
-| CoreDNS k8s-gateway | latest | Internal DNS (`*.lab.jamilshaikh.in → 192.168.60.81`) |
-| external-dns | v0.20.0 | Auto-manage Cloudflare DNS records |
-| Cloudflared | latest | Cloudflare Zero Trust tunnel |
-| CloudNativePG | latest | PostgreSQL operator |
-| VictoriaMetrics stack | v0.72.6 | Prometheus-compatible metrics + Grafana |
-| Loki + Promtail | v6.30.0 | Log aggregation (backed by MinIO) |
-| Uptime Kuma | v2.22.0 | Service uptime monitoring |
-| Trivy Operator | latest | In-cluster security scanning |
-| MinIO | latest | S3-compatible object storage (loki logs, etcd backups) |
-| local-path-provisioner | latest | Default StorageClass (`local-path`) |
-| KubeWise | custom | K8s cost & performance advisor (https://github.com/jamilshaikh08/kubewise) |
-| bpl-stage / bpl-prod | custom | BPL app (stage + prod environments) |
+> **Never delete `paas-*` namespaces or the `paas-db` CNPG cluster.**
 
-### Out-of-band (not in ArgoCD)
-
-| Component | Namespace | Purpose |
-|-----------|-----------|---------|
-| Velero | `velero` | Cluster backups → TrueNAS MinIO via Tailscale proxy |
-| Flux | `flux-system` | Manages `homelab-postgres` CNPG cluster |
-| homelab-postgres | `homelab-postgres` | Shared CNPG cluster for homelab apps |
-| spinup.in (PaaS) | `paas-system`, `paas-deployments`, `paas-tenant-*` | See below |
-
-### spinup.in — Self-hosted PaaS
-
-**[spinup.in](https://spinup.in)** is a self-hosted Vercel clone running on this cluster. Connect a GitHub repo, `git push`, get a live URL — backed by Talos Kubernetes.
-
-- **Source:** `~/workspace/homelab/100k/mvp/vercel-clone` — **do not touch via this repo's tooling**
-- **Namespace:** `paas-system` (control-plane Go service + CNPG DB + container registry)
-- **Tenant workloads:** `paas-deployments` (builds), `paas-tenant-<username>` (live apps)
-- **Deployment:** self-rebuilding — push to vercel-clone `main` → control-plane redeploys within ~3 min
-- **CI path:** GitHub webhook → Cloudflare Tunnel → Traefik → `control-plane` → Kaniko build → deploy
-
-> **Never delete `paas-*` namespaces or the `paas-db` CNPG cluster.** These are live production workloads for spinup.in tenants.
-
-### Automation
-
-- **Single-Command Deployment**: `make deploy` runs all 3 layers end-to-end
-- **Idempotent**: Safe to run multiple times
-- **Self-Healing**: ArgoCD auto-syncs with prune + self-heal enabled
-- **CI/CD**: GitHub Actions workflow with layer-level skip inputs (self-hosted runner)
-- **Scale Workflow**: Terraform-driven worker count and VM sizing with inventory regeneration helpers
+---
 
 ## Quick Start
 
 ### Prerequisites
 
-**Required Software:**
+- Terraform ≥ 1.9, Ansible ≥ 2.15, kubectl ≥ 1.28, talosctl ≥ 1.12, Helm ≥ 3.12
+- Proxmox VE 8.x with OPNsense VM (WAN: `vmbr0`, LAN: `vmbr2` at `192.168.60.1/24`)
+- Terraform Cloud workspace `alif` (remote state)
+- Tailscale active on both local machine and Proxmox
 
-- [Terraform](https://www.terraform.io/downloads) >= 1.9.0
-- [Ansible](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html) >= 2.15
-- [kubectl](https://kubernetes.io/docs/tasks/tools/) >= 1.28
-- [talosctl](https://www.talos.dev/latest/introduction/getting-started/#talosctl) >= 1.12
-- [Helm](https://helm.sh/docs/intro/install/) >= 3.12
-
-**Infrastructure:**
-
-- Proxmox VE 8.x server
-- OPNsense VM as router: WAN on `vmbr0`, LAN on `vmbr2` (`192.168.60.1/24`)
-- Talos nodes on isolated internal subnet: `192.168.60.40` (CP), `192.168.60.41` (worker)
-- Terraform Cloud workspace `alif` (for remote state)
-
-**Pre-deploy secrets** (must be applied manually after Layer 3):
+### Deploy
 
 ```bash
-# 1. Cloudflare API token (for external-dns)
-kubectl create secret generic cloudflare-api-token \
-  --from-literal=api-token=<YOUR_CF_API_TOKEN> \
-  -n external-dns
+git clone https://github.com/jamilshaikh07/talos-proxmox-gitops.git
+cd talos-proxmox-gitops
 
-# 2. Cloudflare Tunnel credentials (locally-managed tunnel)
-kubectl create secret generic cloudflared-credentials \
-  --from-file=credentials.json=~/.cloudflared/<tunnel-id>.json \
-  -n cloudflared
+make deploy          # Full 3-layer deployment (~25 min)
+make tunnel          # SSH tunnel for kubectl access (required from non-office machines)
+make setup-homelab-access   # /etc/hosts + trust internal CA
 ```
 
-> The tunnel credentials JSON is created by `cloudflared tunnel create <name>` at
-> `~/.cloudflared/<tunnel-id>.json`. Update `tunnel:` in
-> `gitops/manifests/cloudflared/deployment.yaml` with your tunnel ID.
-
-### Setup
-
-1. **Clone the repository**
-
-   ```bash
-   git clone https://github.com/jamilshaikh07/talos-proxmox-gitops.git
-   cd talos-proxmox-gitops
-   ```
-
-2. **Configure Proxmox credentials**
-
-   ```bash
-   export TF_VAR_proxmox_api_url="https://your-proxmox-host:8006/api2/json"
-   export TF_VAR_proxmox_api_token_id="root@pam!homelab"
-   export TF_VAR_proxmox_api_token_secret="your-secret-token"
-   ```
-
-3. **Deploy all layers**
-
-   ```bash
-   make deploy
-   # Or layer by layer:
-   make layer1   # Terraform: create VMs
-   make layer2   # Ansible: bootstrap Talos cluster
-   make layer3   # Ansible: deploy ArgoCD + app-of-apps
-   ```
-
-4. **Apply pre-deploy secrets** (see Prerequisites above)
-
-5. **Configure local workstation access**
-
-   ```bash
-   make setup-homelab-access
-   # Adds /etc/hosts entries for internal .lab. domains + trusts the internal CA cert
-   ```
-
-### Deployment Time
-
-- **Layer 1** (Infrastructure): ~5 minutes
-- **Layer 2** (Talos bootstrap): ~10 minutes
-- **Layer 3** (ArgoCD + apps sync): ~10 minutes
-
-**Total: ~25 minutes**
-
-## Network Configuration
-
-> **Note:** Proxmox is physically hosted at a remote location (friend's office). Cluster access requires Tailscale to be active. Use `make tunnel` to set up kubectl access.
-
-| Component | IP Address | Description |
-|-----------|------------|-------------|
-| Proxmox host | 10.20.0.10 (LAN) · 100.127.198.7 (Tailscale) | Proxmox management — **remote, Tailscale only** |
-| Proxmox vmbr2 | 192.168.60.2 | Proxmox on cluster bridge (used by MinIO proxy) |
-| OPNsense WAN | 10.20.0.x (DHCP) | Shared vmbr0 → office router |
-| OPNsense LAN | 192.168.60.1 | Internal gateway (vmbr2) |
-| Control Plane | 192.168.60.40 | Talos master node |
-| Worker 1 | 192.168.60.41 | Talos worker node |
-| MetalLB Pool | 192.168.60.81–99 | Load balancer IP range |
-| Traefik VIP | 192.168.60.81 | Ingress controller |
-| k8s-gateway VIP | 192.168.60.82 | Internal DNS server |
-| TrueNAS (home) | 10.20.0.45 (LAN) · 100.124.83.72 (Tailscale) | Backup target — MinIO on port 9900 |
-
-## Service Access
-
-### Public (via Cloudflare Tunnel — accessible from anywhere)
-
-| Service | URL |
-|---------|-----|
-| ArgoCD | https://argocd.jamilshaikh.in |
-| Grafana | https://grafana.jamilshaikh.in |
-| Uptime Kuma | https://uptime.jamilshaikh.in |
-
-### Internal (LAN only — requires `make setup-homelab-access` or OPNsense DNS)
-
-| Service | URL |
-|---------|-----|
-| Traefik dashboard | http://traefik.lab.jamilshaikh.in |
-| Prometheus/VictoriaMetrics | http://prometheus.lab.jamilshaikh.in |
-
-> Internal services use HTTP (port 80) via Traefik's `web` entrypoint. To add a new internal
-> service: create an IngressRoute on the `web` entrypoint with a `*.lab.jamilshaikh.in` hostname,
-> then add it to `setup-dns` in the Makefile.
-
-## Storage
-
-- **StorageClass**: `local-path` (default, only StorageClass in the cluster)
-- **Path**: `/var/local-path-storage` on each node's OS disk
-- **Binding**: WaitForFirstConsumer
-- **Trade-off**: No replication — data lives on the node where the pod schedules
-
-| Node | Install Disk | Storage Path |
-|------|--------------|-------------|
-| talos-cp-01 | /dev/sda | /var/local-path-storage |
-| talos-wk-01 | /dev/sda | /var/local-path-storage |
-
-## Scaling and Resize
-
-The cluster now supports two Terraform-driven scale paths:
-
-- Horizontal scaling by changing the number of Talos worker VMs.
-- Vertical scaling by changing the CPU, memory, or disk size assigned to the control plane or workers.
-
-### Important constraints
-
-- Talos node IPs are still DHCP-based. Terraform now emits deterministic MAC and planned IP pairs, but you must keep the matching OPNsense DHCP reservations intact.
-- Scale-down is not automatic for stateful workloads. Because the cluster uses `local-path`, any PVC bound to a node being removed must be migrated or deleted first.
-- Shrinking `WORKER_COUNT` removes the highest-numbered worker first. Drain that node before applying Terraform.
-
-### Plan a scale change
+### Layer by layer
 
 ```bash
-# Add a second worker with a smaller footprint than the current default
-make scale-plan WORKER_COUNT=2 WORKER_MEMORY=8192 WORKER_CORES=2
-
-# Resize the existing control plane and worker shapes
-make scale-plan CONTROL_PLANE_MEMORY=12288 WORKER_MEMORY=12288 WORKER_CORES=4
+make layer1          # Terraform: create VMs
+make layer2          # Ansible: bootstrap Talos + Cilium
+make layer3          # Ansible: deploy ArgoCD + app-of-apps
+make layer3a         # Ansible: bootstrap FluxCD (side-by-side)
 ```
 
-### Apply a scale change
+### Status
 
 ```bash
-make scale-apply WORKER_COUNT=2 WORKER_MEMORY=8192 WORKER_CORES=2
-make planned-dhcp
-make layer2
-```
-
-`make planned-dhcp` prints the MAC/IP reservations that should exist on OPNsense for each Talos VM.
-
-### Safe worker scale-down
-
-```bash
-make drain-node NODE=talos-wk-02
-make scale-apply WORKER_COUNT=1
-```
-
-If the node still hosts pods backed by `local-path` PVCs, move or retire that workload first. Draining alone does not preserve node-local data.
-
-## Talos Configuration
-
-- **Version**: v1.12.6 | **Kubernetes**: v1.34.1 | **CNI**: Cilium v1.16.5
-- **Cluster endpoint**: `https://192.168.60.40:6443`
-- **Talosconfig path**: `talos-homelab-cluster/rendered/talosconfig` (gitignored)
-
-Machine config patches in `talos-homelab-cluster/` (config only, no secrets):
-
-| File | Purpose |
-|------|--------|
-| `cni.yaml` | Disable built-in CNI (Cilium installs instead) |
-| `allowcontrolplanes.yaml` | Allow workloads on control plane |
-| `kubelet-certs.yaml` | Enable kubelet cert rotation |
-| `system-extensions.yaml` | qemu-guest-agent + iscsi-tools via image factory |
-| `machine-features.yaml` | KubePrism local API load balancer |
-| `controlplane-machine.yaml` | CP hostname + disk |
-| `talos-wk-01-machine.yaml` | Worker hostname + disk |
-
-## Management Commands
-
-### Deployment
-```bash
-make deploy                # Full 3-layer deployment
-make deploy-skip-layer1    # Layers 2+3 only (reuse existing VMs)
-make deploy-skip-layer2    # Layers 1+3 only
-make layer1                # Terraform only
-make layer2                # Talos bootstrap only
-make layer3                # ArgoCD + GitOps only
-```
-
-### Cluster Status
-```bash
-make status                # Nodes + pods + ArgoCD apps
-make status-apps           # ArgoCD sync status only
-make talos-health          # Talos cluster health
-make ping                  # Connectivity check to all VMs
-```
-
-### Access
-```bash
-make argocd-password       # Get ArgoCD admin password
-make argocd-port-forward   # Port-forward ArgoCD UI → localhost:8080
-make setup-homelab-access  # /etc/hosts entries + trust internal CA
-make kubeconfig            # Display KUBECONFIG path
+make status          # Nodes + pods + ArgoCD apps
+make status-apps     # ArgoCD sync status only
+make talos-health    # Talos cluster health
+make argocd-password # Get ArgoCD admin password
 ```
 
 ### Cleanup
-```bash
-make destroy               # Destroy VMs (with confirmation prompt)
-make destroy-all           # Destroy VMs + remove Talos config dir
-```
-
-### Utilities
-```bash
-make help                  # Full command list with descriptions
-make help-when             # Scenario runbook (what to run when)
-make version               # Tool versions
-make terraform-plan        # Preview infrastructure changes
-make sync-inventory        # Regenerate Ansible inventory from Terraform outputs
-```
-
-### What To Run When
 
 ```bash
-# I want a full clean deployment
-make deploy
-
-# I changed Terraform and want infra updates only
-make terraform-plan
-make layer1
-make sync-inventory
-
-# I changed Talos/Ansible and want to reconcile cluster config
-make layer2
-
-# I changed GitOps manifests/apps and want app reconciliation
-make layer3
-
-# I want to scale workers or resize VM resources
-make scale-plan WORKER_COUNT=2 WORKER_MEMORY=8192 WORKER_CORES=2
-make scale-apply WORKER_COUNT=2 WORKER_MEMORY=8192 WORKER_CORES=2
-make planned-dhcp
-make layer2
-
-# I want a safe worker scale-down
-make drain-node NODE=talos-wk-02
-make scale-apply WORKER_COUNT=1
-make layer2
-
-# I just need health and sync checks
-make status
-make status-apps
-make talos-health
+make destroy         # Destroy VMs (with confirmation)
+make destroy-all     # Destroy VMs + remove Talos config dir
 ```
 
-`make --help` shows GNU Make's built-in help, not project runbooks. Use `make help` and `make help-when` for homelab-specific guidance.
+---
 
-## Troubleshooting
+## Storage
 
-### Layer 2 Failure
+Single StorageClass: `local-path` (Rancher local-path-provisioner). Data lives on the node — no replication. Scale-down requires migrating or retiring any PVC on the removed node first.
 
-```bash
-make layer2                    # Retry without destroying VMs
-make destroy && make deploy    # Full reset if needed
-```
+| Node | Disk | Storage path |
+|---|---|---|
+| talos-cp-01 | /dev/sda | /var/local-path-storage |
+| talos-wk-01 | /dev/sda | /var/local-path-storage |
 
-### ArgoCD App out of sync
+---
 
-```bash
-export KUBECONFIG=~/.kube/config-homelab
-kubectl get applications -n argocd
-```
+## Security
 
-### Storage Issues
-
-```bash
-# Check storage class (should only be local-path)
-kubectl get storageclass
-
-# Check PVC status
-kubectl get pvc -A
-
-# Check provisioner logs
-kubectl logs -n local-path-provisioner -l app.kubernetes.io/name=local-path-provisioner
-
-# Test PVC provisioning
-kubectl apply -f - <<EOF
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: test-pvc
-  namespace: default
-spec:
-  accessModes:
-    - ReadWriteOnce
-  storageClassName: local-path
-  resources:
-    requests:
-      storage: 1Gi
-EOF
-kubectl get pvc test-pvc
-```
-
-> **Note**: The `local-path-provisioner` namespace requires `pod-security.kubernetes.io/enforce: privileged` because its helper pods use hostPath volumes to create directories on nodes.
-
-### Cloudflared not connecting
-
-The tunnel is locally-managed (CLI-created, not dashboard). Credentials live in the
-`cloudflared-credentials` secret in the `cloudflared` namespace:
-
-```bash
-# Check logs
-kubectl logs -n cloudflared -l app=cloudflared --tail=50
-
-# Recreate credentials secret
-kubectl delete secret cloudflared-credentials -n cloudflared
-kubectl create secret generic cloudflared-credentials \
-  --from-file=credentials.json=~/.cloudflared/<tunnel-id>.json \
-  -n cloudflared
-kubectl rollout restart deployment/cloudflared -n cloudflared
-```
-
-### Internal DNS not resolving
-
-`*.lab.jamilshaikh.in` resolves via CoreDNS k8s-gateway at `192.168.60.82`. Use
-`make setup-homelab-access` on your workstation, or configure OPNsense Unbound to forward
-`lab.jamilshaikh.in → 192.168.60.82` for LAN-wide resolution.
-
-
-
-## Security Notes
-
-- Talos secrets (`secrets.yaml`, `rendered/`) are **gitignored** — never committed
-- Terraform state is remote (Terraform Cloud) — `.tfstate` files are gitignored
-- Cloudflare API token and tunnel credentials are **not in Git** — applied manually post-deploy
+- Talos secrets and rendered configs are gitignored — never committed
+- Terraform state is remote (Terraform Cloud) — no `.tfstate` in git
+- Cloudflare API token + tunnel credentials applied manually post-deploy
 - Internal TLS via cert-manager (self-signed root CA → homelab-ca issuer)
 - Talos has no SSH — all node interaction via `talosctl`
+- SOPS + age encryption for secrets in `gitops/manifests/secrets/`
+
+---
+
+## Docs
+
+Full behind-the-scenes decisions in [`docs/`](docs/):
+
+| Doc | What it covers |
+|---|---|
+| [Cluster Foundation](docs/01-cluster-foundation.md) | Talos + Proxmox + Terraform + Ansible — why this stack |
+| [GitOps Layer](docs/02-gitops-layer.md) | ArgoCD + FluxCD side-by-side, app-of-apps pattern |
+| [Networking](docs/03-networking.md) | OPNsense, MetalLB, Traefik, Cloudflare tunnel, external-dns |
+| [Observability](docs/04-observability.md) | VictoriaMetrics, Loki, Promtail, Grafana, Uptime Kuma |
+| [Storage & Backups](docs/05-storage-backups.md) | local-path, MinIO, Velero, CNPG barman |
+| [spinup.in PaaS](docs/06-spinup-paas.md) | Self-hosted Vercel clone — architecture, live tenant workloads |
+| [openclaw AI SRE](docs/07-openclaw-ai-sre.md) | AI SRE agent — cron architecture, Phase 1-3, model chain |
+
+---
 
 ## CI/CD
 
 GitHub Actions at `.github/workflows/deploy-homelab.yml`:
-- Manual dispatch with `skip_layer1`, `skip_layer2`, `skip_layer3` boolean inputs
-- Runs on a self-hosted runner on the Proxmox host
-- Three sequential jobs matching the 3-layer architecture
-- Layer 2 auto-cleans up VMs on failure
-
-## License
-
-MIT License — see [LICENSE](LICENSE) for details.
-
-## Acknowledgments
-
-- **Talos Linux** — immutable, API-driven Kubernetes OS
-- **ArgoCD** — declarative GitOps made easy
-- **Rancher local-path-provisioner** — zero-maintenance local storage
-
-## Contact
-
-- GitHub: [@jamilshaikh07](https://github.com/jamilshaikh07)
-- Project: [github.com/jamilshaikh07/talos-proxmox-gitops](https://github.com/jamilshaikh07/talos-proxmox-gitops)
+- Manual dispatch with `skip_layer1` / `skip_layer2` / `skip_layer3` inputs
+- Self-hosted runner on Proxmox host
+- Layer 2 auto-cleans VMs on failure
 
 ---
 
-*Built for showcasing DevOps/SRE skills*
+## License
+
+MIT — see [LICENSE](LICENSE).
+
+---
+
+*Senior SRE homelab — built to run real products, not just demos.*

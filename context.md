@@ -1,54 +1,85 @@
 # Context
 
 ## Repository
+
 - Name: talos-proxmox-gitops
 - Branch: master
-- Model: long-running homelab infrastructure, not short-lived test infra
+- Model: production homelab running live workloads (spinup.in, openclaw, bpl-prod, Mattermost)
 
-## Current Infrastructure Snapshot
-- Proxmox node: alif
-- CPU: 8 cores
-- Memory: 31.25 GiB total, approximately 23.69 GiB used
-- Storage:
-  - local: approximately 10.92 GiB used of 93.93 GiB
-  - local-lvm: approximately 66.45 GiB used of 348.82 GiB
-- VMs running:
-  - talos-cp-01
-  - talos-wk-01
-  - opnsense
+## Infrastructure Snapshot (June 2026)
+
+- Proxmox node: alif (remote, friend's office — access via Tailscale)
+- Tailscale IP: 100.127.198.7
+- VMs running: talos-cp-01, talos-wk-01, opnsense (VM 102, router)
+- OPNsense: WAN on vmbr0 (office LAN DHCP), LAN on vmbr2 (192.168.60.1/24)
+- TrueNAS: home LAN (10.20.0.45), Tailscale (100.124.83.72) — backup target only
 
 ## Access Pattern
-- Cluster access is tunneled through Proxmox over SSH.
-- Primary path:
-  - make tunnel
-  - kubectl ...
-  - make tunnel-stop
+
+All cluster access requires Tailscale active, then:
+
+```bash
+make tunnel   # SSH port-forward localhost:16443 → 192.168.60.40:6443 via prox alias
+kubectl ...
+make tunnel-stop
+```
 
 ## Architecture
-- Layer 1: Terraform creates Talos VMs.
-- Layer 2: Ansible bootstraps Talos Kubernetes + Cilium.
-- Layer 3: ArgoCD app-of-apps deploys platform workloads.
-- Layer 3a: Flux side-by-side for selected workloads.
 
-## Recent Changes
-- Added Terraform-driven scaling variables and worker count controls.
-- Added deterministic planned DHCP reservation output for Talos nodes.
-- Added scaling helper targets in Makefile:
-  - scale-plan
-  - scale-apply
-  - planned-dhcp
-  - drain-node
-  - uncordon-node
-  - help-when
-- Added scenario runbook docs in README.
-- Added label helper playbook: ansible/playbooks/label-nodes.yml
+- Layer 1: Terraform → Proxmox VMs (talos-cp-01, talos-wk-01)
+- Layer 2: Ansible → Talos bootstrap + Cilium v1.16.5
+- Layer 3: ArgoCD app-of-apps → 27 apps in `gitops/apps/`
+- Layer 3a: FluxCD side-by-side (metrics-server, select workloads in `gitops/flux/apps/`)
+
+**GitOps rule:** No manual `kubectl apply` on anything in `gitops/`. All changes go git → push → ArgoCD. Exceptions: imperative secrets and openclaw cron SQLite edits.
+
+## Live Products on This Cluster
+
+| Product | Namespace | Notes |
+|---|---|---|
+| spinup.in PaaS | paas-system / paas-deployments / paas-tenant-* | NEVER touch paas-* — self-healing |
+| KubeWise | kubewise | K8s cost advisor, ArgoCD managed |
+| openclaw AI SRE | openclaw | Phase 1–3 cron agent, Mattermost delivery |
+| BPL prod | bpl-prod | Production app |
+| Mattermost | mattermost | Team chat, openclaw bot target |
+
+## openclaw AI SRE (Phase 1–3)
+
+All crons run against Haiku (`anthropic/claude-haiku-4-5-20251001`), post to Mattermost `#devops`.
+
+| Phase | What |
+|---|---|
+| 1 | Monitoring crons: cluster, PaaS, BPL, ArgoCD |
+| 2 | Remediation: auto-delete CrashLoop pods, approval-gated sync/rollout |
+| 3 | Runbook Intelligence: incident correlation, capacity forecasting, postmortems, drain/sync runbooks |
+
+Config lives on PVC (`openclaw.json`). Hot-reload on file change — no pod restart needed for model config.
+
+## Removed (June 2026 cleanup)
+
+- bpl-stage — removed, only bpl-prod remains
+- metrics-server — removed from ArgoCD (use `kubectl top` sparingly)
+- Ollama — removed from cluster (local LLM not viable on this hardware)
+- Groq / Cerebras — removed from openclaw config (TPM limits + context limits)
+- test-pg, pnl-postgres, homelab-postgres DR clusters — removed
+- tailscale namespace (operator) — removed
+- etcd-backup cron — removed
+
+## Out-of-Band Components
+
+| Component | Notes |
+|---|---|
+| Velero | Not in ArgoCD. BSL → `http://192.168.60.2:9900` (socat proxy → TrueNAS Tailscale). Daily cron at 02:30 UTC |
+| minio-proxy.service | Systemd on Proxmox. `socat 192.168.60.2:9900 → 100.124.83.72:9900`. Restart: `ssh prox systemctl restart minio-proxy` |
+| spinup.in control-plane | Self-healing: push to vercel-clone main → redeploys in ~3 min |
+
+## Flux Status
+
+Flux runs side-by-side with ArgoCD. Kustomization `oee-sites-pnl` is **suspended** — managed pnl-postgres and homelab-postgres which were removed. Do not resume.
 
 ## Operational Constraints
-- local-path storage is node-local.
-- Scale-down can cause data loss if workloads are still pinned to removed nodes.
-- DHCP reservations must match planned MAC/IP data for predictable node addressing.
 
-## Pending Hardening Work
-- Cloudflare Access policies for public endpoints.
-- OIDC for Grafana.
-- OIDC for ArgoCD.
+- local-path storage is node-local — no replication. Scale-down can cause data loss if workloads are pinned to removed nodes.
+- Talos has no SSH — all node interaction via `talosctl`.
+- DHCP reservations are MAC-based via OPNsense — static for cp (192.168.60.40) and worker (192.168.60.41).
+- Terraform state is remote (Terraform Cloud workspace: alif) — no `.tfstate` in git.
