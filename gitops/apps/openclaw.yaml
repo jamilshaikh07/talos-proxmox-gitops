@@ -14,7 +14,7 @@ spec:
     targetRevision: HEAD
     path: gitops/manifests/openclaw
     directory:
-      exclude: "Dockerfile,openclaw-config.json"
+      exclude: "{Dockerfile,openclaw-config.json}"
   destination:
     server: https://kubernetes.default.svc
     namespace: openclaw
