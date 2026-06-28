@@ -56,7 +56,7 @@ flowchart TB
 | incident-correlator | every 30m | `anthropic/claude-haiku-4-5-20251001` | Mattermost #devops (silent when clean) |
 | capacity-forecast | Mon 8:00 IST | `anthropic/claude-haiku-4-5-20251001` | Mattermost #devops |
 | paas-health-check | every 10m | command | Mattermost #devops (quiet mode: degradation only) |
-| bpl-health-check | every 10m | command | Mattermost #devops (quiet mode: degradation only) |
+| bpl-health-check | every 10m | command | Mattermost #devops (quiet mode: bpl-prod degradation only) |
 | talos-health-check | every 1h | legacy path (disabled) | Mattermost #devops |
 | prospect-hunter | Mon 9:00 IST | `anthropic/claude-sonnet-4-6` | Mattermost #business (disabled) |
 

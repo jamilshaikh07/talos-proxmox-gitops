@@ -258,12 +258,12 @@ kubectl port-forward -n openclaw deployment/openclaw 18789:18789
 |---|---|---|---|---|
 | `critical-alert-check` | every 15m | command | ✅ active | Auto-deletes CrashLoop pods; recurring failures flagged for review |
 | `paas-health-check` | every 10m | command | ✅ active | spinup.in PaaS health — alerts only, no auto-fix in paas-* namespaces |
-| `bpl-health-check` | every 10m | command | ✅ active | BPL stage+prod health — quiet mode alerts |
+| `bpl-health-check` | every 10m | command | ✅ active | BPL prod health — quiet mode alerts |
 | `argocd-sync-check` | every 30m | command | ✅ active | Posts drift with `sync <app>` approval instruction |
 | `incident-correlator` | every 30m | Haiku | ✅ active | Correlated multi-signal summary — silent when cluster clean |
 | `cluster-health-check` | every 1h | command | ✅ active | Auto-deletes Pending pods; postmortem on recurrence |
 | `capacity-forecast` | Mon 8am IST | Haiku | ✅ active | Weekly CPU/memory/PVC risk with 🟢🟡🔴 traffic lights |
-| `talos-health-check` | every 1h | ollama | ⛔ disabled | etcd + Talos node health (re-enable when GPU worker added) |
+| `talos-health-check` | every 1h | legacy path | ⛔ disabled | etcd + Talos node health (re-enable when needed) |
 | `prospect-hunter` | Mon 9am IST | Sonnet | ⛔ disabled | Business leads (enable when needed) |
 
 ## Step 8: Model Chain Simplification (2026-06-28)
@@ -378,6 +378,6 @@ Owner gate remains mandatory via `commands.ownerAllowFrom` mapping.
 | `incident-correlator` | every 30m | `claude-haiku-4-5-20251001` | `#devops` | Correlated multi-signal incident summary |
 | `capacity-forecast` | Mon 8:00 IST | `claude-haiku-4-5-20251001` | `#devops` | Weekly CPU/memory/PVC risk forecast |
 | `paas-health-check` | every 10m | command (no model) | `#devops` | spinup.in PaaS health (quiet mode: alerts only on degradation) |
-| `bpl-health-check` | every 10m | command (no model) | `#devops` | BPL stage+prod health (quiet mode: alerts only on degradation) |
-| `talos-health-check` | every 1h | `ollama/qwen2.5:7b` | `#devops` | etcd + Talos node diagnostics (disabled) |
+| `bpl-health-check` | every 10m | command (no model) | `#devops` | BPL prod health (quiet mode: alerts only on degradation) |
+| `talos-health-check` | every 1h | legacy path (disabled) | `#devops` | etcd + Talos node diagnostics |
 | `prospect-hunter` | Mon 9:00 IST | `claude-sonnet-4-6` | `#business` | Business lead generation (disabled) |

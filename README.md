@@ -68,8 +68,8 @@ Model: `anthropic/claude-haiku-4-5-20251001` (primary, always warm via env var).
 | Cron | Fires | Behaviour |
 |---|---|---|
 | `critical-alert-check` | every 15m | Auto-deletes CrashLoop pods |
-| `paas-health-check` | every 10m | spinup.in PaaS health — report only |
-| `bpl-health-check` | every 10m | BPL prod health — report only |
+| `paas-health-check` | every 10m | spinup.in PaaS health — quiet mode, alerts only on degradation |
+| `bpl-health-check` | every 10m | BPL prod health — quiet mode, alerts only on degradation |
 | `argocd-sync-check` | every 30m | ArgoCD drift → approval-gated sync |
 | `incident-correlator` | every 30m | Correlates multi-signal incidents |
 | `cluster-health-check` | every 1h | Pending pod auto-fix + postmortem |
