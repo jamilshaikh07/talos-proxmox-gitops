@@ -158,6 +158,18 @@ Examples: `fix(cloudflared): re-enable probes`, `feat(autofix-dojo): add SOPS-en
 
 The `paas-db` CNPG cluster in `paas-system` is the operational database for the control-plane. Deleting it = losing all tenant metadata.
 
+## GitOps Rule — No Manual kubectl apply
+
+**ArgoCD is the only deployment mechanism for everything in `gitops/`.** Never run `kubectl apply -f` on any file under `gitops/` directly. The correct flow is always:
+
+```
+edit file in gitops/ → git commit → git push → ArgoCD auto-syncs
+```
+
+This applies to: RBAC, manifests, ArgoCD apps, ingress routes, secrets (SOPS), everything. Manual applies create drift that ArgoCD will revert on next sync, or worse, silently diverge from git truth.
+
+The only exceptions are **imperative secrets** (never in git) and **openclaw cron jobs** (stored in SQLite on PVC, edited via `openclaw cron edit`).
+
 ## Important Notes
 
 - Talos configs in `talos-homelab-cluster/` are generated and gitignored — never commit them

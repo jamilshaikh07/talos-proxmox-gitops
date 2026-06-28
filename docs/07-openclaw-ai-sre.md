@@ -109,7 +109,7 @@ Key design decisions:
 2. `openclaw-config` — openclaw.json with Mattermost/Telegram tokens
 3. `openclaw-talosconfig` — already created by `make deploy`
 
-**RBAC:** ClusterRole `openclaw-readonly` — get/list/watch on pods, nodes, events, deployments, statefulsets, daemonsets, ArgoCD applications, metrics. No write permissions anywhere.
+**RBAC:** ClusterRole `openclaw-readonly` in `gitops/manifests/openclaw/rbac.yaml` — managed by ArgoCD. Never apply manually. All permission changes go through git → ArgoCD auto-sync.
 
 ---
 
@@ -217,13 +217,19 @@ You can say these in the **#devops channel** (bot sees mentions) or **DM opencla
 
 ### RBAC changes (`gitops/manifests/openclaw/rbac.yaml`)
 
+> **Rule:** All RBAC changes go through git only. Never `kubectl apply` manually — ArgoCD owns this file.
+
 | Permission | Scope | Why |
 |---|---|---|
-| `pods: [delete]` | cluster-wide | Auto-fix Pending/CrashLoop |
-| `deployments, daemonsets, statefulsets: [patch, update]` | cluster-wide | Approval-gated rollout restart |
-| `applications (argoproj.io): [patch, update]` | cluster-wide | Approval-gated ArgoCD sync |
+| `pods: [delete]` | cluster-wide | Phase 2: auto-fix Pending/CrashLoop |
+| `deployments, daemonsets, statefulsets: [patch, update]` | cluster-wide | Phase 2: approval-gated rollout restart |
+| `applications (argoproj.io): [patch, update]` | cluster-wide | Phase 2: approval-gated ArgoCD sync |
+| `namespaces: [patch]` | cluster-wide | Phase 3c: `kubectl annotate` autofix counters |
+| `nodes: [patch]` | cluster-wide | Phase 3d: cordon/uncordon for drain runbook |
+| `pods/eviction: [create]` | cluster-wide | Phase 3d: drain uses eviction subresource |
+| `clusters.postgresql.cnpg.io: [get, list, watch]` | cluster-wide | Phase 3e: paas-db health check |
 
-Read permissions unchanged — bot can still only see, never modify data/secrets.
+Read permissions (get/list/watch) unchanged — bot cannot touch secrets or data.
 
 ---
 
@@ -250,13 +256,17 @@ kubectl port-forward -n openclaw deployment/openclaw 18789:18789
 
 ### Live cron schedule
 
-| Job | Fires | Behaviour |
-|---|---|---|
-| `critical-alert-check` | every 15m | Auto-deletes CrashLoop pods; posts others for approval |
-| `argocd-sync-check` | every 30m | Posts drift with `sync <app>` approval instruction |
-| `cluster-health-check` | every 1h | Auto-deletes Pending pods; posts node issues for approval |
-| `talos-health-check` | every 1h | Reports etcd/node health (disabled, re-enable if needed) |
-| `prospect-hunter` | Mon 9am IST | Business leads via Claude Sonnet (disabled) |
+| Job | Fires | Model | Status | Behaviour |
+|---|---|---|---|---|
+| `critical-alert-check` | every 15m | command | ✅ active | Auto-deletes CrashLoop pods; recurring failures flagged for review |
+| `paas-health-check` | every 10m | command | ✅ active | spinup.in PaaS health — alerts only, no auto-fix in paas-* namespaces |
+| `bpl-health-check` | every 10m | command | ✅ active | BPL stage+prod health — quiet mode alerts |
+| `argocd-sync-check` | every 30m | command | ✅ active | Posts drift with `sync <app>` approval instruction |
+| `incident-correlator` | every 30m | Haiku | ✅ active | Correlated multi-signal summary — silent when cluster clean |
+| `cluster-health-check` | every 1h | command | ✅ active | Auto-deletes Pending pods; postmortem on recurrence |
+| `capacity-forecast` | Mon 8am IST | Haiku | ✅ active | Weekly CPU/memory/PVC risk with 🟢🟡🔴 traffic lights |
+| `talos-health-check` | every 1h | ollama | ⛔ disabled | etcd + Talos node health (re-enable when GPU worker added) |
+| `prospect-hunter` | Mon 9am IST | Sonnet | ⛔ disabled | Business leads (enable when needed) |
 
 ## Step 8: Model Chain Simplification (2026-06-28)
 
@@ -272,7 +282,19 @@ Operational pattern now is:
 - LLM usage is reserved for higher-value summarization/troubleshooting jobs
 - Haiku remains default for interactive and analytical turns
 
-## Step 9: Phase 3 — Runbook Intelligence (2026-06-28)
+## Step 9: Phase 3 — Runbook Intelligence (2026-06-28) ✅ Verified
+
+All Phase 3 crons verified live on 2026-06-28. ArgoCD synced all 27 apps (Synced + Healthy). RBAC confirmed via `kubectl auth can-i`. No manual `kubectl apply` required or used — all changes land through git → ArgoCD.
+
+**Verification results:**
+| Check | Result |
+|---|---|
+| `patch nodes` | ✅ yes |
+| `create pods/eviction` | ✅ yes |
+| `patch namespaces` | ✅ yes |
+| `get clusters.postgresql.cnpg.io` | ✅ yes |
+| `incident-correlator` run | ✅ 17 runs, ~8s each, Haiku, silent when clean |
+| All ArgoCD apps | ✅ 27/27 Synced + Healthy |
 
 ### 3a Incident Correlation (new cron)
 
