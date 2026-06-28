@@ -10,6 +10,7 @@ kind: ClusterRole
 metadata:
   name: openclaw-readonly
 rules:
+  # Read everything
   - apiGroups: [""]
     resources: [nodes, pods, events, namespaces, services, endpoints, persistentvolumes, persistentvolumeclaims]
     verbs: [get, list, watch]
@@ -22,6 +23,20 @@ rules:
   - apiGroups: [metrics.k8s.io]
     resources: [nodes, pods]
     verbs: [get, list]
+  # Auto-remediation (Option B): delete pods to force restart/reschedule
+  # Safe — pods are ephemeral; deleting a Pending/CrashLoop pod just reschedules it
+  - apiGroups: [""]
+    resources: [pods]
+    verbs: [delete]
+  # Approval-gated remediation (Option A): patch workloads on user confirm
+  # Covers: kubectl rollout restart (patches deployment), kubectl scale
+  - apiGroups: [apps]
+    resources: [deployments, daemonsets, statefulsets]
+    verbs: [patch, update]
+  # Approval-gated: ArgoCD app sync on user confirm
+  - apiGroups: [argoproj.io]
+    resources: [applications]
+    verbs: [patch, update]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
