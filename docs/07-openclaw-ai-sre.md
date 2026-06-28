@@ -1,6 +1,6 @@
 # BTS: openclaw AI SRE — K8s Deployment
 
-> Started: 2026-06-27 | Status: Done (Steps 1–8 complete)
+> Started: 2026-06-27 | Status: Done (Steps 1–9 complete)
 
 ## What is openclaw?
 
@@ -20,30 +20,28 @@ Originally ran on a bare-metal Intel i3 Debian machine (`noon`, `100.123.217.1` 
 
 ## Architecture Decision: LLM Model Chain
 
-**Final model chain (as of 2026-06-28):**
+**Current model chain (as of 2026-06-28):**
 
 ```
-Primary:    anthropic/claude-haiku-4-5-20251001   (fast, always warm, ~$0.50/month)
-Fallback 1: groq/llama-3.3-70b-versatile          (free, ~300 tok/s, OpenAI-compatible)
-Fallback 2: cerebras/llama3.1-70b                 (free, ~2000 tok/s — limited to 32k context)
-Fallback 3: ollama/qwen2.5:7b                     (in-cluster, $0, CPU-only, slow)
+Primary: anthropic/claude-haiku-4-5-20251001
+Fallback: none
 ```
 
 **Why Haiku as primary (not Groq/Cerebras)?**
 
 Haiku is loaded via `ANTHROPIC_API_KEY` env var — no warmup needed, always available at pod start. Groq and Cerebras use `openai-completions` provider type which goes through a 5-second startup warmup. On first call, Groq's auth takes ~13 seconds → warmup timeout → session defaults to Haiku anyway. By making Haiku the explicit primary, sessions start instantly and consistently.
 
-Cerebras has a hard 32k context limit that caused compaction loops (context fills up, compaction fails, session stalls). Stays in chain as last cloud fallback before Ollama.
-
 **Why not Sonnet for everything?**
 Monitoring crons run every 15-30 minutes. 96 runs/day × Sonnet pricing (~$3/$15 per M tokens) = expensive fast. Haiku handles structured `kubectl` output parsing perfectly at ~12× less cost. Sonnet is reserved for `prospect-hunter` only (once weekly, needs deep reasoning).
 
-**Ollama status:** Kept as offline fallback only. CPU-only inference on a homelab worker is too slow for interactive use (~5 min/response). Useful only if all cloud providers are unreachable simultaneously. A GPU-based worker node would change this.
+**Ollama status:** Removed from cluster and removed from fallback chain. Decision made for speed and operational simplicity.
 
 **Special-purpose overrides:**
 - `prospect-hunter` cron: uses `anthropic/claude-sonnet-4-6` explicitly (overrides default)
 
-## Step 1: Ollama on Kubernetes
+## Step 1 (Historical): Ollama on Kubernetes
+
+> Decommissioned on 2026-06-28. The section below is retained as migration history.
 
 ### What we built
 
@@ -102,10 +100,10 @@ Key design decisions:
 
 **talosctl:** Needs a talosconfig file (cluster CA + endpoints). Mounted from `openclaw-talosconfig` Secret at `/home/node/.talos/config`. The talosconfig is gitignored (contains cluster CA) — recreated from `talos-homelab-cluster/rendered/talosconfig` on rebuild.
 
-**Config seeding:** openclaw.json (with Ollama provider, channel tokens) is stored in a Secret (`openclaw-config`). An init container copies it to the PVC on first boot, then leaves it alone on subsequent starts — so live config changes on the PVC survive pod restarts.
+**Config seeding:** openclaw.json (gateway + channels + model defaults) is stored in a Secret (`openclaw-config`). An init container copies it to the PVC on first boot, then leaves it alone on subsequent starts — so live config changes on the PVC survive pod restarts.
 
 **Secrets required before first deploy (see `README-secrets.md`):**
-1. `openclaw-tokens` — ANTHROPIC_API_KEY + GEMINI_API_KEY
+1. `openclaw-tokens` — `ANTHROPIC_API_KEY` required (`GEMINI_API_KEY` optional legacy)
 2. `openclaw-config` — openclaw.json with Mattermost/Telegram tokens
 3. `openclaw-talosconfig` — already created by `make deploy`
 
@@ -121,10 +119,10 @@ Migrated `jobs.json` from noon machine, applied these changes:
 
 | Job | Change |
 |---|---|
-| `cluster-health-check` | model → `ollama/qwen2.5:7b`, IPs updated to `192.168.60.40/41`, enabled |
-| `critical-alert-check` | model → `ollama/qwen2.5:7b`, enabled |
-| `talos-health-check` | model → `ollama/qwen2.5:7b`, IPs: `192.168.60.40/41`, `talos-wk-04` → `talos-wk-01`, enabled |
-| `argocd-sync-check` | model → `ollama/qwen2.5:7b`, enabled |
+| `cluster-health-check` | now command-based, enabled (no model usage) |
+| `critical-alert-check` | now command-based, enabled (no model usage) |
+| `talos-health-check` | remains disabled (legacy model path) |
+| `argocd-sync-check` | now command-based, enabled (no model usage) |
 | `tech-news-digest` | model → `anthropic/claude-haiku-4-5-20251001`, prompt rewritten to inline Node.js RSS fetch (no Python dependency) |
 | `prospect-hunter` | model → `anthropic/claude-sonnet-4-6`, initially disabled pending API key |
 
@@ -146,7 +144,7 @@ The `jobs.json` was injected via `kubectl cp` to the live pod's PVC. On next res
    shred -u /tmp/ant-key
    ```
 3. Re-enabled `prospect-hunter` in SQLite: copied WAL-checkpointed DB, set `enabled=1`, copied back
-4. Restarted pod — both `ollama/qwen2.5:7b` and `anthropic/claude-haiku-4-5-20251001` auto-detected, all 6 crons active
+4. Restarted pod — Anthropic model path active and cron set healthy
 
 ## Step 6: Mattermost Migration + Hardening (2026-06-27)
 
@@ -274,13 +272,20 @@ After testing Groq/Cerebras in production-like runs, the chain was simplified fo
 
 ```
 Primary:  anthropic/claude-haiku-4-5-20251001
-Fallback: ollama/qwen2.5:7b
+Fallback: none
 ```
 
 Operational pattern now is:
 - Cron monitoring/remediation jobs are command-based where possible (low/no token cost)
 - LLM usage is reserved for higher-value summarization/troubleshooting jobs
 - Haiku remains default for interactive and analytical turns
+
+### Saved operator preferences (explicit)
+
+- **Cost-conscious by default:** prefer command-based checks and Haiku for selective reasoning; avoid unnecessary high-token paths.
+- **Quiet health checks:** 10-minute monitors (`paas-health-check`, `bpl-health-check`) alert only on degradation; healthy state stays silent.
+- **Direct execution style:** apply straightforward fixes directly without repeated confirmation prompts.
+- **GitOps discipline:** infra/RBAC changes go via git → ArgoCD; avoid manual drift.
 
 ## Step 9: Phase 3 — Runbook Intelligence (2026-06-28) ✅ Verified
 
@@ -345,7 +350,7 @@ Owner gate remains mandatory via `commands.ownerAllowFrom` mapping.
 ### 3e spinup.in PaaS Awareness (new cron)
 
 - Added `paas-health-check` (every 10m)
-- Checks and reports only (no auto-remediation in PaaS namespaces):
+- Quiet mode and report-only (no auto-remediation in PaaS namespaces):
   - `control-plane` pod in `paas-system`
   - `paas-db` CNPG ready instances
   - stuck build jobs (`>15m`) in `paas-deployments`
