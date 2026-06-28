@@ -258,24 +258,78 @@ kubectl port-forward -n openclaw deployment/openclaw 18789:18789
 | `talos-health-check` | every 1h | Reports etcd/node health (disabled, re-enable if needed) |
 | `prospect-hunter` | Mon 9am IST | Business leads via Claude Sonnet (disabled) |
 
-## Step 8: Multi-Provider Fallback Chain (2026-06-28)
+## Step 8: Model Chain Simplification (2026-06-28)
 
-Added Groq and Cerebras as free cloud providers alongside Anthropic, with openclaw's native fallback chain so the bot never goes down even if one provider is unavailable.
+After testing Groq/Cerebras in production-like runs, the chain was simplified for reliability and predictable cost:
 
-**Providers configured** (`models.providers` in `openclaw.json`):
+```
+Primary:  anthropic/claude-haiku-4-5-20251001
+Fallback: ollama/qwen2.5:7b
+```
 
-| Provider | API type | Model | Speed | Cost |
-|---|---|---|---|---|
-| `anthropic` | native | claude-haiku-4-5-20251001 | fast | ~$0.50/mo |
-| `groq` | `openai-completions` | llama-3.3-70b-versatile | ~300 tok/s | free |
-| `cerebras` | `openai-completions` | llama3.1-70b | ~2000 tok/s | free (32k ctx limit) |
-| `ollama` | `ollama` | qwen2.5:7b | ~5 min/response | $0 (in-cluster) |
+Operational pattern now is:
+- Cron monitoring/remediation jobs are command-based where possible (low/no token cost)
+- LLM usage is reserved for higher-value summarization/troubleshooting jobs
+- Haiku remains default for interactive and analytical turns
 
-**Key gotcha:** For OpenAI-compatible providers (Groq, Cerebras), the `api` field must be `"openai-completions"` — not `"openai"` (crashes) and not `"openai-compatible"` (unrecognised).
+## Step 9: Phase 3 — Runbook Intelligence (2026-06-28)
 
-**API keys** are stored in the `openclaw-config` K8s secret and seeded to the PVC on first boot. The git template uses `REPLACE_WITH_*` placeholders — update the secret directly when rotating keys.
+### 3a Incident Correlation (new cron)
 
-**Updating live config** without pod restart: openclaw hot-reloads `agents.defaults.model.*` changes automatically. Edit `/home/node/.openclaw/openclaw.json` on the PVC (via `kubectl exec`) and the change applies within seconds.
+- Added `incident-correlator` (every 30m)
+- Uses Haiku to correlate issues across pod health + ArgoCD app state
+- Posts one unified message only when >=2 related issues are detected
+- Output format enforced:
+  - `🔗 Correlated incident: ... Affected: ... Suggested action: ...`
+
+### 3b Capacity Forecasting (new cron)
+
+- Added `capacity-forecast` (`0 8 * * 1` @ `Asia/Kolkata`)
+- Uses Haiku to summarize:
+  - `kubectl top nodes`
+  - `kubectl top pods -A`
+  - `kubectl get pvc -A`
+- Reports node risk as traffic-light status with explicit action line for red conditions
+
+### 3c Automated Postmortems (enhanced existing crons)
+
+Enhanced `cluster-health-check` + `critical-alert-check` command payloads:
+
+- After auto-delete, checks recurrence using namespace events (`reason=Killing`)
+- First occurrence:
+  - `🔧 Auto-fixed: deleted <pod> in <ns>`
+- Recurring occurrence (`>=2/day`):
+  - `🔴 Recurring failure: ... needs human review`
+- Persists daily namespace counts via annotation:
+  - `openclaw.io/autofix-count-<YYYYMMDD>=N`
+- Added production safety exclusions in auto-fix path:
+  - `paas-system`, `paas-deployments`, `paas-tenant-*`
+
+### 3d Runbook Execution (chat-triggered model)
+
+Runbooks are executed through owner-approved chat commands in Mattermost (DM or `#devops` mention). The service account now has required permissions for node patch/eviction and namespace annotation.
+
+Supported operational commands:
+
+| Trigger | Action |
+|---|---|
+| `drain <node>` | Cordon + confirmation + drain workflow |
+| `sync all apps` | Sync all OutOfSync ArgoCD apps with progress messages |
+| `logs <pod> -n <namespace>` | Tail and return latest 50 lines |
+| `restart <kind> <name> -n <namespace>` | Rollout restart + completion status |
+
+Owner gate remains mandatory via `commands.ownerAllowFrom` mapping.
+
+### 3e spinup.in PaaS Awareness (new cron)
+
+- Added `paas-health-check` (every 10m)
+- Checks and reports only (no auto-remediation in PaaS namespaces):
+  - `control-plane` pod in `paas-system`
+  - `paas-db` CNPG ready instances
+  - stuck build jobs (`>15m`) in `paas-deployments`
+  - pod anomalies in `paas-deployments`
+  - `registry` pod status in `paas-system`
+- Sends additional critical message when `control-plane` or `paas-db` are degraded
 
 ## Known Gaps
 
@@ -291,9 +345,11 @@ Added Groq and Cerebras as free cloud providers alongside Anthropic, with opencl
 
 | Job | Schedule | Model | Mattermost Channel | Purpose |
 |---|---|---|---|---|
-| `cluster-health-check` | every 15m | `ollama/qwen2.5:7b` | `#devops` | Node + pod health, resource usage |
-| `critical-alert-check` | every 30m | `ollama/qwen2.5:7b` | `#alerts` | CrashLoop, OOMKill, node NotReady |
-| `talos-health-check` | every 1h | `ollama/qwen2.5:7b` | `#devops` | etcd, node memory/disk |
-| `argocd-sync-check` | every 30m | `ollama/qwen2.5:7b` | `#devops` | App sync drift |
-| `tech-news-digest` | 8:10 AM IST | `claude-haiku-4-5-20251001` | `#news` | K8s/DevOps/AI digest (inline Node.js RSS) |
-| `prospect-hunter` | Mon 9:00 AM IST | `claude-sonnet-4-6` | `#business` | Maharashtra pharma/chemical leads |
+| `cluster-health-check` | every 1h | command (no model) | `#devops` | Pending pod auto-fix + recurring postmortem |
+| `critical-alert-check` | every 15m | command (no model) | `#devops` | CrashLoop auto-fix + critical issue reporting |
+| `argocd-sync-check` | every 30m | command (no model) | `#devops` | Drift detection alerting |
+| `incident-correlator` | every 30m | `claude-haiku-4-5-20251001` | `#devops` | Correlated multi-signal incident summary |
+| `capacity-forecast` | Mon 8:00 IST | `claude-haiku-4-5-20251001` | `#devops` | Weekly CPU/memory/PVC risk forecast |
+| `paas-health-check` | every 10m | command (no model) | `#devops` | spinup.in PaaS health (report-only) |
+| `talos-health-check` | every 1h | `ollama/qwen2.5:7b` | `#devops` | etcd + Talos node diagnostics (disabled) |
+| `prospect-hunter` | Mon 9:00 IST | `claude-sonnet-4-6` | `#business` | Business lead generation (disabled) |
