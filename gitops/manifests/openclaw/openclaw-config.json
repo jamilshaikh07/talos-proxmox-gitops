@@ -18,11 +18,11 @@
     "agents": {
         "defaults": {
             "model": {
-                "primary": "cerebras/llama3.1-70b",
+                "primary": "anthropic/claude-haiku-4-5-20251001",
                 "fallbacks": [
                     "groq/llama-3.3-70b-versatile",
-                    "ollama/qwen2.5:7b",
-                    "anthropic/claude-haiku-4-5-20251001"
+                    "cerebras/llama3.1-70b",
+                    "ollama/qwen2.5:7b"
                 ]
             },
             "models": {
