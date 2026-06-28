@@ -18,13 +18,9 @@
     "agents": {
         "defaults": {
             "model": {
-                "primary": "anthropic/claude-haiku-4-5-20251001",
-                "fallbacks": [
-                    "ollama/qwen2.5:7b"
-                ]
+                "primary": "anthropic/claude-haiku-4-5-20251001"
             },
             "models": {
-                "ollama/qwen2.5:7b": {},
                 "anthropic/claude-haiku-4-5-20251001": {},
                 "anthropic/claude-sonnet-4-6": {}
             },
@@ -39,26 +35,7 @@
         }
     },
     "models": {
-        "providers": {
-            "ollama": {
-                "baseUrl": "http://ollama.ollama.svc.cluster.local:11434",
-                "apiKey": "ollama-local",
-                "api": "ollama",
-                "timeoutSeconds": 60,
-                "contextWindow": 16384,
-                "models": [
-                    {
-                        "id": "qwen2.5:7b",
-                        "name": "qwen2.5:7b",
-                        "contextWindow": 16384,
-                        "params": {
-                            "num_ctx": 16384,
-                            "keep_alive": "2h"
-                        }
-                    }
-                ]
-            }
-        }
+        "providers": {}
     },
     "messages": {
         "ackReactionScope": "group-mentions"
