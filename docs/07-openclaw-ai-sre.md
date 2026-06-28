@@ -257,8 +257,8 @@ kubectl port-forward -n openclaw deployment/openclaw 18789:18789
 | Job | Fires | Model | Status | Behaviour |
 |---|---|---|---|---|
 | `critical-alert-check` | every 15m | command | ✅ active | Auto-deletes CrashLoop pods; recurring failures flagged for review |
-| `paas-health-check` | every 10m | command | ✅ active | spinup.in PaaS health — alerts only, no auto-fix in paas-* namespaces |
-| `bpl-health-check` | every 10m | command | ✅ active | BPL prod health — quiet mode alerts |
+| `paas-health-check` | every 10m | command | ✅ active | spinup.in PaaS health — quiet mode: alerts only on degradation (no auto-fix in paas-* namespaces) |
+| `bpl-health-check` | every 10m | command | ✅ active | BPL prod health — quiet mode: alerts only on degradation |
 | `argocd-sync-check` | every 30m | command | ✅ active | Posts drift with `sync <app>` approval instruction |
 | `incident-correlator` | every 30m | Haiku | ✅ active | Correlated multi-signal summary — silent when cluster clean |
 | `cluster-health-check` | every 1h | command | ✅ active | Auto-deletes Pending pods; postmortem on recurrence |
@@ -350,7 +350,7 @@ Owner gate remains mandatory via `commands.ownerAllowFrom` mapping.
 ### 3e spinup.in PaaS Awareness (new cron)
 
 - Added `paas-health-check` (every 10m)
-- Quiet mode and report-only (no auto-remediation in PaaS namespaces):
+- Quiet mode: alerts only on degradation (no auto-remediation in PaaS namespaces):
   - `control-plane` pod in `paas-system`
   - `paas-db` CNPG ready instances
   - stuck build jobs (`>15m`) in `paas-deployments`
