@@ -158,6 +158,31 @@ The `jobs.json` was injected via `kubectl cp` to the live pod's PVC. On next res
 3. Updated secrets runbook to source `MATTERMOST_BOT_TOKEN` from Mattermost Bot Accounts.
 4. Applied small pod hardening in deployment: `seccompProfile: RuntimeDefault`, `runAsNonRoot: true`, `allowPrivilegeEscalation: false`, `capabilities.drop: [ALL]`.
 
+## Step 7: Hybrid Remediation (2026-06-28)
+
+Moved from pure monitoring → monitoring + remediation.
+
+**Option B — Auto-fix (no approval needed):**
+| Trigger | Action |
+|---|---|
+| Pod stuck `Pending` | `kubectl delete pod` — reschedules immediately |
+| Pod in `CrashLoopBackOff` | `kubectl delete pod` — resets exponential backoff |
+
+Both are safe: pods are ephemeral. Deleting a Pending pod doesn't lose data; deleting a CrashLoop pod just forces an immediate restart instead of waiting 5-10min for backoff.
+
+**Option A — Approval-gated:**
+ArgoCD drift and node-level issues post to #devops with instructions:
+- `fix <pod> -n <namespace>` → bot force-restarts it
+- `sync <app-name>` → bot force-syncs the ArgoCD app
+- `sync all` → bot syncs everything drifted
+
+The interactive DM handler (openclaw-bot in Mattermost) picks up these replies and executes via the expanded ClusterRole.
+
+**RBAC expanded** (`gitops/manifests/openclaw/rbac.yaml`):
+- Added: `pods: [delete]`
+- Added: `deployments, daemonsets, statefulsets: [patch, update]`
+- Added: `applications (argoproj.io): [patch, update]`
+
 ## Known Gaps
 
 - **GitHub Actions for image builds:** `.github/workflows/build-openclaw.yml` is committed and auto-triggers on changes to `gitops/manifests/openclaw/`. Uses `GHCR_TOKEN` secret if set, falls back to `GITHUB_TOKEN`.
