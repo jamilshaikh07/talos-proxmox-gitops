@@ -1,6 +1,6 @@
 # BTS: openclaw AI SRE — K8s Deployment
 
-> Started: 2026-06-27 | Status: Done (Steps 1–6 complete)
+> Started: 2026-06-27 | Status: Done (Steps 1–8 complete)
 
 ## What is openclaw?
 
@@ -18,33 +18,30 @@ Originally ran on a bare-metal Intel i3 Debian machine (`noon`, `100.123.217.1` 
 | Log aggregation | Loki/Promtail picks up pod logs automatically |
 | Network access | Pods on `192.168.60.0/24` can reach Talos nodes directly — no SSH tunnels needed |
 
-## Architecture Decision: LLM Tier Split
+## Architecture Decision: LLM Model Chain
 
-The biggest cost decision — which model for which job:
+**Final model chain (as of 2026-06-28):**
 
 ```
-Monitoring crons (cluster-health, alerts, talos, argocd)
-  → ollama/qwen2.5:7b  — runs IN the cluster, $0, private
-  → Tool calling works natively, 128k context
-
-News digests (daily-ai-news, tech-news-digest)
-  → anthropic/claude-haiku-4-5  — cloud, ~$0.50/month
-
-Prospect hunter (family business leads, weekly)
-  → anthropic/claude-sonnet-4-6  — cloud, ~$0.20/week
+Primary:    anthropic/claude-haiku-4-5-20251001   (fast, always warm, ~$0.50/month)
+Fallback 1: groq/llama-3.3-70b-versatile          (free, ~300 tok/s, OpenAI-compatible)
+Fallback 2: cerebras/llama3.1-70b                 (free, ~2000 tok/s — limited to 32k context)
+Fallback 3: ollama/qwen2.5:7b                     (in-cluster, $0, CPU-only, slow)
 ```
 
-**Why not Gemini free tier (the old setup)?**
-Gemini free tier worked but adds an external cloud dependency for monitoring. Ollama is self-contained — if the internet is down the cluster still gets watched.
+**Why Haiku as primary (not Groq/Cerebras)?**
 
-**Why not Claude for everything?**
-Monitoring crons run every 15-30 minutes. 96 runs/day × Sonnet pricing = expensive fast. Ollama handles structured kubectl output parsing perfectly at $0.
+Haiku is loaded via `ANTHROPIC_API_KEY` env var — no warmup needed, always available at pod start. Groq and Cerebras use `openai-completions` provider type which goes through a 5-second startup warmup. On first call, Groq's auth takes ~13 seconds → warmup timeout → session defaults to Haiku anyway. By making Haiku the explicit primary, sessions start instantly and consistently.
 
-**Why qwen2.5:7b specifically?**
-- Reliable tool calling (monitoring agents need to exec kubectl/talosctl)
-- 4.7GB model weight — fits comfortably on worker node (9GB free RAM)
-- 128k context window natively; openclaw configured at 16384 (covers system prompt ~8-10K + 3-5 kubectl tool call results + response)
-- `OLLAMA_KEEP_ALIVE=2h` — model stays warm across cron runs, eliminates 30-60s cold load penalty
+Cerebras has a hard 32k context limit that caused compaction loops (context fills up, compaction fails, session stalls). Stays in chain as last cloud fallback before Ollama.
+
+**Why not Sonnet for everything?**
+Monitoring crons run every 15-30 minutes. 96 runs/day × Sonnet pricing (~$3/$15 per M tokens) = expensive fast. Haiku handles structured `kubectl` output parsing perfectly at ~12× less cost. Sonnet is reserved for `prospect-hunter` only (once weekly, needs deep reasoning).
+
+**Ollama status:** Kept as offline fallback only. CPU-only inference on a homelab worker is too slow for interactive use (~5 min/response). Useful only if all cloud providers are unreachable simultaneously. A GPU-based worker node would change this.
+
+**Special-purpose overrides:**
+- `prospect-hunter` cron: uses `anthropic/claude-sonnet-4-6` explicitly (overrides default)
 
 ## Step 1: Ollama on Kubernetes
 
@@ -260,6 +257,25 @@ kubectl port-forward -n openclaw deployment/openclaw 18789:18789
 | `cluster-health-check` | every 1h | Auto-deletes Pending pods; posts node issues for approval |
 | `talos-health-check` | every 1h | Reports etcd/node health (disabled, re-enable if needed) |
 | `prospect-hunter` | Mon 9am IST | Business leads via Claude Sonnet (disabled) |
+
+## Step 8: Multi-Provider Fallback Chain (2026-06-28)
+
+Added Groq and Cerebras as free cloud providers alongside Anthropic, with openclaw's native fallback chain so the bot never goes down even if one provider is unavailable.
+
+**Providers configured** (`models.providers` in `openclaw.json`):
+
+| Provider | API type | Model | Speed | Cost |
+|---|---|---|---|---|
+| `anthropic` | native | claude-haiku-4-5-20251001 | fast | ~$0.50/mo |
+| `groq` | `openai-completions` | llama-3.3-70b-versatile | ~300 tok/s | free |
+| `cerebras` | `openai-completions` | llama3.1-70b | ~2000 tok/s | free (32k ctx limit) |
+| `ollama` | `ollama` | qwen2.5:7b | ~5 min/response | $0 (in-cluster) |
+
+**Key gotcha:** For OpenAI-compatible providers (Groq, Cerebras), the `api` field must be `"openai-completions"` — not `"openai"` (crashes) and not `"openai-compatible"` (unrecognised).
+
+**API keys** are stored in the `openclaw-config` K8s secret and seeded to the PVC on first boot. The git template uses `REPLACE_WITH_*` placeholders — update the secret directly when rotating keys.
+
+**Updating live config** without pod restart: openclaw hot-reloads `agents.defaults.model.*` changes automatically. Edit `/home/node/.openclaw/openclaw.json` on the PVC (via `kubectl exec`) and the change applies within seconds.
 
 ## Known Gaps
 
