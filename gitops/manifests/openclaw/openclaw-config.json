@@ -20,14 +20,10 @@
             "model": {
                 "primary": "anthropic/claude-haiku-4-5-20251001",
                 "fallbacks": [
-                    "groq/llama-3.3-70b-versatile",
-                    "cerebras/llama3.1-70b",
                     "ollama/qwen2.5:7b"
                 ]
             },
             "models": {
-                "groq/llama-3.3-70b-versatile": {},
-                "cerebras/llama3.1-70b": {},
                 "ollama/qwen2.5:7b": {},
                 "anthropic/claude-haiku-4-5-20251001": {},
                 "anthropic/claude-sonnet-4-6": {}
@@ -44,39 +40,11 @@
     },
     "models": {
         "providers": {
-            "groq": {
-                "baseUrl": "https://api.groq.com/openai/v1",
-                "apiKey": "REPLACE_WITH_GROQ_KEY",
-                "api": "openai-completions",
-                "timeoutSeconds": 30,
-                "contextWindow": 32768,
-                "models": [
-                    {
-                        "id": "llama-3.3-70b-versatile",
-                        "name": "llama-3.3-70b-versatile",
-                        "contextWindow": 32768
-                    }
-                ]
-            },
-            "cerebras": {
-                "baseUrl": "https://api.cerebras.ai/v1",
-                "apiKey": "REPLACE_WITH_CEREBRAS_KEY",
-                "api": "openai-completions",
-                "timeoutSeconds": 30,
-                "contextWindow": 32768,
-                "models": [
-                    {
-                        "id": "llama3.1-70b",
-                        "name": "llama3.1-70b",
-                        "contextWindow": 32768
-                    }
-                ]
-            },
             "ollama": {
                 "baseUrl": "http://ollama.ollama.svc.cluster.local:11434",
                 "apiKey": "ollama-local",
                 "api": "ollama",
-                "timeoutSeconds": 300,
+                "timeoutSeconds": 60,
                 "contextWindow": 16384,
                 "models": [
                     {
