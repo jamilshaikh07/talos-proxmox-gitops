@@ -350,7 +350,7 @@ Owner gate remains mandatory via `commands.ownerAllowFrom` mapping.
 | `argocd-sync-check` | every 30m | command (no model) | `#devops` | Drift detection alerting |
 | `incident-correlator` | every 30m | `claude-haiku-4-5-20251001` | `#devops` | Correlated multi-signal incident summary |
 | `capacity-forecast` | Mon 8:00 IST | `claude-haiku-4-5-20251001` | `#devops` | Weekly CPU/memory/PVC risk forecast |
-| `paas-health-check` | every 10m | command (no model) | `#devops` | spinup.in PaaS health (report-only) |
+| `paas-health-check` | every 10m | command (no model) | `#devops` | spinup.in PaaS health (quiet mode: alerts only on degradation) |
 | `bpl-health-check` | every 10m | command (no model) | `#devops` | BPL stage+prod health (quiet mode: alerts only on degradation) |
 | `talos-health-check` | every 1h | `ollama/qwen2.5:7b` | `#devops` | etcd + Talos node diagnostics (disabled) |
 | `prospect-hunter` | Mon 9:00 IST | `claude-sonnet-4-6` | `#business` | Business lead generation (disabled) |
