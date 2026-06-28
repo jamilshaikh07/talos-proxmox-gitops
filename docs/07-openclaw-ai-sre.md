@@ -160,28 +160,106 @@ The `jobs.json` was injected via `kubectl cp` to the live pod's PVC. On next res
 
 ## Step 7: Hybrid Remediation (2026-06-28)
 
-Moved from pure monitoring → monitoring + remediation.
+Moved from pure monitoring → monitoring + remediation. Two modes running in parallel.
 
-**Option B — Auto-fix (no approval needed):**
-| Trigger | Action |
+---
+
+### How it works end-to-end
+
+#### Option B — Auto-fix (no approval, fires automatically)
+
+Triggers: Pending pods (scheduling deadlock) and CrashLoopBackOff pods (stuck in backoff).
+
+```
+cron fires (every 1h / every 15m)
+  └── kubectl get pods -A --no-headers
+        └── awk filter: $4=="Pending" or status~CrashLoopBackOff
+              ├── nothing found → silent
+              └── found →
+                    kubectl delete pod <pod> -n <ns> --grace-period=0
+                    openclaw message send → Mattermost #devops
+                    "🔧 Auto-fixed: deleted Pending pod `x` in `ns` — rescheduling now"
+```
+
+**Why this is safe:**
+- Pods are ephemeral — deleting a Pending pod just reschedules it, no data loss
+- Deleting a CrashLoop pod resets the exponential backoff (5min wait → immediate retry)
+- The pod's owner (Deployment/StatefulSet) recreates it automatically
+
+#### Option A — Approval-gated (you reply to trigger)
+
+Triggers: ArgoCD drift, node not Ready, non-CrashLoop pod failures.
+
+```
+cron detects issue (e.g. ArgoCD app OutOfSync)
+  └── posts to Mattermost #devops:
+        "⚠️ ArgoCD drift detected:
+         openclaw Unknown Healthy
+         Reply `sync openclaw` to force sync"
+
+You reply in #devops or DM openclaw-bot:
+  └── "sync openclaw"
+        └── openclaw-bot LLM agent picks up message
+              └── runs: argocd app sync openclaw
+                         OR kubectl rollout restart deployment/x -n y
+              └── posts result back to channel
+```
+
+**Supported reply commands (chat with bot directly):**
+| You say | Bot does |
 |---|---|
-| Pod stuck `Pending` | `kubectl delete pod` — reschedules immediately |
-| Pod in `CrashLoopBackOff` | `kubectl delete pod` — resets exponential backoff |
+| `fix <pod> -n <namespace>` | `kubectl delete pod <pod> -n <namespace>` |
+| `sync <app-name>` | `argocd app sync <app-name>` |
+| `sync all` | syncs all drifted ArgoCD apps |
+| `restart deployment <name> -n <ns>` | `kubectl rollout restart deployment/<name> -n <ns>` |
+| `status` | full cluster health summary |
 
-Both are safe: pods are ephemeral. Deleting a Pending pod doesn't lose data; deleting a CrashLoop pod just forces an immediate restart instead of waiting 5-10min for backoff.
+You can say these in the **#devops channel** (bot sees mentions) or **DM openclaw-bot** directly.
 
-**Option A — Approval-gated:**
-ArgoCD drift and node-level issues post to #devops with instructions:
-- `fix <pod> -n <namespace>` → bot force-restarts it
-- `sync <app-name>` → bot force-syncs the ArgoCD app
-- `sync all` → bot syncs everything drifted
+---
 
-The interactive DM handler (openclaw-bot in Mattermost) picks up these replies and executes via the expanded ClusterRole.
+### RBAC changes (`gitops/manifests/openclaw/rbac.yaml`)
 
-**RBAC expanded** (`gitops/manifests/openclaw/rbac.yaml`):
-- Added: `pods: [delete]`
-- Added: `deployments, daemonsets, statefulsets: [patch, update]`
-- Added: `applications (argoproj.io): [patch, update]`
+| Permission | Scope | Why |
+|---|---|---|
+| `pods: [delete]` | cluster-wide | Auto-fix Pending/CrashLoop |
+| `deployments, daemonsets, statefulsets: [patch, update]` | cluster-wide | Approval-gated rollout restart |
+| `applications (argoproj.io): [patch, update]` | cluster-wide | Approval-gated ArgoCD sync |
+
+Read permissions unchanged — bot can still only see, never modify data/secrets.
+
+---
+
+### Where to see the cron job list
+
+**Option 1 — CLI:**
+```bash
+kubectl exec -n openclaw deployment/openclaw -- openclaw cron list --all
+```
+
+**Option 2 — DM the bot in Mattermost:**
+```
+cron list
+```
+openclaw-bot replies with all jobs, schedules, last run status.
+
+**Option 3 — Gateway UI (port-forward):**
+```bash
+kubectl port-forward -n openclaw deployment/openclaw 18789:18789
+# open http://localhost:18789 in browser
+```
+
+---
+
+### Live cron schedule
+
+| Job | Fires | Behaviour |
+|---|---|---|
+| `critical-alert-check` | every 15m | Auto-deletes CrashLoop pods; posts others for approval |
+| `argocd-sync-check` | every 30m | Posts drift with `sync <app>` approval instruction |
+| `cluster-health-check` | every 1h | Auto-deletes Pending pods; posts node issues for approval |
+| `talos-health-check` | every 1h | Reports etcd/node health (disabled, re-enable if needed) |
+| `prospect-hunter` | Mon 9am IST | Business leads via Claude Sonnet (disabled) |
 
 ## Known Gaps
 
