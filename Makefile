@@ -287,18 +287,61 @@ tunnel: ## SSH tunnel: localhost:16443 → 192.168.60.40:6443 via Proxmox (works
 	@if ss -tlnp 2>/dev/null | grep -q ':16443'; then \
 		echo "$(GREEN)✓ Tunnel already running$(NC)"; \
 	else \
-		ssh -L 16443:192.168.60.40:6443 -N -f prox && \
+		if command -v autossh >/dev/null 2>&1; then \
+			autossh -M 0 -f -N \
+				-o "ExitOnForwardFailure=yes" \
+				-o "ServerAliveInterval=20" \
+				-o "ServerAliveCountMax=3" \
+				-o "TCPKeepAlive=yes" \
+				-L 16443:192.168.60.40:6443 prox; \
+			echo "$(GREEN)✅ autossh tunnel started (auto-reconnect enabled)$(NC)"; \
+		else \
+			echo "$(YELLOW)autossh not found; starting plain ssh tunnel (no auto-reconnect).$(NC)"; \
+			ssh -f -N \
+				-o "ExitOnForwardFailure=yes" \
+				-o "ServerAliveInterval=20" \
+				-o "ServerAliveCountMax=3" \
+				-o "TCPKeepAlive=yes" \
+				-L 16443:192.168.60.40:6443 prox; \
+		fi && \
 		echo "$(GREEN)✅ Tunnel started — run: kubectl get nodes$(NC)"; \
 	fi
 
 .PHONY: tunnel-stop
 tunnel-stop: ## Stop the Proxmox SSH tunnel
-	@PID=$$(ss -tlnp 2>/dev/null | grep ':16443' | grep -oP 'pid=\K[0-9]+' | head -1); \
-	if [ -n "$$PID" ]; then \
-		kill $$PID && echo "$(GREEN)✅ Tunnel stopped$(NC)"; \
+	@PIDS=$$(ss -tlnp 2>/dev/null | grep ':16443' | grep -oP 'pid=\K[0-9]+' | sort -u); \
+	if [ -n "$$PIDS" ]; then \
+		kill $$PIDS && echo "$(GREEN)✅ Tunnel stopped$(NC)"; \
 	else \
 		echo "$(YELLOW)No tunnel running on port 16443$(NC)"; \
 	fi
+
+.PHONY: tunnel-status
+tunnel-status: ## Show SSH tunnel status for localhost:16443 and API reachability
+	@echo "$(BLUE)🔎 Tunnel status (localhost:16443)$(NC)"
+	@LINE=$$(ss -tlnp 2>/dev/null | grep ':16443' | head -1); \
+	if [ -n "$$LINE" ]; then \
+		PID=$$(echo "$$LINE" | grep -oP 'pid=\K[0-9]+' | head -1); \
+		PROC=$$(ps -p $$PID -o comm= 2>/dev/null | xargs); \
+		echo "$(GREEN)✓ Listening on :16443$(NC)"; \
+		echo "Process: $${PROC:-unknown} (pid=$${PID:-n/a})"; \
+	else \
+		echo "$(RED)✗ Not listening on :16443$(NC)"; \
+		exit 0; \
+	fi
+	@kubectl --request-timeout=5s get --raw='/readyz' >/dev/null 2>&1 \
+		&& echo "$(GREEN)✓ Kubernetes API reachable through tunnel$(NC)" \
+		|| echo "$(YELLOW)⚠ Tunnel exists but Kubernetes API check failed$(NC)"
+
+.PHONY: tunnel-ensure
+tunnel-ensure: ## Ensure SSH tunnel is running; auto-start if needed
+	@if ss -tlnp 2>/dev/null | grep -q ':16443'; then \
+		echo "$(GREEN)✓ Tunnel already running$(NC)"; \
+	else \
+		echo "$(YELLOW)Tunnel not detected on :16443; auto-starting...$(NC)"; \
+		$(MAKE) --no-print-directory tunnel; \
+	fi
+	@$(MAKE) --no-print-directory tunnel-status
 
 # ============================================================================
 # CLUSTER MANAGEMENT
@@ -307,6 +350,8 @@ tunnel-stop: ## Stop the Proxmox SSH tunnel
 .PHONY: status
 status: ## Check cluster status
 	@echo "$(BLUE)📊 Cluster Status:$(NC)"
+	@echo ""
+	@$(MAKE) --no-print-directory tunnel-ensure
 	@echo ""
 	@echo "$(YELLOW)Nodes:$(NC)"
 	@kubectl get nodes -o wide 2>/dev/null || echo "$(RED)Cluster not accessible$(NC)"
