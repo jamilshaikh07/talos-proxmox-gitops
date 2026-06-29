@@ -15,6 +15,12 @@ Not a tutorial — a running record of what was built, why it was built that way
 | [spinup.in PaaS](./06-spinup-paas.md) | Self-hosted Vercel clone — architecture, live tenant workloads |
 | [openclaw AI SRE](./07-openclaw-ai-sre.md) | AI SRE agent — Phase 1–3, Haiku model chain, Mattermost delivery, cron architecture |
 
+## Incidents
+
+| Incident | Date | Impact | Doc |
+|---|---|---|---|
+| OPNsense DNS + NAT outage — cluster-wide connectivity failure | 2026-06-29 | Critical — all external pulls failed, cloudflared/external-dns/openclaw down | [→](./incidents/2026-06-29-opnsense-dns-nat-outage.md) |
+
 ---
 
 *Updated as the cluster evolves. Each doc captures decisions at the time they were made.*
