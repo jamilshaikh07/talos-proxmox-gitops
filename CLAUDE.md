@@ -66,7 +66,7 @@ Run `make help` for the full list of targets.
   - `flux/` — FluxCD managed resources
     - `flux-system/` — GitRepository + root Kustomization bootstrap manifests
     - `apps/` — HelmRelease/Kustomization YAMLs managed by Flux (e.g. metrics-server)
-  - `manifests/` — Kustomize/raw K8s manifests, including SOPS-encrypted secrets
+  - `manifests/` — Kustomize/raw K8s manifests
 - `scripts/` — `generate-ansible-inventory.py` bridges Terraform outputs to Ansible inventory
 - `deploy-homelab.sh` — Master orchestration script (called by `make deploy` and CI)
 
@@ -80,7 +80,7 @@ Run `make help` for the full list of targets.
 
 **Storage:** local-path-provisioner (default StorageClass `local-path`) using `/var/local-path-storage` on the main OS disk of each node. Simple, zero-maintenance hostpath storage.
 
-**Secrets:** SOPS with age encryption. Rules in `.sops.yaml` — encrypts `*.enc.yaml`, files in `gitops/manifests/secrets/`, and `gitops/manifests/autofix-dojo/*-secret.yaml`. Talos-generated secrets are gitignored.
+**Secrets:** Imperative secrets only — created via `kubectl create secret` directly, never stored in git. Talos-generated secrets are gitignored.
 
 ### Network Layout
 
@@ -136,7 +136,7 @@ GitHub Actions workflow at `.github/workflows/deploy-homelab.yml` — manual dis
 type(scope): description
 ```
 
-Examples: `fix(cloudflared): re-enable probes`, `feat(autofix-dojo): add SOPS-encrypted secret`, `chore(helm): critical upgrades`. Main branch is `master`.
+Examples: `fix(cloudflared): re-enable probes`, `feat(openclaw): add remediation cron`, `chore(helm): critical upgrades`. Main branch is `master`.
 
 ## spinup.in — Hosted PaaS (DO NOT TOUCH)
 
@@ -164,7 +164,7 @@ The `paas-db` CNPG cluster in `paas-system` is the operational database for the 
 edit file in gitops/ → git commit → git push → ArgoCD auto-syncs
 ```
 
-This applies to: RBAC, manifests, ArgoCD apps, ingress routes, secrets (SOPS), everything. Manual applies create drift that ArgoCD will revert on next sync, or worse, silently diverge from git truth.
+This applies to: RBAC, manifests, ArgoCD apps, ingress routes, everything. Manual applies create drift that ArgoCD will revert on next sync, or worse, silently diverge from git truth.
 
 The only exceptions are **imperative secrets** (never in git) and **openclaw cron jobs** (stored in SQLite on PVC, edited via `openclaw cron edit`).
 
