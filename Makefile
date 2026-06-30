@@ -489,34 +489,6 @@ logs: ## View all system logs
 # DNS & CERTIFICATE MANAGEMENT
 # ============================================================================
 
-.PHONY: setup-dns
-setup-dns: ## Add internal *.lab.jamilshaikh.in domains to /etc/hosts
-	@echo "$(YELLOW)📝 Adding internal *.lab.jamilshaikh.in domains to /etc/hosts...$(NC)"
-	@if grep -q "prometheus.lab.jamilshaikh.in" /etc/hosts 2>/dev/null; then \
-		echo "$(GREEN)✓$(NC) Domains already configured in /etc/hosts"; \
-	else \
-		echo "$(YELLOW)Adding internal homelab domains...$(NC)"; \
-		echo "" | sudo tee -a /etc/hosts; \
-		echo "# Homelab Internal Services (*.lab.jamilshaikh.in)" | sudo tee -a /etc/hosts; \
-		echo "192.168.60.81 prometheus.lab.jamilshaikh.in traefik.lab.jamilshaikh.in mattermost.lab.jamilshaikh.in" | sudo tee -a /etc/hosts; \
-		echo "$(GREEN)✅ DNS configuration added to /etc/hosts$(NC)"; \
-	fi
-	@echo ""
-	@echo "$(BLUE)🌐 Internal services (LAN only):$(NC)"
-	@echo "  http://prometheus.lab.jamilshaikh.in    - Prometheus/VictoriaMetrics UI"
-	@echo "  http://traefik.lab.jamilshaikh.in       - Traefik dashboard"
-	@echo ""
-	@echo "$(BLUE)🌍 Public services (via Cloudflare):$(NC)"
-	@echo "  https://argocd.jamilshaikh.in           - ArgoCD UI"
-	@echo "  https://grafana.jamilshaikh.in          - Grafana dashboards"
-	@echo "  https://uptime.jamilshaikh.in           - Uptime Kuma monitoring"
-
-.PHONY: remove-dns
-remove-dns: ## Remove *.lab.jamilshaikh.in domains from /etc/hosts
-	@echo "$(YELLOW)🗑️  Removing *.lab.jamilshaikh.in domains from /etc/hosts...$(NC)"
-	@sudo sed -i '/# Homelab Internal Services/,+1d' /etc/hosts 2>/dev/null || true
-	@echo "$(GREEN)✅ DNS configuration removed$(NC)"
-
 .PHONY: extract-ca
 extract-ca: ## Extract homelab CA certificate
 	@echo "$(BLUE)📜 Extracting homelab CA certificate...$(NC)"
@@ -551,10 +523,6 @@ trust-ca: extract-ca ## Trust homelab CA certificate (Linux)
 		echo "$(YELLOW)⚠️  Unsupported OS. Please install homelab-ca.crt manually.$(NC)"; \
 		echo "For Windows: certutil -addstore -f \"ROOT\" homelab-ca.crt"; \
 	fi
-	@echo ""
-	@echo "$(BLUE)🌐 Internal services with trusted CA (future HTTPS):$(NC)"
-	@echo "  http://prometheus.lab.jamilshaikh.in"
-	@echo "  http://traefik.lab.jamilshaikh.in"
 
 .PHONY: untrust-ca
 untrust-ca: ## Remove homelab CA certificate
@@ -571,7 +539,7 @@ untrust-ca: ## Remove homelab CA certificate
 	@rm -f homelab-ca.crt
 
 .PHONY: setup-homelab-access
-setup-homelab-access: setup-dns trust-ca ## Complete setup: DNS + CA trust
+setup-homelab-access: trust-ca ## Complete setup: CA trust
 	@echo ""
 	@echo "$(GREEN)╔═══════════════════════════════════════════════════════════════╗$(NC)"
 	@echo "$(GREEN)║          HOMELAB ACCESS SETUP COMPLETE!                       ║$(NC)"
@@ -582,9 +550,8 @@ setup-homelab-access: setup-dns trust-ca ## Complete setup: DNS + CA trust
 	@echo "$(CYAN)Next steps:$(NC)"
 	@echo "  1. ArgoCD (public):  $(GREEN)https://argocd.jamilshaikh.in$(NC)"
 	@echo "  2. Grafana (public): $(GREEN)https://grafana.jamilshaikh.in$(NC)"
-	@echo "  3. Prometheus (LAN): $(GREEN)http://prometheus.lab.jamilshaikh.in$(NC)"
-	@echo "  4. Get ArgoCD password: $(GREEN)make argocd-password$(NC)"
-	@echo "  5. Check cluster status: $(GREEN)make status$(NC)"
+	@echo "  3. Get ArgoCD password: $(GREEN)make argocd-password$(NC)"
+	@echo "  4. Check cluster status: $(GREEN)make status$(NC)"
 
 # ============================================================================
 # VERSION INFO

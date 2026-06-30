@@ -96,11 +96,9 @@ Run `make help` for the full list of targets.
 | Worker 1 (VM) | 192.168.60.41 |
 | MetalLB pool | 192.168.60.81-99 |
 | Traefik LB / services | 192.168.60.81 |
-| k8s-gateway DNS | 192.168.60.82 |
 | TrueNAS (home, backup) | 10.20.0.45 (home LAN) · **100.124.83.72** (Tailscale) |
 
 All Talos VMs are on the internal `vmbr2` bridge (192.168.60.0/24), routed via OPNsense (VM 102).
-Services are accessible at `*.lab.jamilshaikh.in` (resolved via `/etc/hosts` entries pointing to 192.168.60.81).
 
 #### Remote access
 

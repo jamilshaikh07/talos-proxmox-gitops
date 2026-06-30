@@ -62,14 +62,6 @@ spec:
           enabled: true
           isDefaultClass: true
 
-        # Dashboard configuration
-        ingressRoute:
-          dashboard:
-            enabled: true
-            matchRule: Host(`traefik.lab.jamilshaikh.in`)
-            entryPoints:
-              - web
-
         # Prometheus metrics
         metrics:
           prometheus:
