@@ -78,6 +78,13 @@ spec:
                   name: openclaw-tokens
                   key: GEMINI_API_KEY
                   optional: true
+            # DeepSeek API key (openai-compatible provider)
+            - name: DEEPSEEK_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: openclaw-tokens
+                  key: DEEPSEEK_API_KEY
+                  optional: true
           resources:
             requests:
               cpu: 50m
