@@ -55,6 +55,11 @@
       --namespace {{ argocd_namespace }}
       --version {{ argocd_helm_version }}
       --set server.service.type=ClusterIP
+      --set repoServer.replicas=2
+      --set repoServer.resources.requests.cpu=100m
+      --set repoServer.resources.requests.memory=128Mi
+      --set repoServer.resources.limits.cpu=500m
+      --set repoServer.resources.limits.memory=512Mi
   environment:
     KUBECONFIG: "{{ kubeconfig_path }}"
     PATH: "/home/linuxbrew/.linuxbrew/bin:{{ ansible_env.PATH }}"
