@@ -40,6 +40,7 @@
     },
     "plugins": {
         "allow": ["mattermost"],
+        "bundledDiscovery": "compat",
         "entries": {
             "mattermost": {
                 "enabled": true
