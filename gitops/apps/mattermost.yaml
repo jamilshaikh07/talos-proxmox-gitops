@@ -19,11 +19,11 @@ spec:
           siteUrl: "https://mattermost.jamilshaikh.in"
 
           features:
-            database:
-              driver: "postgres"
-              existingDatabaseSecret:
-                name: mattermost-db-app
-                key: uri
+            # database intentionally NOT set here — the chart derives
+            # MM_SQLSETTINGS_DRIVERNAME from the DSN scheme in this path,
+            # producing "postgresql" (unregistered Go sql driver) instead
+            # of "postgres", which crash-loops the server. DB connection
+            # is wired correctly via mattermostApp.extraEnv below instead.
             fileStore:
               driver: "amazons3"
               url: "http://minio.minio-system.svc.cluster.local:9000"
