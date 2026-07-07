@@ -71,7 +71,9 @@
             "baseUrl": "https://mattermost.jamilshaikh.in",
             "botToken": "REPLACE_WITH_MATTERMOST_BOT_TOKEN",
             "chatmode": "oncall",
-            "dmPolicy": "pairing"
+            "dmPolicy": "pairing",
+            "groupPolicy": "allowlist",
+            "groupAllowFrom": ["*"]
         }
     }
 }
