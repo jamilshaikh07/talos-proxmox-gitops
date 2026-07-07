@@ -7,7 +7,17 @@ These secrets are NOT in git. Run once after a cluster rebuild.
 ```bash
 kubectl create secret generic openclaw-tokens -n openclaw \
   --from-literal=ANTHROPIC_API_KEY='sk-ant-...' \
-  --from-literal=GEMINI_API_KEY='AIza...'
+  --from-literal=GEMINI_API_KEY='AIza...' \
+  --from-literal=DEEPSEEK_API_KEY='sk-...'
+```
+
+To add/rotate just the DeepSeek key on an existing secret:
+
+```bash
+kubectl create secret generic openclaw-tokens -n openclaw \
+  --from-literal=DEEPSEEK_API_KEY='sk-...' \
+  --dry-run=client -o yaml | kubectl apply -f -
+kubectl rollout restart deployment/openclaw -n openclaw
 ```
 
 ## 2. openclaw-config (gateway config with Mattermost token)
