@@ -16,12 +16,13 @@ spec:
     targetRevision: 5.3.0
     helm:
       values: |
-        # MinIO — S3-compatible object storage. Backs two consumers:
+        # MinIO — S3-compatible object storage. Backs three consumers:
         #   1. CNPG Barman backups (the original reason this was added).
         #   2. The paas container registry (registry.paas-system.svc)
         #      via its s3aws storage driver — every successful kaniko
         #      build writes its image blobs here before the runtime
         #      pulls them.
+        #   3. Mattermost file storage (profile pictures, attachments).
         # Homelab test environment — NOT production-grade.
 
         mode: standalone
@@ -72,6 +73,9 @@ spec:
             policy: none
             purge: false
           - name: loki-ruler
+            policy: none
+            purge: false
+          - name: mattermost
             policy: none
             purge: false
 

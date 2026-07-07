@@ -18,21 +18,21 @@ spec:
         global:
           siteUrl: "https://mattermost.jamilshaikh.in"
 
-        features:
-          database:
-            driver: "postgres"
-            existingDatabaseSecret:
-              name: mattermost-db-app
-              key: uri
-          fileStore:
-            driver: "amazons3"
-            url: "http://minio.minio-system.svc.cluster.local:9000"
-            bucket: "mattermost"
-            region: "us-east-1"
-            existingSecret:
-              name: mattermost-s3-creds
-              accessKeyIdKey: accessKeyId
-              secretAccessKeyKey: secretAccessKey
+          features:
+            database:
+              driver: "postgres"
+              existingDatabaseSecret:
+                name: mattermost-db-app
+                key: uri
+            fileStore:
+              driver: "amazons3"
+              url: "http://minio.minio-system.svc.cluster.local:9000"
+              bucket: "mattermost"
+              region: "us-east-1"
+              existingSecret:
+                name: mattermost-s3-creds
+                accessKeyIdKey: accessKeyId
+                secretAccessKeyKey: secretAccessKey
 
         mattermostApp:
           replicaCount: 1
