@@ -69,12 +69,15 @@
     "channels": {
         "mattermost": {
             "enabled": true,
-            "baseUrl": "https://mattermost.jamilshaikh.in",
+            "baseUrl": "http://mattermost.mattermost.svc.cluster.local:8065",
             "botToken": "REPLACE_WITH_MATTERMOST_BOT_TOKEN",
             "chatmode": "oncall",
             "dmPolicy": "pairing",
             "groupPolicy": "allowlist",
-            "groupAllowFrom": ["*"]
+            "groupAllowFrom": ["*"],
+            "network": {
+                "dangerouslyAllowPrivateNetwork": true
+            }
         }
     }
 }
