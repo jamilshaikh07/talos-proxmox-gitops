@@ -17,14 +17,27 @@ spec:
       values: |
         global:
           siteUrl: "https://mattermost.jamilshaikh.in"
-          # database and fileStore intentionally NOT set under
-          # global.features — that chart path derives
-          # MM_SQLSETTINGS_DRIVERNAME from the DSN scheme (crash-loops:
-          # unknown driver "postgresql") and unconditionally forces
-          # MM_FILESETTINGS_AMAZONS3SSL=true with no override (breaks
-          # against MinIO's plain-HTTP internal endpoint). Both are
-          # wired directly via mattermostApp.extraEnv below instead,
-          # which gives exact control over the actual env vars.
+          # database intentionally NOT set under global.features — that
+          # chart path derives MM_SQLSETTINGS_DRIVERNAME from the DSN
+          # scheme (crash-loops: unknown driver "postgresql"). Wired via
+          # mattermostApp.extraEnv below instead.
+          #
+          # fileStore.driver/bucket ARE set here (chart renders these two
+          # unconditionally regardless of config, so they must be set
+          # here rather than duplicated in extraEnv — ArgoCD's
+          # ServerSideApply rejects duplicate env-list entries outright).
+          # endpoint/ssl/region/credentials go via extraEnv instead,
+          # since setting existingSecret/url here also unconditionally
+          # forces MM_FILESETTINGS_AMAZONS3SSL=true with no override,
+          # which fails against MinIO's plain-HTTP internal endpoint.
+          features:
+            fileStore:
+              driver: "amazons3"
+              bucket: "mattermost"
+              existingSecret:
+                name: mattermost-s3-creds
+                accessKeyIdKey: accessKeyId
+                secretAccessKeyKey: secretAccessKey
 
         mattermostApp:
           replicaCount: 1
@@ -45,26 +58,12 @@ spec:
                 secretKeyRef:
                   name: mattermost-db-app
                   key: uri
-            - name: MM_FILESETTINGS_DRIVERNAME
-              value: amazons3
             - name: MM_FILESETTINGS_AMAZONS3ENDPOINT
               value: minio.minio-system.svc.cluster.local:9000
             - name: MM_FILESETTINGS_AMAZONS3SSL
               value: "false"
-            - name: MM_FILESETTINGS_AMAZONS3BUCKET
-              value: mattermost
             - name: MM_FILESETTINGS_AMAZONS3REGION
               value: us-east-1
-            - name: MM_FILESETTINGS_AMAZONS3ACCESSKEYID
-              valueFrom:
-                secretKeyRef:
-                  name: mattermost-s3-creds
-                  key: accessKeyId
-            - name: MM_FILESETTINGS_AMAZONS3SECRETACCESSKEY
-              valueFrom:
-                secretKeyRef:
-                  name: mattermost-s3-creds
-                  key: secretAccessKey
 
         serviceAccount:
           create: false
