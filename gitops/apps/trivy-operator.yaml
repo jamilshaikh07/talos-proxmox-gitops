@@ -26,6 +26,12 @@ spec:
               memory: 64Mi
             limits:
               memory: 256Mi
+          # infraAssessment (node-collector) targets a traditional systemd
+          # host layout (/etc/systemd, /var/lib/kubelet, etc.) that doesn't
+          # exist on Talos's immutable, systemd-less nodes — the job can
+          # never succeed there, just retries forever. Everything else
+          # (vuln/config-audit/secret scanning) is unaffected.
+          infraAssessmentScannerEnabled: false
 
         trivy:
           resources:
