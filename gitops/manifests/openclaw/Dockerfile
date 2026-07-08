@@ -2,7 +2,7 @@ FROM node:22-slim
 
 # kubectl
 ARG KUBECTL_VERSION=v1.34.1
-RUN apt-get update && apt-get install -y curl ca-certificates bash && \
+RUN apt-get update && apt-get install -y curl ca-certificates bash bsdextrautils && \
     curl -fsSL https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl \
       -o /usr/local/bin/kubectl && chmod +x /usr/local/bin/kubectl
 
