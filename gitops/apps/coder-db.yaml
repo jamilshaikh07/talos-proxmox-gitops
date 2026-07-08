@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: coder-db
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/instance: app-of-apps
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/jamilshaikh07/talos-proxmox-gitops
+    targetRevision: HEAD
+    path: gitops/manifests/coder-db
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: coder
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

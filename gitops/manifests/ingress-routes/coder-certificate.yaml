@@ -1,0 +1,13 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: coder-tls
+  namespace: coder
+spec:
+  secretName: coder-tls
+  dnsNames:
+    - code.jamilshaikh.in
+  issuerRef:
+    name: homelab-ca-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io

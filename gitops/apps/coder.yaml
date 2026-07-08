@@ -1,0 +1,48 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: coder
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/instance: app-of-apps
+  annotations:
+    argocd.argoproj.io/sync-wave: "6"
+spec:
+  project: default
+  source:
+    chart: coder
+    repoURL: https://helm.coder.com/v2
+    targetRevision: 2.35.1
+    helm:
+      values: |
+        coder:
+          # ClusterIP — ingress handled by Traefik + Cloudflare Tunnel,
+          # same pattern as every other app here. LoadBalancer default
+          # would needlessly consume a MetalLB address.
+          service:
+            type: ClusterIP
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+          env:
+            - name: CODER_ACCESS_URL
+              value: "https://code.jamilshaikh.in"
+            - name: CODER_PG_CONNECTION_URL
+              valueFrom:
+                secretKeyRef:
+                  name: coder-db-app
+                  key: uri
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: coder
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

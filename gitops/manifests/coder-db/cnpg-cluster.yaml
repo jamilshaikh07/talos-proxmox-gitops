@@ -1,0 +1,29 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: coder-db
+  namespace: coder
+spec:
+  instances: 1
+  imageName: ghcr.io/cloudnative-pg/postgresql:17.5
+  storage:
+    storageClass: local-path
+    size: 3Gi
+  walStorage:
+    storageClass: local-path
+    size: 1Gi
+  bootstrap:
+    initdb:
+      database: coder
+      owner: coder
+  postgresql:
+    parameters:
+      max_connections: "100"
+      shared_buffers: "128MB"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
