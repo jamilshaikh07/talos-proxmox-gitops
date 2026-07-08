@@ -77,6 +77,11 @@
             "groupAllowFrom": ["*"],
             "network": {
                 "dangerouslyAllowPrivateNetwork": true
+            },
+            "groups": {
+                "837zg4t6wjb17m4n9w49j5mq3w": {
+                    "requireMention": false
+                }
             }
         }
     }
