@@ -122,7 +122,7 @@ variable "control_plane_memory" {
 
 variable "control_plane_cores" {
   type        = number
-  default     = 2
+  default     = 4
   description = "vCPU cores assigned to the Talos control plane VM"
 }
 
@@ -198,8 +198,8 @@ variable "worker_memory" {
 
 variable "worker_cores" {
   type        = number
-  default     = 6
-  description = "Default vCPU cores assigned to each Talos worker VM. Sized for the alif host (i7-4770, 4C/8T): 2 vCPU on talos-cp-01 + 6 here = 8 of 8 logical CPUs (CPU overcommit is fine on Proxmox; observed host CPU was 12% with the prior 4-core default). Memory stays at 16 GiB because the host RAM is the actual scarce resource (74% used at 8+16 GiB)."
+  default     = 4
+  description = "Default vCPU cores assigned to each Talos worker VM. Sized for the alif host (i7-4770, 4C/8T): 4 vCPU on talos-cp-01 + 4 here = 8 of 8 logical CPUs. Rebalanced from the original 2+6 split because the control-plane was the CPU bottleneck (62% requests on 2 cores) while the worker sat at 44%; total host allocation unchanged. Memory stays at 16 GiB because the host RAM is the actual scarce resource."
 }
 
 variable "worker_storage" {

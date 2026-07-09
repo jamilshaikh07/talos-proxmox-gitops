@@ -50,10 +50,10 @@ locals {
         try(var.worker_overrides[worker_name].disk_cache, null),
         var.worker_disk_cache,
       )
-      longhorn_disk_size = coalesce(
+      longhorn_disk_size = try(coalesce(
         try(var.worker_overrides[worker_name].longhorn_disk_size, null),
         var.worker_longhorn_disk_size,
-      )
+      ), "")
       longhorn_storage = coalesce(
         try(var.worker_overrides[worker_name].longhorn_storage, null),
         var.worker_longhorn_storage,
