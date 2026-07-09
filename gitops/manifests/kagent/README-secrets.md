@@ -55,11 +55,22 @@ An earlier stopgap (Traefik BasicAuth middleware) was used for about an
 hour before this was wired up — removed once Access was confirmed
 enforcing (`curl -I` returns a 302 to the Cloudflare login page).
 
-Same GitHub IdP + `allow-jamil`-style policy was also applied to a second
-Access Application scoped to `grafana.jamilshaikh.in` (app id
-`89d2c1ad-99ee-45b0-a44b-2fa38985b499`) — Grafana's own local admin login
-stays underneath as a second layer, this isn't a replacement for it. Same
-"not in git, redo via Cloudflare dashboard/API on rebuild" caveat applies.
+Same GitHub IdP + `allow-jamil`-style policy was also applied to two more
+scoped Access Applications, same "not in git, redo via Cloudflare
+dashboard/API on rebuild" caveat applying to all three:
+
+- `grafana.jamilshaikh.in` (app id `89d2c1ad-99ee-45b0-a44b-2fa38985b499`)
+  — Grafana's own local admin login stays underneath as a second layer,
+  this isn't a replacement for it.
+- `argocd.jamilshaikh.in` (app id `7f54e53c-53f2-48df-b324-a942ca64f993`)
+  — same deal, ArgoCD's own admin login is untouched and still required
+  after the Access gate.
+
+Note: once you've authenticated via GitHub for *any* Access-protected
+`*.jamilshaikh.in` app in a browser, Cloudflare Access silently reuses
+that session for the others in the same browser — you won't see a second
+GitHub prompt, it just passes you straight through to each app's own
+(separate, unrelated) login.
 
 Still worth doing eventually: the underlying `kagent-tools` ServiceAccount
 is bound to a literal cluster-admin ClusterRole (`apiGroups: ['*'],
