@@ -50,6 +50,11 @@ spec:
           grafana:
             url: "http://victoria-metrics-grafana.monitoring.svc.cluster.local:80/api"
             secretRef: "grafana-mcp-token"
+          # Default allowed-hosts is loopback-only, which rejects every
+          # in-cluster caller (kagent-controller connects via the Service
+          # DNS name, not localhost) with "403 forbidden: host not allowed".
+          args:
+            - -allowed-hosts=kagent-grafana-mcp.kagent:8000,kagent-grafana-mcp.kagent.svc.cluster.local:8000
   destination:
     server: https://kubernetes.default.svc
     namespace: kagent
