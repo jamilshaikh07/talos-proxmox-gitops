@@ -32,29 +32,34 @@ kubectl create secret generic grafana-mcp-token -n kagent \
   --from-literal=GRAFANA_SERVICE_ACCOUNT_TOKEN='glsa_...'
 ```
 
-## kagent-basic-auth (Traefik BasicAuth — required, not optional)
+## Access control — Cloudflare Access (not Kubernetes-side)
 
 **kagent's UI ships with `controller.auth.mode: unsecure` and no oauth2-proxy
-by default — the chart has zero built-in login.** The IngressRoute
-(`kagent-ingressroute.yaml`) attaches a `kagent-basic-auth` Traefik
-Middleware; without this secret existing, that Middleware has nothing to
-read and Traefik will reject all requests (fail-closed, not fail-open —
-safe default, but means this secret must exist before the ingress works
-at all).
+by default — the chart has zero built-in login of its own.** Rather than
+running an in-cluster auth proxy, access is gated at Cloudflare's edge,
+*before* traffic ever reaches the tunnel:
 
-```bash
-htpasswd -nbB admin 'your-password-here' > /tmp/kagent-htpasswd
-kubectl create secret generic kagent-basic-auth -n kagent \
-  --from-file=users=/tmp/kagent-htpasswd
-rm /tmp/kagent-htpasswd
-```
+- Access Application `kagent` (Cloudflare account `2526e7c2985b2dde30ed8f5018553908`),
+  scoped only to `kagent.jamilshaikh.in` — not the whole domain.
+- Identity provider: GitHub OAuth (Zero Trust team `jamilhomelab`,
+  callback `https://jamilhomelab.cloudflareaccess.com/cdn-cgi/access/callback`).
+- Policy `allow-jamil`: requires GitHub login **and** email
+  `jamilshaikh07@gmail.com` — `github-organization` policy rules only work
+  for GitHub orgs, not personal accounts, hence `login_method` + `email`.
+- None of this is in git — Access Apps/Policies/IdPs live in Cloudflare,
+  not Kubernetes. If rebuilding from scratch, redo this via the Cloudflare
+  dashboard or API (Access: Apps and Policies + Access: Identity Providers
+  permissions needed on the API token).
 
-Treat this as a stopgap, not the long-term answer — the underlying
-`kagent-tools` ServiceAccount is bound to a literal cluster-admin
-ClusterRole (`apiGroups: ['*'], resources: ['*'], verbs: ['*']`), so
-anyone who gets past this Basic Auth has full cluster access. Proper
-fix is `controller.auth.mode: trusted-proxy` + `oauth2-proxy.enabled: true`
-with a real OIDC provider — tracked as a follow-up, not yet done.
+An earlier stopgap (Traefik BasicAuth middleware) was used for about an
+hour before this was wired up — removed once Access was confirmed
+enforcing (`curl -I` returns a 302 to the Cloudflare login page).
+
+Still worth doing eventually: the underlying `kagent-tools` ServiceAccount
+is bound to a literal cluster-admin ClusterRole (`apiGroups: ['*'],
+resources: ['*'], verbs: ['*']`) — Access controls *who* can reach the UI,
+not what the agents themselves are allowed to do once inside. Scoping that
+RBAC down is a separate, not-yet-done follow-up.
 
 ## Notes
 

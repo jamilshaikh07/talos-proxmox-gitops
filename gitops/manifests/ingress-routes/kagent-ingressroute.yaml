@@ -14,8 +14,6 @@ spec:
       services:
         - name: kagent-ui
           port: 8080
-      middlewares:
-        - name: kagent-basic-auth
 ---
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
@@ -33,7 +31,5 @@ spec:
       services:
         - name: kagent-ui
           port: 8080
-      middlewares:
-        - name: kagent-basic-auth
   tls:
     secretName: kagent-tls
