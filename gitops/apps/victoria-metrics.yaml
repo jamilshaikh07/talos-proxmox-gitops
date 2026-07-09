@@ -30,9 +30,12 @@ spec:
                   storage: 10Gi
               storageClassName: local-path
             resources:
-              limits:
-                cpu: 200m
+              requests:
+                cpu: 100m
                 memory: 384Mi
+              limits:
+                cpu: 500m
+                memory: 1Gi
 
         # VMAgent scrapes all ServiceMonitors (replaces Prometheus scrape engine)
         vmagent:
