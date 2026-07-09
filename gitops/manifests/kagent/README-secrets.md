@@ -32,6 +32,30 @@ kubectl create secret generic grafana-mcp-token -n kagent \
   --from-literal=GRAFANA_SERVICE_ACCOUNT_TOKEN='glsa_...'
 ```
 
+## kagent-basic-auth (Traefik BasicAuth — required, not optional)
+
+**kagent's UI ships with `controller.auth.mode: unsecure` and no oauth2-proxy
+by default — the chart has zero built-in login.** The IngressRoute
+(`kagent-ingressroute.yaml`) attaches a `kagent-basic-auth` Traefik
+Middleware; without this secret existing, that Middleware has nothing to
+read and Traefik will reject all requests (fail-closed, not fail-open —
+safe default, but means this secret must exist before the ingress works
+at all).
+
+```bash
+htpasswd -nbB admin 'your-password-here' > /tmp/kagent-htpasswd
+kubectl create secret generic kagent-basic-auth -n kagent \
+  --from-file=users=/tmp/kagent-htpasswd
+rm /tmp/kagent-htpasswd
+```
+
+Treat this as a stopgap, not the long-term answer — the underlying
+`kagent-tools` ServiceAccount is bound to a literal cluster-admin
+ClusterRole (`apiGroups: ['*'], resources: ['*'], verbs: ['*']`), so
+anyone who gets past this Basic Auth has full cluster access. Proper
+fix is `controller.auth.mode: trusted-proxy` + `oauth2-proxy.enabled: true`
+with a real OIDC provider — tracked as a follow-up, not yet done.
+
 ## Notes
 
 - `gitops/apps/kagent.yaml` sets `providers.openAI.config.baseUrl` to

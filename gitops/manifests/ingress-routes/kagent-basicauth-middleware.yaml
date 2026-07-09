@@ -1,0 +1,8 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: kagent-basic-auth
+  namespace: kagent
+spec:
+  basicAuth:
+    secret: kagent-basic-auth
