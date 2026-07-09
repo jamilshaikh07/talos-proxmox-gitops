@@ -41,6 +41,15 @@ spec:
           enabled: false
         argo-rollouts-agent:
           enabled: false
+
+        # Chart default (grafana.kagent:3000) doesn't exist on this cluster —
+        # Grafana is the victoria-metrics-k8s-stack subchart in monitoring.
+        # Token in secret grafana-mcp-token, created imperatively (see
+        # gitops/manifests/kagent/README-secrets.md).
+        grafana-mcp:
+          grafana:
+            url: "http://victoria-metrics-grafana.monitoring.svc.cluster.local:80/api"
+            secretRef: "grafana-mcp-token"
   destination:
     server: https://kubernetes.default.svc
     namespace: kagent

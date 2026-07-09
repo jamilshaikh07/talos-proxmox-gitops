@@ -20,6 +20,18 @@ kubectl create secret generic kagent-tokens -n kagent \
 kubectl rollout restart deployment/kagent-controller -n kagent
 ```
 
+## grafana-mcp-token (Grafana service account token)
+
+Grafana → Administration → Service accounts → New (role: Viewer) → Add
+service account token. Grafana's admin credentials can drift from the
+`victoria-metrics-grafana` k8s Secret if changed via the UI, so this has to
+be done manually rather than scripted against that secret.
+
+```bash
+kubectl create secret generic grafana-mcp-token -n kagent \
+  --from-literal=GRAFANA_SERVICE_ACCOUNT_TOKEN='glsa_...'
+```
+
 ## Notes
 
 - `gitops/apps/kagent.yaml` sets `providers.openAI.config.baseUrl` to
