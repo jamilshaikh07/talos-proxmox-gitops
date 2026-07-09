@@ -10,7 +10,8 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: oci://ghcr.io/kagent-dev/kagent/helm/kagent
+    repoURL: ghcr.io/kagent-dev/kagent/helm
+    chart: kagent
     targetRevision: 0.9.11
     helm:
       values: |

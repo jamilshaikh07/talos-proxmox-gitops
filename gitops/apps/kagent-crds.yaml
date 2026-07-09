@@ -10,7 +10,8 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: oci://ghcr.io/kagent-dev/kagent/helm/kagent-crds
+    repoURL: ghcr.io/kagent-dev/kagent/helm
+    chart: kagent-crds
     targetRevision: 0.9.11
   destination:
     server: https://kubernetes.default.svc

@@ -1,0 +1,18 @@
+---
+# Registers ghcr.io/kagent-dev/kagent/helm as an ArgoCD OCI Helm repository.
+# Public registry, no credentials — ArgoCD's on-the-fly OCI chart resolution
+# (repoURL + chart field, unregistered) hit a resolver bug where the chart
+# name wasn't appended to the digest-lookup request. Pre-registering as a
+# Repository fixes it.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kagent-oci-repo
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/secret-type: repository
+stringData:
+  type: helm
+  name: kagent
+  url: ghcr.io/kagent-dev/kagent/helm
+  enableOCI: "true"
