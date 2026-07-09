@@ -48,6 +48,11 @@
   changed_when: create_ns.rc == 0
   failed_when: create_ns.rc != 0 and 'already exists' not in create_ns.stderr
 
+# NOTE: GitHub SSO (Dex connector + RBAC admin grant + server.insecure=true)
+# is NOT included in this fresh-install command — it needs the
+# dex.github.clientSecret key in argocd-secret created first (imperative,
+# not in git). See gitops/manifests/argocd-config/README-sso.md for the
+# full post-install helm upgrade to reapply it after a rebuild.
 - name: Install ArgoCD using Helm
   ansible.builtin.command:
     cmd: >

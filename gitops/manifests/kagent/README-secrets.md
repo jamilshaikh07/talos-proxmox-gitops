@@ -63,8 +63,11 @@ dashboard/API on rebuild" caveat applying to all three:
   — Grafana's own local admin login stays underneath as a second layer,
   this isn't a replacement for it.
 - `argocd.jamilshaikh.in` (app id `7f54e53c-53f2-48df-b324-a942ca64f993`)
-  — same deal, ArgoCD's own admin login is untouched and still required
-  after the Access gate.
+  — unlike Grafana, ArgoCD's *own* login was also replaced with GitHub SSO
+  (Dex connector, separate GitHub OAuth App from the Cloudflare Access one)
+  the same night — see `gitops/manifests/argocd-config/README-sso.md`.
+  Logging in via GitHub now grants `role:admin` directly, same rights as
+  the local `admin` account.
 
 Note: once you've authenticated via GitHub for *any* Access-protected
 `*.jamilshaikh.in` app in a browser, Cloudflare Access silently reuses
