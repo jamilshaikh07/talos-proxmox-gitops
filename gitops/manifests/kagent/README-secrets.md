@@ -55,6 +55,12 @@ An earlier stopgap (Traefik BasicAuth middleware) was used for about an
 hour before this was wired up — removed once Access was confirmed
 enforcing (`curl -I` returns a 302 to the Cloudflare login page).
 
+Same GitHub IdP + `allow-jamil`-style policy was also applied to a second
+Access Application scoped to `grafana.jamilshaikh.in` (app id
+`89d2c1ad-99ee-45b0-a44b-2fa38985b499`) — Grafana's own local admin login
+stays underneath as a second layer, this isn't a replacement for it. Same
+"not in git, redo via Cloudflare dashboard/API on rebuild" caveat applies.
+
 Still worth doing eventually: the underlying `kagent-tools` ServiceAccount
 is bound to a literal cluster-admin ClusterRole (`apiGroups: ['*'],
 resources: ['*'], verbs: ['*']`) — Access controls *who* can reach the UI,
