@@ -6,11 +6,12 @@
 - Branch: master
 - Model: production homelab running live workloads (spinup.in, openclaw, bpl-prod, Mattermost)
 
-## Infrastructure Snapshot (June 2026)
+## Infrastructure Snapshot (Jul 2026)
 
 - Proxmox node: alif (remote, friend's office — access via Tailscale)
 - Tailscale IP: 100.127.198.7
 - VMs running: talos-cp-01, talos-wk-01, opnsense (VM 102, router)
+- talos-cp-01 / talos-wk-01: 4 vCPU / 4 vCPU each (rebalanced 2026-07-09, was 2/6 — CP was the bottleneck at 62% CPU requests on 2 cores)
 - OPNsense: WAN on vmbr0 (office LAN DHCP), LAN on vmbr2 (192.168.60.1/24)
 - TrueNAS: home LAN (10.20.0.45), Tailscale (100.124.83.72) — backup target only
 
@@ -28,7 +29,7 @@ make tunnel-stop
 
 - Layer 1: Terraform → Proxmox VMs (talos-cp-01, talos-wk-01)
 - Layer 2: Ansible → Talos bootstrap + Cilium v1.16.5
-- Layer 3: ArgoCD app-of-apps → 27 apps in `gitops/apps/`
+- Layer 3: ArgoCD app-of-apps → 29 apps in `gitops/apps/`
 - Layer 3a: FluxCD side-by-side (metrics-server, select workloads in `gitops/flux/apps/`)
 
 **GitOps rule:** No manual `kubectl apply` on anything in `gitops/`. All changes go git → push → ArgoCD. Exceptions: imperative secrets and openclaw cron SQLite edits.
@@ -40,8 +41,14 @@ make tunnel-stop
 | spinup.in PaaS | paas-system / paas-deployments / paas-tenant-* | NEVER touch paas-* — self-healing |
 | KubeWise | kubewise | K8s cost advisor, ArgoCD managed |
 | openclaw AI SRE | openclaw | Phase 1–3 cron agent, Mattermost delivery |
+| kagent | kagent | Cluster-native AI agents (k8s/helm/cilium/promql/grafana), DeepSeek via OpenAI-compatible provider. See [docs/08-kagent-ai-agents.md](./docs/08-kagent-ai-agents.md) |
 | BPL prod | bpl-prod | Production app |
 | Mattermost | mattermost | Team chat, openclaw bot target |
+| Coder | coder | Self-hosted dev environments (CNPG-backed) |
+
+## Access Control (added 2026-07-09)
+
+Cloudflare Access (GitHub SSO) gates `kagent.jamilshaikh.in`, `grafana.jamilshaikh.in`, `argocd.jamilshaikh.in` — each a separately scoped Access Application, not a domain wildcard. ArgoCD additionally has native GitHub SSO via Dex (replaces the local admin login). None of the Cloudflare-side config is in git. Full details + a real RBAC subject-matching gotcha: [docs/09-access-control-sso.md](./docs/09-access-control-sso.md).
 
 ## openclaw AI SRE (Phase 1–3)
 
