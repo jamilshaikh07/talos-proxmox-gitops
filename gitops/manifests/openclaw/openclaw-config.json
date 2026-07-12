@@ -21,8 +21,6 @@
                 "primary": "deepseek/deepseek-v4-flash"
             },
             "models": {
-                "anthropic/claude-haiku-4-5-20251001": {},
-                "anthropic/claude-sonnet-4-6": {},
                 "deepseek/deepseek-v4-flash": {}
             },
             "workspace": "/home/node/.openclaw/workspace",
