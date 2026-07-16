@@ -1,0 +1,66 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: teleport
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/instance: app-of-apps
+  annotations:
+    argocd.argoproj.io/sync-wave: "6"
+spec:
+  project: default
+  source:
+    chart: teleport-cluster
+    repoURL: https://charts.releases.teleport.dev
+    targetRevision: 18.10.0
+    helm:
+      values: |
+        clusterName: "teleport.jamilshaikh.in"
+        chartMode: standalone
+
+        # Kagent lesson (2026-07): the chart's own defaults are empty and
+        # unpinned. Set both explicitly rather than trusting the chart.
+        service:
+          type: ClusterIP
+
+        # Single-port TLS multiplexing (web/kubectl/ssh all on 443) — the
+        # mode the chart docs specifically call for when running behind an
+        # existing Ingress/reverse proxy (Traefik + Cloudflare Tunnel here)
+        # instead of Teleport's own LoadBalancer.
+        proxyListenerMode: multiplex
+
+        ingress:
+          enabled: true
+          useExisting: true
+
+        # Deprecated API, doesn't exist on k8s 1.34 — chart defaults this
+        # to true, which would fail the install outright.
+        podSecurityPolicy:
+          enabled: false
+
+        persistence:
+          enabled: true
+          volumeSize: 5Gi
+
+        # Chart docs explicitly warn against setting CPU *limits* (throttling
+        # makes Teleport unstable) — request only, matching their guidance.
+        resources:
+          requests:
+            cpu: 250m
+            memory: 512Mi
+          limits:
+            memory: 1Gi
+
+        # Top-level, not nested under auth:/proxy: — applies to both pod sets.
+        nodeSelector:
+          kubernetes.io/hostname: talos-wk-01
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: teleport
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
