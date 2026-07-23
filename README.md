@@ -19,7 +19,7 @@ A 3-layer IaC stack (Terraform + Ansible + ArgoCD) on Proxmox running Talos Linu
 |---|---|---|
 | **spinup.in** | [spinup.in](https://spinup.in) | Self-hosted Vercel clone: push to GitHub, get a live URL |
 | **Belapur Premier League** | [belapurpremierleague.com](https://belapurpremierleague.com) | Production sports league site (internally: `bpl-prod` app) |
-| **KubeWise** | [github.com/jamilshaikh08/kubewise](https://github.com/jamilshaikh08/kubewise) | K8s cost & performance advisor |
+| **KubeWise** | [kubewise.jamilshaikh.in](https://kubewise.jamilshaikh.in) | K8s cost & performance advisor ([source](https://github.com/jamilshaikh08/kubewise)) |
 | **Mattermost** | [mattermost.jamilshaikh.in](https://mattermost.jamilshaikh.in) | Self-hosted team comms, openclaw bot delivery target |
 | **ArgoCD** | [argocd.jamilshaikh.in](https://argocd.jamilshaikh.in) | GitOps controller UI, GitHub SSO |
 | **Grafana** | [grafana.jamilshaikh.in](https://grafana.jamilshaikh.in) | Metrics dashboards |
@@ -27,7 +27,7 @@ A 3-layer IaC stack (Terraform + Ansible + ArgoCD) on Proxmox running Talos Linu
 | **Coder** | [code.jamilshaikh.in](https://code.jamilshaikh.in) | Self-hosted dev environments |
 | **Teleport** | [teleport.jamilshaikh.in](https://teleport.jamilshaikh.in) | Browser/audited SSH + kubectl access proxy |
 
-ArgoCD, Grafana, and Teleport are gated by Cloudflare Access (GitHub SSO) on top of their own auth.
+ArgoCD, Grafana, Teleport, and KubeWise are gated by Cloudflare Access (GitHub SSO) on top of their own auth (where they have any).
 
 ### Platform stack (ArgoCD app-of-apps, 27 apps)
 
@@ -215,7 +215,7 @@ Single StorageClass: `local-path` (Rancher local-path-provisioner). Data lives o
 - Internal TLS via cert-manager (self-signed root CA to homelab-ca issuer)
 - Talos has no SSH; all node interaction via `talosctl`
 - Secrets are imperative only (`kubectl create secret`), never committed to git
-- Cloudflare Access (GitHub SSO) gates ArgoCD, Grafana, and Teleport at the edge
+- Cloudflare Access (GitHub SSO) gates ArgoCD, Grafana, Teleport, and KubeWise at the edge
 
 ---
 
