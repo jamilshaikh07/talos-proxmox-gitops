@@ -1,0 +1,35 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: kubewise
+  namespace: kubewise
+  annotations:
+    external-dns.alpha.kubernetes.io/target: "3a067db9-77b1-49c9-a3d4-30f86d16c80d.cfargotunnel.com"
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: Host(`kubewise.jamilshaikh.in`)
+      kind: Rule
+      services:
+        - name: kubewise-dashboard
+          port: 3000
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: kubewise-tls
+  namespace: kubewise
+  annotations:
+    external-dns.alpha.kubernetes.io/target: "3a067db9-77b1-49c9-a3d4-30f86d16c80d.cfargotunnel.com"
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`kubewise.jamilshaikh.in`)
+      kind: Rule
+      services:
+        - name: kubewise-dashboard
+          port: 3000
+  tls:
+    secretName: kubewise-tls

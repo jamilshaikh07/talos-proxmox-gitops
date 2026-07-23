@@ -1,0 +1,13 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: kubewise-tls
+  namespace: kubewise
+spec:
+  secretName: kubewise-tls
+  dnsNames:
+    - kubewise.jamilshaikh.in
+  issuerRef:
+    name: homelab-ca-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io
