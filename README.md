@@ -2,7 +2,7 @@
 
 > **Production homelab running real workloads, GitOps-managed, AI SRE-monitored.**
 
-A 3-layer IaC stack (Terraform + Ansible + ArgoCD) on Proxmox running Talos Linux Kubernetes. This isn't a demo: it hosts live products, including [spinup.in](https://spinup.in) (self-hosted PaaS), [belapurpremierleague.com](https://belapurpremierleague.com) (production sports league site), [KubeWise](https://github.com/jamilshaikh08/kubewise) (K8s cost advisor), openclaw AI SRE, and Mattermost for team comms.
+A 3-layer IaC stack (Terraform + Ansible + ArgoCD) on Proxmox running Talos Linux Kubernetes. This isn't a demo: it hosts live products, including [spinup.in](https://spinup.in) (self-hosted PaaS), [belapurpremierleague.com](https://belapurpremierleague.com) (production sports league site), [KubeWise](https://github.com/jamilshaikh07/kubewise) (K8s cost advisor), openclaw AI SRE, and Mattermost for team comms.
 
 [![Talos](https://img.shields.io/badge/Talos-v1.12.6-blue.svg)](https://www.talos.dev/)
 [![Kubernetes](https://img.shields.io/badge/Kubernetes-v1.34.1-green.svg)](https://kubernetes.io/)
@@ -19,7 +19,7 @@ A 3-layer IaC stack (Terraform + Ansible + ArgoCD) on Proxmox running Talos Linu
 |---|---|---|
 | **spinup.in** | [spinup.in](https://spinup.in) | Self-hosted Vercel clone: push to GitHub, get a live URL |
 | **Belapur Premier League** | [belapurpremierleague.com](https://belapurpremierleague.com) | Production sports league site (internally: `bpl-prod` app) |
-| **KubeWise** | [kubewise.jamilshaikh.in](https://kubewise.jamilshaikh.in) | K8s cost & performance advisor ([source](https://github.com/jamilshaikh08/kubewise)) |
+| **KubeWise** | [kubewise.jamilshaikh.in](https://kubewise.jamilshaikh.in) | K8s cost & performance advisor ([source](https://github.com/jamilshaikh07/kubewise)) |
 | **Mattermost** | [mattermost.jamilshaikh.in](https://mattermost.jamilshaikh.in) | Self-hosted team comms, openclaw bot delivery target |
 | **ArgoCD** | [argocd.jamilshaikh.in](https://argocd.jamilshaikh.in) | GitOps controller UI, GitHub SSO |
 | **Grafana** | [grafana.jamilshaikh.in](https://grafana.jamilshaikh.in) | Metrics dashboards |
