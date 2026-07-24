@@ -17,11 +17,11 @@ spec:
     helm:
       parameters:
         - name: api.image.tag
-          value: "v1.0.0" # bumped automatically by CI
+          value: "v1.0.1" # bumped automatically by CI
         - name: dashboard.image.tag
-          value: "v1.0.0" # bumped automatically by CI
+          value: "v1.0.1" # bumped automatically by CI
         - name: agent.image.tag
-          value: "v1.0.0" # bumped automatically by CI
+          value: "v1.0.1" # bumped automatically by CI
       values: |
         agent:
           enabled: true
