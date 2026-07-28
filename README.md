@@ -25,9 +25,8 @@ A 3-layer IaC stack (Terraform + Ansible + ArgoCD) on Proxmox running Talos Linu
 | **Grafana** | [grafana.jamilshaikh.in](https://grafana.jamilshaikh.in) | Metrics dashboards |
 | **Uptime Kuma** | [uptime.jamilshaikh.in](https://uptime.jamilshaikh.in) | Service uptime monitoring |
 | **Coder** | [code.jamilshaikh.in](https://code.jamilshaikh.in) | Self-hosted dev environments |
-| **Teleport** | [teleport.jamilshaikh.in](https://teleport.jamilshaikh.in) | Browser/audited SSH + kubectl access proxy |
 
-ArgoCD, Grafana, Teleport, and KubeWise are gated by Cloudflare Access (GitHub SSO) on top of their own auth (where they have any).
+ArgoCD, Grafana, and KubeWise are gated by Cloudflare Access (GitHub SSO) on top of their own auth (where they have any).
 
 ### Platform stack (ArgoCD app-of-apps, 27 apps)
 
@@ -51,7 +50,6 @@ ArgoCD, Grafana, Teleport, and KubeWise are gated by Cloudflare Access (GitHub S
 | KubeWise | K8s cost advisor |
 | bpl-prod | Belapur Premier League production site |
 | Coder | Self-hosted dev environments |
-| Teleport | Access proxy: browser/audited SSH + kubectl |
 
 ### Out-of-band (not in ArgoCD)
 
@@ -215,7 +213,7 @@ Single StorageClass: `local-path` (Rancher local-path-provisioner). Data lives o
 - Internal TLS via cert-manager (self-signed root CA to homelab-ca issuer)
 - Talos has no SSH; all node interaction via `talosctl`
 - Secrets are imperative only (`kubectl create secret`), never committed to git
-- Cloudflare Access (GitHub SSO) gates ArgoCD, Grafana, Teleport, and KubeWise at the edge
+- Cloudflare Access (GitHub SSO) gates ArgoCD, Grafana, and KubeWise at the edge
 
 ---
 
