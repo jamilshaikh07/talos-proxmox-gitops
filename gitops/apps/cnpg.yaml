@@ -24,6 +24,11 @@ spec:
 
         replicaCount: 1
 
+        # Keep off talos-cp-01: CP pod-limit overcommit was starving kube-apiserver's
+        # CFS share, causing periodic apiserver SIGKILLs (see docs/04-observability.md)
+        nodeSelector:
+          kubernetes.io/hostname: talos-wk-01
+
         resources:
           requests:
             cpu: 100m

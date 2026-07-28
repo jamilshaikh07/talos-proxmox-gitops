@@ -93,6 +93,22 @@
     dest: "{{ talos_config_dir }}/machine-features.yaml"
     mode: '0644'
 
+- name: Create apiserver resources patch
+  ansible.builtin.copy:
+    content: |
+      # Guarantee kube-apiserver a real CFS share on talos-cp-01. Without this
+      # it only requests 200m/512Mi, so it loses CPU scheduling priority under
+      # node contention and gets SIGKILLed by the kubelet's liveness probe,
+      # taking down every leader-election-dependent pod cluster-wide with it.
+      cluster:
+        apiServer:
+          resources:
+            requests:
+              cpu: "1000m"
+              memory: "1Gi"
+    dest: "{{ talos_config_dir }}/apiserver-resources.yaml"
+    mode: '0644'
+
 - name: Create control plane machine patch (hostname + install disk + longhorn disk)
   ansible.builtin.copy:
     content: |
@@ -170,6 +186,7 @@
       --config-patch @system-extensions.yaml
       --config-patch @machine-features.yaml
       --config-patch-control-plane @controlplane-machine.yaml
+      --config-patch-control-plane @apiserver-resources.yaml
       --output rendered-cp
     chdir: "{{ talos_config_dir }}"
   when: not rendered_config.stat.exists
