@@ -21,12 +21,15 @@ spec:
         ports:
         - containerPort: 8080
           name: http
+        env:
+        - name: RP_KEYS_FILE
+          value: /configs/keys.json
         envFrom:
         - secretRef:
             name: routeplane-provider-keys
         volumeMounts:
         - name: config
-          mountPath: /app/configs
+          mountPath: /configs
           readOnly: true
         resources:
           requests:
