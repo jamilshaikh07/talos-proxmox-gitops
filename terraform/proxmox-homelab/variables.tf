@@ -116,7 +116,7 @@ variable "control_plane_ip_octet" {
 
 variable "control_plane_memory" {
   type        = number
-  default     = 8192
+  default     = 12288
   description = "Memory in MB assigned to the Talos control plane VM"
 }
 
