@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: routeplane-config
+  namespace: routeplane
+data:
+  keys.json: |
+    {
+      "keys": [
+        {
+          "name": "homelab",
+          "routeplane_key": "rp_homelab_jamil",
+          "provider_keys": {
+            "anthropic": "env:ANTHROPIC_API_KEY",
+            "openai": "env:OPENAI_API_KEY",
+            "deepseek": "env:DEEPSEEK_API_KEY",
+            "groq": "env:GROQ_API_KEY"
+          }
+        }
+      ]
+    }
+  routing-policies.json: |
+    {
+      "policies": [
+        {
+          "name": "cost-smart",
+          "strategy": "cost",
+          "providers": ["deepseek", "groq", "anthropic", "openai"]
+        },
+        {
+          "name": "claude-first",
+          "strategy": "priority",
+          "providers": ["anthropic", "openai", "deepseek"]
+        },
+        {
+          "name": "fast",
+          "strategy": "latency",
+          "providers": ["groq", "deepseek", "anthropic"]
+        }
+      ]
+    }

@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: routeplane
+  namespace: routeplane
+  labels:
+    app: routeplane
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: routeplane
+  template:
+    metadata:
+      labels:
+        app: routeplane
+    spec:
+      containers:
+      - name: routeplane
+        image: ghcr.io/routeplane-core/routeplane-ce:latest
+        ports:
+        - containerPort: 8080
+          name: http
+        envFrom:
+        - secretRef:
+            name: routeplane-provider-keys
+        volumeMounts:
+        - name: config
+          mountPath: /app/configs
+          readOnly: true
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "500m"
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 30
+          failureThreshold: 3
+      volumes:
+      - name: config
+        configMap:
+          name: routeplane-config
