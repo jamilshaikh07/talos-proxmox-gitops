@@ -23,7 +23,8 @@ spec:
         vmsingle:
           enabled: true
           spec:
-            retentionPeriod: "7d"
+            # 3d retention - 7d was accumulating 3.8B rows causing OOM at 1Gi limit
+            retentionPeriod: "3d"
             storage:
               resources:
                 requests:
@@ -32,10 +33,10 @@ spec:
             resources:
               requests:
                 cpu: 100m
-                memory: 384Mi
+                memory: 512Mi
               limits:
                 cpu: 500m
-                memory: 1Gi
+                memory: 2Gi
 
         # VMAgent scrapes all ServiceMonitors (replaces Prometheus scrape engine)
         vmagent:
@@ -47,6 +48,11 @@ spec:
                 memory: 64Mi
               limits:
                 memory: 256Mi
+            # Drop high-cardinality metrics unused in homelab to cut ingestion volume
+            metricRelabelings:
+              - sourceLabels: [__name__]
+                regex: "container_blkio_device_usage_total|container_tasks_state|container_memory_failures_total|container_fs_reads_bytes_total|container_fs_writes_bytes_total|container_fs_reads_total|container_fs_writes_total"
+                action: drop
 
         # Alertmanager - disabled for now
         alertmanager:
@@ -90,9 +96,13 @@ spec:
         prometheus-node-exporter:
           enabled: true
 
-        # kube-state-metrics - keep
+        # kube-state-metrics - raise liveness probe threshold so transient
+        # kube-apiserver hiccups don't cause a restart loop (default is 3)
         kube-state-metrics:
           enabled: true
+          livenessProbe:
+            failureThreshold: 10
+            timeoutSeconds: 10
 
         # Talos doesn't expose these endpoints
         kubeEtcd:
