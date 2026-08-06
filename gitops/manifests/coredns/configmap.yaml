@@ -33,11 +33,10 @@ data:
            # cluster-wide DNS failures until CoreDNS is restarted.
            health_check 5s
         }
-        cache 30 {
+        cache 300 {
            disable success cluster.local
            disable denial cluster.local
         }
         loop
-        reload
         loadbalance
     }
