@@ -33,6 +33,11 @@ data:
         service: http://traefik.traefik-system.svc.cluster.local
       - hostname: "*.urbanequestrian.in"
         service: http://traefik.traefik-system.svc.cluster.local
+      # Spinup tenant custom domain (chemdesk.in)
+      - hostname: "chemdesk.in"
+        service: http://traefik.traefik-system.svc.cluster.local
+      - hostname: "*.chemdesk.in"
+        service: http://traefik.traefik-system.svc.cluster.local
       # iqama.space (public product, no *.jamilshaikh.in wildcard coverage)
       - hostname: "iqama.space"
         service: http://traefik.traefik-system.svc.cluster.local
