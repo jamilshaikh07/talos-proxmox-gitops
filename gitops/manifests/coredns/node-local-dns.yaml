@@ -27,7 +27,9 @@ data:
         loop
         bind 169.254.20.10
         forward . 10.96.0.10 {
-            force_tcp
+            # force_tcp removed: TCP connections to CoreDNS silently hang,
+            # causing cluster-wide DNS timeouts. Use UDP (default) instead.
+            health_check 5s
         }
         prometheus :9253
         health 169.254.20.10:8080
@@ -39,7 +41,7 @@ data:
         loop
         bind 169.254.20.10
         forward . 10.96.0.10 {
-            force_tcp
+            health_check 5s
         }
         prometheus :9253
         }
@@ -50,7 +52,7 @@ data:
         loop
         bind 169.254.20.10
         forward . 10.96.0.10 {
-            force_tcp
+            health_check 5s
         }
         prometheus :9253
         }
