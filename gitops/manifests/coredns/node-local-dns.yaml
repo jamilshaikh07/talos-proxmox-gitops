@@ -26,9 +26,10 @@ data:
         reload
         loop
         bind 169.254.20.10
-        forward . 10.96.0.10 {
-            # force_tcp removed: TCP connections to CoreDNS silently hang,
-            # causing cluster-wide DNS timeouts. Use UDP (default) instead.
+        forward . __PILLAR__UPSTREAM__SERVERS__ {
+            # Use pod IPs auto-discovered from kube-dns endpoints via
+            # -upstreamsvc flag. ClusterIP (10.96.0.10) is unreachable from
+            # hostNetwork on Cilium when bpf-lb-sock is disabled.
             health_check 5s
         }
         prometheus :9253
@@ -40,7 +41,7 @@ data:
         reload
         loop
         bind 169.254.20.10
-        forward . 10.96.0.10 {
+        forward . __PILLAR__UPSTREAM__SERVERS__ {
             health_check 5s
         }
         prometheus :9253
@@ -51,7 +52,7 @@ data:
         reload
         loop
         bind 169.254.20.10
-        forward . 10.96.0.10 {
+        forward . __PILLAR__UPSTREAM__SERVERS__ {
             health_check 5s
         }
         prometheus :9253
@@ -62,7 +63,7 @@ data:
         reload
         loop
         bind 169.254.20.10
-        forward . /etc/resolv.conf
+        forward . __PILLAR__UPSTREAM__SERVERS__
         prometheus :9253
         }
 ---
