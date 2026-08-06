@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: omniroute
+  namespace: omniroute
+  labels:
+    app: omniroute
+spec:
+  selector:
+    app: omniroute
+  ports:
+  - port: 80
+    targetPort: 20128
+    name: http
+  type: ClusterIP
