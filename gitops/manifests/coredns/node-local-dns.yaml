@@ -26,7 +26,7 @@ data:
         reload
         loop
         bind 169.254.20.10
-        forward . __PILLAR__CLUSTER__DNS__ {
+        forward . 10.96.0.10 {
             force_tcp
         }
         prometheus :9253
@@ -38,7 +38,7 @@ data:
         reload
         loop
         bind 169.254.20.10
-        forward . __PILLAR__CLUSTER__DNS__ {
+        forward . 10.96.0.10 {
             force_tcp
         }
         prometheus :9253
@@ -49,7 +49,7 @@ data:
         reload
         loop
         bind 169.254.20.10
-        forward . __PILLAR__CLUSTER__DNS__ {
+        forward . 10.96.0.10 {
             force_tcp
         }
         prometheus :9253
@@ -107,7 +107,7 @@ spec:
         - -localip
         - 169.254.20.10
         - -conf
-        - /etc/Corefile
+        - /etc/coredns/Corefile
         - -upstreamsvc
         - kube-dns
         securityContext:
