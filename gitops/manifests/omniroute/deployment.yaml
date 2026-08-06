@@ -35,6 +35,7 @@ spec:
         envFrom:
         - secretRef:
             name: omniroute-secrets
+            optional: false
         volumeMounts:
         - name: data
           mountPath: /app/data
@@ -47,16 +48,16 @@ spec:
             cpu: 500m
         readinessProbe:
           httpGet:
-            path: /api/health
+            path: /api/health/ping
             port: 20128
-          initialDelaySeconds: 15
+          initialDelaySeconds: 20
           periodSeconds: 10
-          failureThreshold: 5
+          failureThreshold: 6
         livenessProbe:
           httpGet:
-            path: /api/health
+            path: /api/health/ping
             port: 20128
-          initialDelaySeconds: 30
+          initialDelaySeconds: 40
           periodSeconds: 30
           failureThreshold: 3
       volumes:
