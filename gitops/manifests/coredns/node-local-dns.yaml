@@ -10,6 +10,32 @@ metadata:
   name: node-local-dns
   namespace: kube-system
 ---
+# -upstreamsvc kube-dns needs to list Endpoints for the kube-dns Service
+# to discover CoreDNS pod IPs and substitute __PILLAR__UPSTREAM__SERVERS__.
+# Without this, node-cache silently falls back to /etc/resolv.conf, which
+# can't resolve cluster.local names.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: node-local-dns
+rules:
+- apiGroups: [""]
+  resources: ["endpoints", "services"]
+  verbs: ["list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: node-local-dns
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: node-local-dns
+subjects:
+- kind: ServiceAccount
+  name: node-local-dns
+  namespace: kube-system
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
