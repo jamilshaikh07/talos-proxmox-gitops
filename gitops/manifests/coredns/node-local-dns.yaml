@@ -110,7 +110,7 @@ spec:
         - -localip
         - 169.254.20.10
         - -conf
-        - /etc/coredns/Corefile
+        - /etc/Corefile
         - -upstreamsvc
         - kube-dns
         securityContext:
@@ -154,4 +154,4 @@ spec:
           name: node-local-dns
           items:
           - key: Corefile
-            path: Corefile
+            path: Corefile.base
