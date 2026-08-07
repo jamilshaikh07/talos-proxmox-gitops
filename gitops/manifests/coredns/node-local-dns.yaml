@@ -3,36 +3,17 @@
 # Link-local VIP: 169.254.20.10 (not routed, only visible on the node)
 # After deploying, set clusterDNS: ["169.254.20.10"] in Talos kubelet config
 # to make all pods use the local cache instead of CoreDNS directly.
+#
+# Forward target is CoreDNS's ClusterIP (10.96.0.10, the kube-dns Service),
+# hardcoded rather than templated via -upstreamsvc. Verified reachable from
+# hostNetwork pods on this cluster's Cilium config (nslookup succeeds). The
+# -upstreamsvc __PILLAR__ substitution path was tried and reverted: it needs
+# RBAC to list Endpoints, and even when granted, it only resolves to this
+# same ClusterIP anyway — no benefit, more moving parts.
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: node-local-dns
-  namespace: kube-system
----
-# -upstreamsvc kube-dns needs to list Endpoints for the kube-dns Service
-# to discover CoreDNS pod IPs and substitute __PILLAR__UPSTREAM__SERVERS__.
-# Without this, node-cache silently falls back to /etc/resolv.conf, which
-# can't resolve cluster.local names.
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: node-local-dns
-rules:
-- apiGroups: [""]
-  resources: ["endpoints", "services"]
-  verbs: ["list", "watch"]
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: node-local-dns
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: node-local-dns
-subjects:
-- kind: ServiceAccount
   name: node-local-dns
   namespace: kube-system
 ---
@@ -52,10 +33,7 @@ data:
         reload
         loop
         bind 169.254.20.10
-        forward . __PILLAR__UPSTREAM__SERVERS__ {
-            # Use pod IPs auto-discovered from kube-dns endpoints via
-            # -upstreamsvc flag. ClusterIP (10.96.0.10) is unreachable from
-            # hostNetwork on Cilium when bpf-lb-sock is disabled.
+        forward . 10.96.0.10 {
             health_check 5s
         }
         prometheus :9253
@@ -67,7 +45,7 @@ data:
         reload
         loop
         bind 169.254.20.10
-        forward . __PILLAR__UPSTREAM__SERVERS__ {
+        forward . 10.96.0.10 {
             health_check 5s
         }
         prometheus :9253
@@ -78,7 +56,7 @@ data:
         reload
         loop
         bind 169.254.20.10
-        forward . __PILLAR__UPSTREAM__SERVERS__ {
+        forward . 10.96.0.10 {
             health_check 5s
         }
         prometheus :9253
@@ -89,7 +67,7 @@ data:
         reload
         loop
         bind 169.254.20.10
-        forward . __PILLAR__UPSTREAM__SERVERS__
+        forward . /etc/resolv.conf
         prometheus :9253
         }
 ---
@@ -136,9 +114,7 @@ spec:
         - -localip
         - 169.254.20.10
         - -conf
-        - /etc/Corefile
-        - -upstreamsvc
-        - kube-dns
+        - /etc/coredns/Corefile
         securityContext:
           privileged: true
         ports:
@@ -180,4 +156,4 @@ spec:
           name: node-local-dns
           items:
           - key: Corefile
-            path: Corefile.base
+            path: Corefile
