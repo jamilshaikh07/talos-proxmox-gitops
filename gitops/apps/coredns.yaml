@@ -16,7 +16,7 @@ spec:
     path: gitops/manifests/coredns
   syncPolicy:
     automated:
-      prune: false
+      prune: true
       selfHeal: true
     syncOptions:
       - CreateNamespace=false
