@@ -60,6 +60,20 @@
     dest: "{{ talos_config_dir }}/kubelet-certs.yaml"
     mode: '0644'
 
+- name: Create kubelet cluster DNS patch
+  ansible.builtin.copy:
+    content: |
+      cluster:
+        network:
+          dnsDomain: cluster.local
+          dnsServiceIP: 10.96.0.10
+      machine:
+        kubelet:
+          clusterDNS:
+            - 10.96.0.10
+    dest: "{{ talos_config_dir }}/kubelet-dns.yaml"
+    mode: '0644'
+
 - name: Create kubelet cert approver patch
   ansible.builtin.copy:
     content: |
@@ -182,6 +196,7 @@
       --config-patch @cni.yaml
       --config-patch @allowcontrolplanes.yaml
       --config-patch @kubelet-certs.yaml
+      --config-patch @kubelet-dns.yaml
       --config-patch @kubelet-cert-approver.yaml
       --config-patch @system-extensions.yaml
       --config-patch @machine-features.yaml
@@ -212,6 +227,7 @@
       --config-patch @cni.yaml
       --config-patch @allowcontrolplanes.yaml
       --config-patch @kubelet-certs.yaml
+      --config-patch @kubelet-dns.yaml
       --config-patch @kubelet-cert-approver.yaml
       --config-patch @system-extensions.yaml
       --config-patch @machine-features.yaml
