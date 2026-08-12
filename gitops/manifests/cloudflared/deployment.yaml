@@ -64,22 +64,15 @@ spec:
       labels:
         app: cloudflared
     spec:
-      # talos-wk-01's Cilium datapath is intermittently flaky for in-cluster
-      # service traffic (DNS UDP to CoreDNS AND plain TCP to ClusterIPs) —
-      # observed causing "Unable to reach the origin service ... i/o timeout"
-      # on the tunnel replica scheduled there (648 timeouts vs 0 on
-      # talos-cp-01 over the same window), surfacing to visitors as
-      # Cloudflare 502 "Bad gateway" pages. Pin both replicas to cp-01 until
-      # wk-01's networking is fixed or a third, healthier node is added.
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
-                  - key: kubernetes.io/hostname
-                    operator: In
-                    values:
-                      - talos-cp-01
+      # NOTE: an earlier fix here pinned both replicas to talos-cp-01 to
+      # dodge cross-node timeouts. Root cause was found and fixed instead:
+      # Cilium's auto-MTU detection wasn't subtracting VXLAN's 50-byte
+      # encapsulation overhead, leaving pod interfaces at MTU 1500 when the
+      # real cross-node ceiling was ~1450 — a PMTU black hole affecting
+      # ALL cross-node traffic cluster-wide, not something specific to
+      # wk-01. Fixed via `MTU: 1450` in gitops/apps/cilium.yaml (see that
+      # file's comment for verification details). Node pinning removed —
+      # both nodes are equally healthy now, no reason to avoid either.
       dnsPolicy: None
       dnsConfig:
         nameservers:
