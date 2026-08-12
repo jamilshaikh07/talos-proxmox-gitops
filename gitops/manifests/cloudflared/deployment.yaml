@@ -64,6 +64,33 @@ spec:
       labels:
         app: cloudflared
     spec:
+      # talos-wk-01's Cilium datapath is intermittently flaky for in-cluster
+      # service traffic (DNS UDP to CoreDNS AND plain TCP to ClusterIPs) —
+      # observed causing "Unable to reach the origin service ... i/o timeout"
+      # on the tunnel replica scheduled there (648 timeouts vs 0 on
+      # talos-cp-01 over the same window), surfacing to visitors as
+      # Cloudflare 502 "Bad gateway" pages. Pin both replicas to cp-01 until
+      # wk-01's networking is fixed or a third, healthier node is added.
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                      - talos-cp-01
+      dnsPolicy: None
+      dnsConfig:
+        nameservers:
+          - 10.96.0.10
+        searches:
+          - cloudflared.svc.cluster.local
+          - svc.cluster.local
+          - cluster.local
+        options:
+          - name: ndots
+            value: "5"
       containers:
         - name: cloudflared
           image: cloudflare/cloudflared:2025.2.1
