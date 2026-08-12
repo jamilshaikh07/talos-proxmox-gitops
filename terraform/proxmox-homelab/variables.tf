@@ -192,14 +192,14 @@ variable "worker_ip_start" {
 
 variable "worker_memory" {
   type        = number
-  default     = 16384
-  description = "Default memory in MB assigned to each Talos worker VM"
+  default     = 12288
+  description = "Default memory in MB assigned to each Talos worker VM. Trimmed from 16384 -> 12288: the alif host has only 32GB total RAM against 30.75GB configured across all 3 VMs (cp-01 12GB + wk-01 16GB + opnsense 2GB), leaving no headroom for the hypervisor itself. Host was observed at load average 43 (8 cores) with swap 100% exhausted, causing multi-second etcd fsync stalls on talos-cp-01 (lease renewal failures, control-plane restarts). wk-01 was only actually using ~7.2GB of its 16GB, so 12GB still leaves ~4.6GB of headroom while returning 4GB to the host."
 }
 
 variable "worker_cores" {
   type        = number
   default     = 4
-  description = "Default vCPU cores assigned to each Talos worker VM. Sized for the alif host (i7-4770, 4C/8T): 4 vCPU on talos-cp-01 + 4 here = 8 of 8 logical CPUs. Rebalanced from the original 2+6 split because the control-plane was the CPU bottleneck (62% requests on 2 cores) while the worker sat at 44%; total host allocation unchanged. Memory stays at 16 GiB because the host RAM is the actual scarce resource."
+  description = "Default vCPU cores assigned to each Talos worker VM. Sized for the alif host (i7-4770, 4C/8T): 4 vCPU on talos-cp-01 + 4 here = 8 of 8 logical CPUs. Rebalanced from the original 2+6 split because the control-plane was the CPU bottleneck (62% requests on 2 cores) while the worker sat at 44%; total host allocation unchanged."
 }
 
 variable "worker_storage" {
