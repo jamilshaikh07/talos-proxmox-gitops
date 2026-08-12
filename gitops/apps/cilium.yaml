@@ -11,6 +11,21 @@ spec:
     targetRevision: 1.19.2
     helm:
       values: |
+        # Auto-MTU detection was leaving pod-facing interfaces (veth + the
+        # cilium_vxlan device) advertising MTU 1500 — the physical NIC's
+        # MTU — without subtracting VXLAN's 50 bytes of encapsulation
+        # overhead (14 eth + 20 ip + 8 udp + 8 vxlan). Confirmed directly:
+        # `ping -M do -s 1450` between pods on different nodes gets kernel
+        # "sendmsg: Message too large" / 100% loss, while -s 1400 works.
+        # Same on both nodes — this is a cluster-wide cross-node bug, not
+        # a talos-wk-01-specific one. Cross-node TCP payloads landing in
+        # the 1450-1500 byte range hit a classic PMTU black hole (silent
+        # drop instead of a clean reject), which is the real cause behind
+        # the intermittent DNS/DB/outbound-HTTPS/ingress failures seen
+        # throughout this cluster. Forcing MTU here makes Cilium correctly
+        # clamp every pod interface + the vxlan device to a value that
+        # actually fits after encapsulation.
+        MTU: 1450
         ipam:
           mode: kubernetes
         kubeProxyReplacement: false

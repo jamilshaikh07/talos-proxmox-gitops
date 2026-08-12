@@ -17,6 +17,11 @@
     release_namespace: kube-system
     update_repo_cache: true
     values:
+      # See gitops/apps/cilium.yaml for the full explanation: auto-MTU
+      # detection under-accounts for VXLAN's 50-byte overhead, leaving
+      # pod interfaces at MTU 1500 when the real cross-node ceiling is
+      # ~1450 — a PMTU black hole for TCP payloads in that range.
+      MTU: 1450
       ipam:
         mode: kubernetes
       kubeProxyReplacement: false
