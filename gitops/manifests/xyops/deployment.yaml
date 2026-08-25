@@ -17,6 +17,7 @@ spec:
       labels:
         app: xyops
     spec:
+      serviceAccountName: xyops
       containers:
         - name: xyops
           image: ghcr.io/pixlcore/xyops:latest

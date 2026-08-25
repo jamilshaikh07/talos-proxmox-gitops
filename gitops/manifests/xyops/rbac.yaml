@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: xyops
+  namespace: xyops
+---
+# Read-only on ArgoCD Applications (health/sync checks) + pod
+# list/delete cluster-wide (housekeeping jobs run from the local xySat
+# worker inside the xyops pod). No write access to anything else.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: xyops-cluster-jobs
+rules:
+  - apiGroups: ["argoproj.io"]
+    resources: ["applications"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: xyops-cluster-jobs
+subjects:
+  - kind: ServiceAccount
+    name: xyops
+    namespace: xyops
+roleRef:
+  kind: ClusterRole
+  name: xyops-cluster-jobs
+  apiGroup: rbac.authorization.k8s.io
