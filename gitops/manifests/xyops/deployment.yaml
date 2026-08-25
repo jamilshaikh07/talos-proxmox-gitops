@@ -34,6 +34,15 @@ spec:
               value: https://xyops.jamilshaikh.in
             - name: XYOPS_xysat_local
               value: "true" # run a local worker so jobs work immediately
+            # XYOPS_masters is cluster-internal only; external workers (e.g. the
+            # Proxmox host) can't resolve it, so route them through the same
+            # public Cloudflare Tunnel path browsers use instead.
+            - name: XYOPS_satellite__config__host
+              value: xyops.jamilshaikh.in
+            - name: XYOPS_satellite__config__port
+              value: "443"
+            - name: XYOPS_satellite__config__secure
+              value: "true"
             - name: TZ
               value: Asia/Kolkata
             - name: XYOPS_foreground
