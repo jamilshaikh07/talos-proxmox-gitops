@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: xyops
+  namespace: xyops
+  labels:
+    app: xyops
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate # single-conductor SQLite store — no rolling overlap
+  selector:
+    matchLabels:
+      app: xyops
+  template:
+    metadata:
+      labels:
+        app: xyops
+    spec:
+      containers:
+        - name: xyops
+          image: ghcr.io/pixlcore/xyops:latest
+          ports:
+            - containerPort: 5522
+              name: http
+            - containerPort: 5523
+              name: https
+          env:
+            - name: XYOPS_hostname
+              value: xyops.xyops.svc.cluster.local
+            - name: XYOPS_masters
+              value: xyops.xyops.svc.cluster.local
+            - name: XYOPS_base_app_url
+              value: https://xyops.jamilshaikh.in
+            - name: XYOPS_xysat_local
+              value: "true" # run a local worker so jobs work immediately
+            - name: TZ
+              value: Asia/Kolkata
+            - name: XYOPS_foreground
+              value: "true"
+            - name: XYOPS_echo
+              value: "true"
+          volumeMounts:
+            - name: data
+              mountPath: /opt/xyops/data
+            - name: conf
+              mountPath: /opt/xyops/conf
+            - name: logs
+              mountPath: /opt/xyops/logs
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+          readinessProbe:
+            httpGet:
+              path: /api/app/ping
+              port: 5522
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /api/app/ping
+              port: 5522
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            failureThreshold: 3
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: xyops-data
+        - name: conf
+          persistentVolumeClaim:
+            claimName: xyops-conf
+        - name: logs
+          persistentVolumeClaim:
+            claimName: xyops-logs
