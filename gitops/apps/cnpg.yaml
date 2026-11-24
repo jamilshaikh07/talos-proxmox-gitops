@@ -26,6 +26,11 @@ spec:
 
         replicaCount: 1
 
+        # Tolerate transient API server latency (leader election was lost ~670 times)
+        additionalArgs:
+          - --leader-lease-duration=60
+          - --leader-renew-deadline=45
+
         # Keep off talos-cp-01: CP pod-limit overcommit was starving kube-apiserver's
         # CFS share, causing periodic apiserver SIGKILLs (see docs/04-observability.md)
         nodeSelector:
