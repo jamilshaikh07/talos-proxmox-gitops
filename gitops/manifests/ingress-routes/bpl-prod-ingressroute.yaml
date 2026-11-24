@@ -20,11 +20,27 @@ spec:
     # rules win over the SPA catch-all below regardless of how Traefik
     # weighs match-string length.  Apex + www each get their own rule —
     # mirrors the stage IngressRoute's working single-line shape.
+    # Stateless DB-backed reads -> read replicas (HPA-scaled). Higher priority than the
+    # catch-all /api rule below. Auction/socket/auth/admin stay on the single bpl-backend pod.
+    - kind: Rule
+      match: Host(`belapurpremierleague.com`) && Method(`GET`) && (PathPrefix(`/api/public`) || Path(`/api/teams`) || Path(`/api/players`))
+      priority: 200
+      services:
+        - name: bpl-backend-read
+          port: 4000
     - kind: Rule
       match: Host(`belapurpremierleague.com`) && (PathPrefix(`/api`) || PathPrefix(`/socket.io`) || PathPrefix(`/healthz`) || PathPrefix(`/readyz`))
       priority: 100
       services:
         - name: bpl-backend
+          port: 4000
+    # Stateless DB-backed reads -> read replicas (HPA-scaled). Higher priority than the
+    # catch-all /api rule below. Auction/socket/auth/admin stay on the single bpl-backend pod.
+    - kind: Rule
+      match: Host(`www.belapurpremierleague.com`) && Method(`GET`) && (PathPrefix(`/api/public`) || Path(`/api/teams`) || Path(`/api/players`))
+      priority: 200
+      services:
+        - name: bpl-backend-read
           port: 4000
     - kind: Rule
       match: Host(`www.belapurpremierleague.com`) && (PathPrefix(`/api`) || PathPrefix(`/socket.io`) || PathPrefix(`/healthz`) || PathPrefix(`/readyz`))
