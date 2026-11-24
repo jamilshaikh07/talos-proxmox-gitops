@@ -9,7 +9,7 @@ spec:
   entryPoints:
     - web
   routes:
-    - match: Host(`loavul.jamilshaikh.in`)
+    - match: Host(`loavul.jamilshaikh.in`) && !PathPrefix(`/api/metrics`)
       kind: Rule
       services:
         - name: loavul-web
