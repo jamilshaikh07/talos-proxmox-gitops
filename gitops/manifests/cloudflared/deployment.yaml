@@ -55,7 +55,7 @@ metadata:
   labels:
     app: cloudflared
 spec:
-  replicas: 2
+  replicas: 3
   selector:
     matchLabels:
       app: cloudflared
@@ -96,11 +96,13 @@ spec:
             - containerPort: 2000
               name: metrics
           resources:
+            # 200m throttled the tunnel (75% of periods) at ~300 req/s in a load test,
+            # which capped every site behind it. Give it room to burst.
             requests:
-              cpu: 50m
+              cpu: 100m
               memory: 64Mi
             limits:
-              cpu: 200m
+              cpu: "1"
               memory: 256Mi
           securityContext:
             allowPrivilegeEscalation: false
