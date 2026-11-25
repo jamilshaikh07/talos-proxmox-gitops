@@ -1,0 +1,15 @@
+# Applied to every request on the web entrypoint (see traefik values). Deliberately conservative: it must not
+# override headers apps set themselves, so no global CSP / X-Frame-Options (those are attached per site instead).
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: security-headers
+  namespace: traefik-system
+spec:
+  headers:
+    contentTypeNosniff: true
+    referrerPolicy: strict-origin-when-cross-origin
+    permissionsPolicy: "geolocation=(), payment=(), usb=()"
+    customResponseHeaders:
+      X-Powered-By: ""
+      Server: ""

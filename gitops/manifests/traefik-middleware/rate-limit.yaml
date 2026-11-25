@@ -1,0 +1,15 @@
+# Per-client-IP limit on the web entrypoint. Clients arrive via the Cloudflare tunnel, so the real IP is in
+# Cf-Connecting-Ip (Cloudflare overwrites it, it cannot be spoofed from the internet). Cached responses are
+# served by Cloudflare and never reach this limit. Generous on purpose: a person never exceeds it.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: rate-limit
+  namespace: traefik-system
+spec:
+  rateLimit:
+    average: 200
+    period: 1s
+    burst: 400
+    sourceCriterion:
+      requestHeaderName: Cf-Connecting-Ip

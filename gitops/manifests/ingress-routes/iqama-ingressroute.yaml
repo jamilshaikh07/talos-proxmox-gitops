@@ -11,6 +11,8 @@ spec:
   routes:
     - match: Host(`iqama.space`)
       kind: Rule
+      middlewares:
+        - name: frame-protect
       services:
         - name: todo-app
           port: 80
@@ -28,6 +30,8 @@ spec:
   routes:
     - match: Host(`iqama.space`)
       kind: Rule
+      middlewares:
+        - name: frame-protect
       services:
         - name: todo-app
           port: 80

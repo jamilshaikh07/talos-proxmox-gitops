@@ -25,12 +25,16 @@ spec:
     - kind: Rule
       match: Host(`belapurpremierleague.com`) && Method(`GET`) && (PathPrefix(`/api/public`) || Path(`/api/teams`) || Path(`/api/players`))
       priority: 200
+      middlewares:
+        - name: frame-protect
       services:
         - name: bpl-read
           kind: TraefikService
     - kind: Rule
       match: Host(`belapurpremierleague.com`) && (PathPrefix(`/api`) || PathPrefix(`/socket.io`) || PathPrefix(`/healthz`) || PathPrefix(`/readyz`))
       priority: 100
+      middlewares:
+        - name: frame-protect
       services:
         - name: bpl-backend
           port: 4000
@@ -39,23 +43,31 @@ spec:
     - kind: Rule
       match: Host(`www.belapurpremierleague.com`) && Method(`GET`) && (PathPrefix(`/api/public`) || Path(`/api/teams`) || Path(`/api/players`))
       priority: 200
+      middlewares:
+        - name: frame-protect
       services:
         - name: bpl-read
           kind: TraefikService
     - kind: Rule
       match: Host(`www.belapurpremierleague.com`) && (PathPrefix(`/api`) || PathPrefix(`/socket.io`) || PathPrefix(`/healthz`) || PathPrefix(`/readyz`))
       priority: 100
+      middlewares:
+        - name: frame-protect
       services:
         - name: bpl-backend
           port: 4000
     # Everything else -> SPA
     - kind: Rule
       match: Host(`belapurpremierleague.com`)
+      middlewares:
+        - name: frame-protect
       services:
         - name: bpl-frontend
           port: 80
     - kind: Rule
       match: Host(`www.belapurpremierleague.com`)
+      middlewares:
+        - name: frame-protect
       services:
         - name: bpl-frontend
           port: 80

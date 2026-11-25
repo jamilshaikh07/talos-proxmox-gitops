@@ -1,0 +1,9 @@
+# Clickjacking protection for this site only: only same-origin pages may embed it.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: frame-protect
+  namespace: bpl-prod
+spec:
+  headers:
+    contentSecurityPolicy: "frame-ancestors 'self'"

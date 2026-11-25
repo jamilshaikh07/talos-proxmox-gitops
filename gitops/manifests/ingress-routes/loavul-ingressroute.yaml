@@ -11,6 +11,8 @@ spec:
   routes:
     - match: Host(`loavul.jamilshaikh.in`) && !PathPrefix(`/api/metrics`)
       kind: Rule
+      middlewares:
+        - name: frame-protect
       services:
         - name: loavul-web
           port: 80
