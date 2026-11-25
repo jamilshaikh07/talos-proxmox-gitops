@@ -9,10 +9,29 @@ spec:
   entryPoints:
     - web
   routes:
-    - match: Host(`loavul.jamilshaikh.in`) && !PathPrefix(`/api/metrics`)
+    # App is branded "Anvil"; the old loavul host keeps working as a redirect.
+    - match: Host(`anvil.jamilshaikh.in`) && !PathPrefix(`/api/metrics`)
       kind: Rule
       middlewares:
         - name: frame-protect
       services:
         - name: loavul-web
           port: 80
+    - match: Host(`loavul.jamilshaikh.in`)
+      kind: Rule
+      middlewares:
+        - name: redirect-to-anvil
+      services:
+        - name: loavul-web
+          port: 80
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-to-anvil
+  namespace: loavul
+spec:
+  redirectRegex:
+    regex: "^https?://loavul\\.jamilshaikh\\.in/(.*)"
+    replacement: "https://anvil.jamilshaikh.in/${1}"
+    permanent: false
