@@ -38,6 +38,11 @@ spec:
             exposedPort: 80
             expose:
               default: true
+            # Applied to every route on this entrypoint (middlewares live in gitops/manifests/traefik-middleware)
+            http:
+              middlewares:
+                - traefik-system-security-headers@kubernetescrd
+                - traefik-system-rate-limit@kubernetescrd
 
           # HTTPS (port kept open; TLS termination handled by Cloudflare edge, not Traefik)
           websecure:
