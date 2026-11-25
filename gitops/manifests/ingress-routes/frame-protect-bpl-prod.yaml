@@ -1,4 +1,5 @@
-# Clickjacking protection for this site only: only same-origin pages may embed it.
+# Content-Security-Policy for the BPL site. Everything is same-origin (fonts are self-hosted); the only third
+# parties are YouTube embeds (live stream) and https images (owner/player photos).
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
@@ -6,4 +7,4 @@ metadata:
   namespace: bpl-prod
 spec:
   headers:
-    contentSecurityPolicy: "frame-ancestors 'self'"
+    contentSecurityPolicy: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https:; connect-src 'self' wss://belapurpremierleague.com wss://www.belapurpremierleague.com; frame-src https://www.youtube.com https://www.youtube-nocookie.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'"
