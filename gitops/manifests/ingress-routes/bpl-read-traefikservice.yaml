@@ -1,0 +1,26 @@
+# Read path with a safety net: normally everything goes to the HPA-scaled read pods. If every read pod is
+# unhealthy or gone (bad deploy, scale-to-zero, crash loop) the health checks drop that child and Traefik
+# serves the same GET endpoints from the main backend instead of answering 503. The main backend keeps a
+# token 1/101 share so it is always a known-good fallback.
+apiVersion: traefik.io/v1alpha1
+kind: TraefikService
+metadata:
+  name: bpl-read
+  namespace: bpl-prod
+spec:
+  weighted:
+    services:
+      - name: bpl-backend-read
+        port: 4000
+        weight: 100
+        healthCheck:
+          path: /readyz
+          interval: 5s
+          timeout: 3s
+      - name: bpl-backend
+        port: 4000
+        weight: 1
+        healthCheck:
+          path: /readyz
+          interval: 5s
+          timeout: 3s
