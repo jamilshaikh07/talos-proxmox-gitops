@@ -12,8 +12,29 @@ spec:
   entryPoints:
     - web
   routes:
+    # Public status API: allow the portfolio (jamilshaikh.in) to read it from the browser.
+    - match: Host(`uptime.jamilshaikh.in`) && PathPrefix(`/api/status-page`)
+      kind: Rule
+      priority: 100
+      middlewares:
+        - name: kuma-status-cors
+      services:
+        - name: uptime-kuma
+          port: 3001
     - match: Host(`uptime.jamilshaikh.in`)
       kind: Rule
       services:
         - name: uptime-kuma
           port: 3001
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: kuma-status-cors
+  namespace: monitoring
+spec:
+  headers:
+    accessControlAllowMethods: ["GET"]
+    accessControlAllowOriginList: ["https://jamilshaikh.in", "https://www.jamilshaikh.in"]
+    accessControlMaxAge: 600
+    addVaryHeader: true
