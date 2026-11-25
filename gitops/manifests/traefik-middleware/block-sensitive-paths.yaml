@@ -1,0 +1,17 @@
+# Defence in depth for every site behind this Traefik: never serve repo/config internals, whatever the app
+# or its image accidentally ships (urbanequestrian.in exposed /.git/config this way). Highest priority.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: block-sensitive-paths
+  namespace: traefik-system
+spec:
+  entryPoints:
+    - web
+  routes:
+    - kind: Rule
+      match: PathPrefix(`/.git`) || PathPrefix(`/.env`) || PathPrefix(`/.svn`) || PathPrefix(`/.hg`) || Path(`/Dockerfile`) || Path(`/docker-compose.yml`) || Path(`/.dockerignore`)
+      priority: 1000000
+      services:
+        - name: noop@internal
+          kind: TraefikService
