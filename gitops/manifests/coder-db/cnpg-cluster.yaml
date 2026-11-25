@@ -27,3 +27,24 @@ spec:
     limits:
       cpu: 500m
       memory: 512Mi
+  backup:
+    retentionPolicy: 30d
+    barmanObjectStore:
+      destinationPath: s3://bpl-db-backups/coder-db/
+      endpointURL: http://192.168.60.2:9900
+      s3Credentials:
+        accessKeyId: { name: db-backup-s3, key: ACCESS_KEY_ID }
+        secretAccessKey: { name: db-backup-s3, key: ACCESS_SECRET_KEY }
+      data: { compression: gzip }
+      wal: { compression: gzip, maxParallel: 2 }
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: coder-db-nightly
+  namespace: coder
+spec:
+  backupOwnerReference: self
+  cluster: { name: coder-db }
+  method: barmanObjectStore
+  schedule: "0 30 2 * * *"
