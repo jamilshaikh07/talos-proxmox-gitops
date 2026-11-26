@@ -1,0 +1,51 @@
+# Cloudflare edge analytics (requests, visitors, cache, threats, countries) as Prometheus metrics.
+# The token lives in the imperative secret `cloudflare-exporter` (key: token); it only needs Analytics Read.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudflare-exporter
+  namespace: monitoring
+  labels: { app: cloudflare-exporter }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: cloudflare-exporter } }
+  template:
+    metadata: { labels: { app: cloudflare-exporter } }
+    spec:
+      containers:
+        - name: exporter
+          # Mirrored from ghcr.io/lablabs/cloudflare_exporter:0.0.16 (GHCR pulls are very slow from this cluster)
+          image: public.ecr.aws/d2v6s3n0/cloudflare-exporter:0.0.16
+          ports: [{ name: metrics, containerPort: 8080 }]
+          env:
+            - name: CF_API_TOKEN
+              valueFrom: { secretKeyRef: { name: cloudflare-exporter, key: token } }
+            - { name: FREE_TIER, value: "true" }
+            - { name: CF_ZONES, value: "9bbf27bce10c429612905ebc73e8d4f6,ef0fd9a3eeca880b30b1bf8079c1c43d,9411cccf2e00d70a8e8d72cb59b13cfc,81578d3600264502ca142c6f57bde1ec,0a29eb2250077ddb4f5f2858cc3ae529,fccdc63076363c0ba1e9c31d4599f886,a8bfa18f0d72c88da00a588e00e3dd9b" }
+          readinessProbe: { httpGet: { path: /metrics, port: metrics }, periodSeconds: 30 }
+          resources:
+            requests: { cpu: 10m, memory: 32Mi }
+            limits: { cpu: 200m, memory: 128Mi }
+          securityContext: { allowPrivilegeEscalation: false, capabilities: { drop: [ALL] }, runAsNonRoot: true, runAsUser: 65532, seccompProfile: { type: RuntimeDefault } }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cloudflare-exporter
+  namespace: monitoring
+  labels: { app: cloudflare-exporter }
+spec:
+  selector: { app: cloudflare-exporter }
+  ports: [{ name: metrics, port: 8080, targetPort: metrics }]
+---
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMServiceScrape
+metadata:
+  name: cloudflare-exporter
+  namespace: monitoring
+spec:
+  selector: { matchLabels: { app: cloudflare-exporter } }
+  endpoints:
+    - port: metrics
+      interval: 60s
+      scrapeTimeout: 30s

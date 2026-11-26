@@ -1,0 +1,898 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: traffic-all-sites
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+  annotations:
+    grafana_folder: "homelab"
+data:
+  traffic.json: |
+    {
+      "title": "Traffic - all sites",
+      "uid": "traffic-all-sites",
+      "schemaVersion": 39,
+      "version": 1,
+      "refresh": "1m",
+      "time": {
+        "from": "now-7d",
+        "to": "now"
+      },
+      "tags": [
+        "traffic",
+        "cloudflare",
+        "traefik"
+      ],
+      "panels": [
+        {
+          "id": 1,
+          "type": "stat",
+          "title": "Requests (range)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 0,
+            "w": 4,
+            "h": 4
+          },
+          "targets": [
+            {
+              "expr": "sum(increase(cloudflare_zone_requests_total{zone=~\"$zone\"}[$__range]))",
+              "instant": true,
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${ds}"
+              }
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "color": {
+                "mode": "fixed",
+                "fixedColor": "white"
+              },
+              "decimals": null
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "colorMode": "value",
+            "graphMode": "none",
+            "textMode": "value"
+          }
+        },
+        {
+          "id": 2,
+          "type": "stat",
+          "title": "Unique visitors (range)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "gridPos": {
+            "x": 4,
+            "y": 0,
+            "w": 4,
+            "h": 4
+          },
+          "targets": [
+            {
+              "expr": "sum(increase(cloudflare_zone_uniques_total{zone=~\"$zone\"}[$__range]))",
+              "instant": true,
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${ds}"
+              }
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "color": {
+                "mode": "fixed",
+                "fixedColor": "cyan"
+              },
+              "decimals": null
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "colorMode": "value",
+            "graphMode": "none",
+            "textMode": "value"
+          }
+        },
+        {
+          "id": 3,
+          "type": "stat",
+          "title": "Page views (range)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "gridPos": {
+            "x": 8,
+            "y": 0,
+            "w": 4,
+            "h": 4
+          },
+          "targets": [
+            {
+              "expr": "sum(increase(cloudflare_zone_pageviews_total{zone=~\"$zone\"}[$__range]))",
+              "instant": true,
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${ds}"
+              }
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "color": {
+                "mode": "fixed",
+                "fixedColor": "blue"
+              },
+              "decimals": null
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "colorMode": "value",
+            "graphMode": "none",
+            "textMode": "value"
+          }
+        },
+        {
+          "id": 4,
+          "type": "stat",
+          "title": "Bandwidth (range)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "gridPos": {
+            "x": 12,
+            "y": 0,
+            "w": 4,
+            "h": 4
+          },
+          "targets": [
+            {
+              "expr": "sum(increase(cloudflare_zone_bandwidth_total{zone=~\"$zone\"}[$__range]))",
+              "instant": true,
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${ds}"
+              }
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "bytes",
+              "color": {
+                "mode": "fixed",
+                "fixedColor": "orange"
+              },
+              "decimals": null
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "colorMode": "value",
+            "graphMode": "none",
+            "textMode": "value"
+          }
+        },
+        {
+          "id": 5,
+          "type": "stat",
+          "title": "Served from cache",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "gridPos": {
+            "x": 16,
+            "y": 0,
+            "w": 4,
+            "h": 4
+          },
+          "targets": [
+            {
+              "expr": "100*sum(increase(cloudflare_zone_requests_cached{zone=~\"$zone\"}[$__range]))/clamp_min(sum(increase(cloudflare_zone_requests_total{zone=~\"$zone\"}[$__range])),1)",
+              "instant": true,
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${ds}"
+              }
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "color": {
+                "mode": "fixed",
+                "fixedColor": "green"
+              },
+              "decimals": 0
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "colorMode": "value",
+            "graphMode": "none",
+            "textMode": "value"
+          }
+        },
+        {
+          "id": 6,
+          "type": "stat",
+          "title": "Threats blocked (range)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "gridPos": {
+            "x": 20,
+            "y": 0,
+            "w": 4,
+            "h": 4
+          },
+          "targets": [
+            {
+              "expr": "sum(increase(cloudflare_zone_threats_total{zone=~\"$zone\"}[$__range]))",
+              "instant": true,
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${ds}"
+              }
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "color": {
+                "mode": "fixed",
+                "fixedColor": "red"
+              },
+              "decimals": null
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "colorMode": "value",
+            "graphMode": "none",
+            "textMode": "value"
+          }
+        },
+        {
+          "id": 7,
+          "type": "row",
+          "title": "Cloudflare edge - what visitors sent",
+          "collapsed": false,
+          "gridPos": {
+            "x": 0,
+            "y": 4,
+            "w": 24,
+            "h": 1
+          },
+          "panels": []
+        },
+        {
+          "id": 8,
+          "type": "timeseries",
+          "title": "Requests per site",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 5,
+            "w": 12,
+            "h": 8
+          },
+          "targets": [
+            {
+              "expr": "sum by (zone)(increase(cloudflare_zone_requests_total{zone=~\"$zone\"}[$__interval]))",
+              "legendFormat": "{{zone}}",
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${ds}"
+              }
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "custom": {
+                "lineWidth": 2,
+                "fillOpacity": 15,
+                "stacking": {
+                  "mode": "normal"
+                }
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "mean",
+                "max"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi"
+            }
+          }
+        },
+        {
+          "id": 9,
+          "type": "timeseries",
+          "title": "Unique visitors per site",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "gridPos": {
+            "x": 12,
+            "y": 5,
+            "w": 12,
+            "h": 8
+          },
+          "targets": [
+            {
+              "expr": "sum by (zone)(increase(cloudflare_zone_uniques_total{zone=~\"$zone\"}[$__interval]))",
+              "legendFormat": "{{zone}}",
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${ds}"
+              }
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "custom": {
+                "lineWidth": 2,
+                "fillOpacity": 15,
+                "stacking": {
+                  "mode": "none"
+                }
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "mean",
+                "max"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi"
+            }
+          }
+        },
+        {
+          "id": 10,
+          "type": "timeseries",
+          "title": "Cache hit ratio per site",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 13,
+            "w": 12,
+            "h": 8
+          },
+          "targets": [
+            {
+              "expr": "sum by (zone)(increase(cloudflare_zone_requests_cached{zone=~\"$zone\"}[$__interval]))/clamp_min(sum by (zone)(increase(cloudflare_zone_requests_total{zone=~\"$zone\"}[$__interval])),1)",
+              "legendFormat": "{{zone}}",
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${ds}"
+              }
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percentunit",
+              "custom": {
+                "lineWidth": 2,
+                "fillOpacity": 15,
+                "stacking": {
+                  "mode": "none"
+                }
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "mean",
+                "max"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi"
+            }
+          }
+        },
+        {
+          "id": 11,
+          "type": "timeseries",
+          "title": "Responses by status code",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "gridPos": {
+            "x": 12,
+            "y": 13,
+            "w": 12,
+            "h": 8
+          },
+          "targets": [
+            {
+              "expr": "sum by (status)(increase(cloudflare_zone_requests_status{zone=~\"$zone\"}[$__interval]))",
+              "legendFormat": "{{status}}",
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${ds}"
+              }
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "custom": {
+                "lineWidth": 2,
+                "fillOpacity": 15,
+                "stacking": {
+                  "mode": "normal"
+                }
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "mean",
+                "max"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi"
+            }
+          }
+        },
+        {
+          "id": 12,
+          "type": "table",
+          "title": "Top countries",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 21,
+            "w": 12,
+            "h": 8
+          },
+          "targets": [
+            {
+              "expr": "topk(15, sum by (country)(increase(cloudflare_zone_requests_country{zone=~\"$zone\"}[$__range])))",
+              "instant": true,
+              "format": "table",
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${ds}"
+              }
+            }
+          ],
+          "transformations": [
+            {
+              "id": "organize",
+              "options": {
+                "excludeByName": {
+                  "Time": true
+                },
+                "renameByName": {
+                  "Value": "value"
+                }
+              }
+            },
+            {
+              "id": "sortBy",
+              "options": {
+                "sort": [
+                  {
+                    "field": "value",
+                    "desc": true
+                  }
+                ]
+              }
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short"
+            },
+            "overrides": []
+          }
+        },
+        {
+          "id": 13,
+          "type": "table",
+          "title": "Traffic per site (range)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "gridPos": {
+            "x": 12,
+            "y": 21,
+            "w": 12,
+            "h": 8
+          },
+          "targets": [
+            {
+              "expr": "sum by (zone)(increase(cloudflare_zone_requests_total{zone=~\"$zone\"}[$__range]))",
+              "instant": true,
+              "format": "table",
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${ds}"
+              }
+            }
+          ],
+          "transformations": [
+            {
+              "id": "organize",
+              "options": {
+                "excludeByName": {
+                  "Time": true
+                },
+                "renameByName": {
+                  "Value": "value"
+                }
+              }
+            },
+            {
+              "id": "sortBy",
+              "options": {
+                "sort": [
+                  {
+                    "field": "value",
+                    "desc": true
+                  }
+                ]
+              }
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short"
+            },
+            "overrides": []
+          }
+        },
+        {
+          "id": 14,
+          "type": "row",
+          "title": "Traefik - what reached the homelab (cache misses only)",
+          "collapsed": false,
+          "gridPos": {
+            "x": 0,
+            "y": 29,
+            "w": 24,
+            "h": 1
+          },
+          "panels": []
+        },
+        {
+          "id": 15,
+          "type": "timeseries",
+          "title": "Requests/s by router",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 30,
+            "w": 12,
+            "h": 8
+          },
+          "targets": [
+            {
+              "expr": "sum by (router)(rate(traefik_router_requests_total{router!~\"api@.*|dashboard@.*|ping@.*|noop@.*\"}[$__rate_interval]))",
+              "legendFormat": "{{router}}",
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${ds}"
+              }
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "reqps",
+              "custom": {
+                "lineWidth": 2,
+                "fillOpacity": 15,
+                "stacking": {
+                  "mode": "normal"
+                }
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "mean",
+                "max"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi"
+            }
+          }
+        },
+        {
+          "id": 16,
+          "type": "timeseries",
+          "title": "5xx/s by router",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "gridPos": {
+            "x": 12,
+            "y": 30,
+            "w": 12,
+            "h": 8
+          },
+          "targets": [
+            {
+              "expr": "sum by (router)(rate(traefik_router_requests_total{code=~\"5..\",router!~\"api@.*|dashboard@.*|ping@.*\"}[$__rate_interval]))",
+              "legendFormat": "{{router}}",
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${ds}"
+              }
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "reqps",
+              "custom": {
+                "lineWidth": 2,
+                "fillOpacity": 15,
+                "stacking": {
+                  "mode": "none"
+                }
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "mean",
+                "max"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi"
+            }
+          }
+        },
+        {
+          "id": 17,
+          "type": "timeseries",
+          "title": "p95 latency by router",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 38,
+            "w": 12,
+            "h": 8
+          },
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.95, sum by (le, router)(rate(traefik_router_request_duration_seconds_bucket{router!~\"api@.*|dashboard@.*|ping@.*\"}[$__rate_interval])))",
+              "legendFormat": "{{router}}",
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${ds}"
+              }
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "custom": {
+                "lineWidth": 2,
+                "fillOpacity": 15,
+                "stacking": {
+                  "mode": "none"
+                }
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "mean",
+                "max"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi"
+            }
+          }
+        },
+        {
+          "id": 18,
+          "type": "timeseries",
+          "title": "Rate-limited (429) and blocked paths (418)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${ds}"
+          },
+          "gridPos": {
+            "x": 12,
+            "y": 38,
+            "w": 12,
+            "h": 8
+          },
+          "targets": [
+            {
+              "expr": "sum by (code)(rate(traefik_entrypoint_requests_total{code=~\"429|418\"}[$__rate_interval]))",
+              "legendFormat": "{{code}}",
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${ds}"
+              }
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "reqps",
+              "custom": {
+                "lineWidth": 2,
+                "fillOpacity": 15,
+                "stacking": {
+                  "mode": "none"
+                }
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "mean",
+                "max"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi"
+            }
+          }
+        }
+      ],
+      "templating": {
+        "list": [
+          {
+            "name": "ds",
+            "type": "datasource",
+            "query": "prometheus",
+            "current": {},
+            "label": "Datasource"
+          },
+          {
+            "name": "zone",
+            "type": "query",
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${ds}"
+            },
+            "query": {
+              "query": "label_values(cloudflare_zone_requests_total, zone)",
+              "refId": "z"
+            },
+            "refresh": 2,
+            "includeAll": true,
+            "multi": true,
+            "current": {
+              "text": "All",
+              "value": "$__all"
+            },
+            "label": "Site"
+          }
+        ]
+      }
+    }
