@@ -113,11 +113,10 @@ spec:
           runAsNonRoot: true
           runAsUser: 65532
 
-        # Persistence for certificates
+        # TLS is terminated at Cloudflare, so Traefik keeps no certificates; a node-pinned volume would
+        # also stop replicas from running on both nodes.
         persistence:
-          enabled: true
-          storageClass: local-path
-          size: 1Gi
+          enabled: false
   syncPolicy:
     automated:
       prune: true
