@@ -1,5 +1,81 @@
-# Cloudflare edge analytics (requests, visitors, cache, threats, countries) as Prometheus metrics.
-# The token lives in the imperative secret `cloudflare-exporter` (key: token); it only needs Analytics Read.
+# Cloudflare edge analytics for the free plan, as Prometheus metrics.
+# The off-the-shelf exporter queries datasets the free plan cannot read ("authorization denied"), so this tiny
+# stdlib exporter uses only httpRequests1dGroups (works on free). One sample per completed day carries that
+# day's timestamp, so 30 days of history appear immediately. The token lives in the imperative secret
+# `cloudflare-exporter` (key: token) and only needs Analytics Read.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cloudflare-exporter-script
+  namespace: monitoring
+data:
+  exporter.py: |
+    import json, os, threading, time, datetime, urllib.request
+    from http.server import BaseHTTPRequestHandler, HTTPServer
+
+    TOKEN = os.environ["CF_API_TOKEN"]
+    ZONES = [z for z in os.environ["CF_ZONES"].split(",") if z]
+    DAYS = 35
+    Q = """query($z:String!,$d:Date!){viewer{zones(filter:{zoneTag:$z}){httpRequests1dGroups(limit:60,filter:{date_geq:$d},orderBy:[date_ASC]){
+      dimensions{date} sum{requests cachedRequests bytes threats pageViews responseStatusMap{edgeResponseStatus requests} countryMap{clientCountryName requests}} uniq{uniques}}}}}"""
+    state = {"text": "# no data yet\n"}
+
+    def gql(zone, since):
+        req = urllib.request.Request("https://api.cloudflare.com/client/v4/graphql",
+            data=json.dumps({"query": Q, "variables": {"z": zone, "d": since}}).encode(),
+            headers={"Authorization": "Bearer " + TOKEN, "Content-Type": "application/json"})
+        return json.load(urllib.request.urlopen(req, timeout=30))
+
+    def zone_names():
+        req = urllib.request.Request("https://api.cloudflare.com/client/v4/zones?per_page=50", headers={"Authorization": "Bearer " + TOKEN})
+        return {z["id"]: z["name"] for z in json.load(urllib.request.urlopen(req, timeout=30))["result"]}
+
+    def esc(v): return str(v).replace("\\", "\\\\").replace('"', '\\"')
+
+    def refresh():
+        names = zone_names()
+        today = datetime.date.today()
+        since = (today - datetime.timedelta(days=DAYS)).isoformat()
+        out, errors = [], 0
+        for zid in ZONES:
+            name = names.get(zid, zid)
+            try:
+                d = gql(zid, since)
+                if d.get("errors"): raise RuntimeError(d["errors"][0]["message"])
+                groups = d["data"]["viewer"]["zones"][0]["httpRequests1dGroups"]
+            except Exception as e:
+                print("zone", name, "failed:", e, flush=True); errors += 1; continue
+            for g in groups:
+                day = datetime.date.fromisoformat(g["dimensions"]["date"])
+                if day >= today: continue  # only completed days (fixed timestamp, never rewritten)
+                ts = int(datetime.datetime(day.year, day.month, day.day, 12, tzinfo=datetime.timezone.utc).timestamp() * 1000)
+                s, lab = g["sum"], 'zone="%s"' % esc(name)
+                for m, v in (("requests", s["requests"]), ("cached_requests", s["cachedRequests"]), ("bytes", s["bytes"]), ("threats", s["threats"]), ("pageviews", s["pageViews"]), ("uniques", g["uniq"]["uniques"])):
+                    out.append("cf_daily_%s{%s} %s %d" % (m, lab, v, ts))
+                for r in s["responseStatusMap"]:
+                    out.append('cf_daily_status{%s,status="%s"} %s %d' % (lab, r["edgeResponseStatus"], r["requests"], ts))
+                for r in sorted(s["countryMap"], key=lambda r: -r["requests"])[:15]:
+                    out.append('cf_daily_country{%s,country="%s"} %s %d' % (lab, esc(r["clientCountryName"]), r["requests"], ts))
+        out.append("cf_exporter_zone_errors %d" % errors)
+        out.append("cf_exporter_last_success_timestamp_seconds %d" % time.time())
+        state["text"] = "\n".join(out) + "\n"
+        print("refreshed", len(out), "samples,", errors, "errors", flush=True)
+
+    def loop():
+        while True:
+            try: refresh()
+            except Exception as e: print("refresh failed:", e, flush=True)
+            time.sleep(900)
+
+    class H(BaseHTTPRequestHandler):
+        def do_GET(self):
+            body = state["text"].encode()
+            self.send_response(200); self.send_header("Content-Type", "text/plain; version=0.0.4"); self.send_header("Content-Length", str(len(body))); self.end_headers(); self.wfile.write(body)
+        def log_message(self, *a): pass
+
+    threading.Thread(target=loop, daemon=True).start()
+    HTTPServer(("0.0.0.0", 8080), H).serve_forever()
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -14,19 +90,22 @@ spec:
     spec:
       containers:
         - name: exporter
-          # Mirrored from ghcr.io/lablabs/cloudflare_exporter:0.0.16 (GHCR pulls are very slow from this cluster)
-          image: public.ecr.aws/d2v6s3n0/cloudflare-exporter:0.0.16
+          image: public.ecr.aws/docker/library/python:3.12-alpine
+          command: ["python", "-u", "/app/exporter.py"]
           ports: [{ name: metrics, containerPort: 8080 }]
           env:
             - name: CF_API_TOKEN
               valueFrom: { secretKeyRef: { name: cloudflare-exporter, key: token } }
-            - { name: FREE_TIER, value: "true" }
             - { name: CF_ZONES, value: "9bbf27bce10c429612905ebc73e8d4f6,ef0fd9a3eeca880b30b1bf8079c1c43d,9411cccf2e00d70a8e8d72cb59b13cfc,81578d3600264502ca142c6f57bde1ec,0a29eb2250077ddb4f5f2858cc3ae529,fccdc63076363c0ba1e9c31d4599f886,a8bfa18f0d72c88da00a588e00e3dd9b" }
+          volumeMounts: [{ name: script, mountPath: /app }]
           readinessProbe: { httpGet: { path: /metrics, port: metrics }, periodSeconds: 30 }
           resources:
             requests: { cpu: 10m, memory: 32Mi }
             limits: { cpu: 200m, memory: 128Mi }
           securityContext: { allowPrivilegeEscalation: false, capabilities: { drop: [ALL] }, runAsNonRoot: true, runAsUser: 65532, seccompProfile: { type: RuntimeDefault } }
+      volumes:
+        - name: script
+          configMap: { name: cloudflare-exporter-script }
 ---
 apiVersion: v1
 kind: Service
@@ -47,5 +126,6 @@ spec:
   selector: { matchLabels: { app: cloudflare-exporter } }
   endpoints:
     - port: metrics
-      interval: 60s
+      interval: 5m
       scrapeTimeout: 30s
+      honorTimestamps: true

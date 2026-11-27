@@ -13,10 +13,10 @@ data:
       "title": "Traffic - all sites",
       "uid": "traffic-all-sites",
       "schemaVersion": 39,
-      "version": 1,
+      "version": 2,
       "refresh": "1m",
       "time": {
-        "from": "now-7d",
+        "from": "now-30d",
         "to": "now"
       },
       "tags": [
@@ -41,7 +41,7 @@ data:
           },
           "targets": [
             {
-              "expr": "sum(increase(cloudflare_zone_requests_total{zone=~\"$zone\"}[$__range]))",
+              "expr": "sum(sum_over_time(cf_daily_requests{zone=~\"$zone\"}[$__range]))",
               "instant": true,
               "refId": "A",
               "datasource": {
@@ -75,7 +75,7 @@ data:
         {
           "id": 2,
           "type": "stat",
-          "title": "Unique visitors (range)",
+          "title": "Avg unique visitors / day",
           "datasource": {
             "type": "prometheus",
             "uid": "${ds}"
@@ -88,7 +88,7 @@ data:
           },
           "targets": [
             {
-              "expr": "sum(increase(cloudflare_zone_uniques_total{zone=~\"$zone\"}[$__range]))",
+              "expr": "sum(avg_over_time(cf_daily_uniques{zone=~\"$zone\"}[$__range]))",
               "instant": true,
               "refId": "A",
               "datasource": {
@@ -135,7 +135,7 @@ data:
           },
           "targets": [
             {
-              "expr": "sum(increase(cloudflare_zone_pageviews_total{zone=~\"$zone\"}[$__range]))",
+              "expr": "sum(sum_over_time(cf_daily_pageviews{zone=~\"$zone\"}[$__range]))",
               "instant": true,
               "refId": "A",
               "datasource": {
@@ -182,7 +182,7 @@ data:
           },
           "targets": [
             {
-              "expr": "sum(increase(cloudflare_zone_bandwidth_total{zone=~\"$zone\"}[$__range]))",
+              "expr": "sum(sum_over_time(cf_daily_bytes{zone=~\"$zone\"}[$__range]))",
               "instant": true,
               "refId": "A",
               "datasource": {
@@ -229,7 +229,7 @@ data:
           },
           "targets": [
             {
-              "expr": "100*sum(increase(cloudflare_zone_requests_cached{zone=~\"$zone\"}[$__range]))/clamp_min(sum(increase(cloudflare_zone_requests_total{zone=~\"$zone\"}[$__range])),1)",
+              "expr": "100*sum(sum_over_time(cf_daily_cached_requests{zone=~\"$zone\"}[$__range]))/clamp_min(sum(sum_over_time(cf_daily_requests{zone=~\"$zone\"}[$__range])),1)",
               "instant": true,
               "refId": "A",
               "datasource": {
@@ -276,7 +276,7 @@ data:
           },
           "targets": [
             {
-              "expr": "sum(increase(cloudflare_zone_threats_total{zone=~\"$zone\"}[$__range]))",
+              "expr": "sum(sum_over_time(cf_daily_threats{zone=~\"$zone\"}[$__range]))",
               "instant": true,
               "refId": "A",
               "datasource": {
@@ -310,7 +310,7 @@ data:
         {
           "id": 7,
           "type": "row",
-          "title": "Cloudflare edge - what visitors sent",
+          "title": "Cloudflare edge - what visitors sent (completed days)",
           "collapsed": false,
           "gridPos": {
             "x": 0,
@@ -323,7 +323,7 @@ data:
         {
           "id": 8,
           "type": "timeseries",
-          "title": "Requests per site",
+          "title": "Requests per day",
           "datasource": {
             "type": "prometheus",
             "uid": "${ds}"
@@ -336,7 +336,7 @@ data:
           },
           "targets": [
             {
-              "expr": "sum by (zone)(increase(cloudflare_zone_requests_total{zone=~\"$zone\"}[$__interval]))",
+              "expr": "sum by (zone)(max_over_time(cf_daily_requests{zone=~\"$zone\"}[1d]))",
               "legendFormat": "{{zone}}",
               "refId": "A",
               "datasource": {
@@ -375,7 +375,7 @@ data:
         {
           "id": 9,
           "type": "timeseries",
-          "title": "Unique visitors per site",
+          "title": "Unique visitors per day",
           "datasource": {
             "type": "prometheus",
             "uid": "${ds}"
@@ -388,7 +388,7 @@ data:
           },
           "targets": [
             {
-              "expr": "sum by (zone)(increase(cloudflare_zone_uniques_total{zone=~\"$zone\"}[$__interval]))",
+              "expr": "sum by (zone)(max_over_time(cf_daily_uniques{zone=~\"$zone\"}[1d]))",
               "legendFormat": "{{zone}}",
               "refId": "A",
               "datasource": {
@@ -440,7 +440,7 @@ data:
           },
           "targets": [
             {
-              "expr": "sum by (zone)(increase(cloudflare_zone_requests_cached{zone=~\"$zone\"}[$__interval]))/clamp_min(sum by (zone)(increase(cloudflare_zone_requests_total{zone=~\"$zone\"}[$__interval])),1)",
+              "expr": "sum by (zone)(max_over_time(cf_daily_cached_requests{zone=~\"$zone\"}[1d]))/clamp_min(sum by (zone)(max_over_time(cf_daily_requests{zone=~\"$zone\"}[1d])),1)",
               "legendFormat": "{{zone}}",
               "refId": "A",
               "datasource": {
@@ -492,7 +492,7 @@ data:
           },
           "targets": [
             {
-              "expr": "sum by (status)(increase(cloudflare_zone_requests_status{zone=~\"$zone\"}[$__interval]))",
+              "expr": "sum by (status)(max_over_time(cf_daily_status{zone=~\"$zone\"}[1d]))",
               "legendFormat": "{{status}}",
               "refId": "A",
               "datasource": {
@@ -544,7 +544,7 @@ data:
           },
           "targets": [
             {
-              "expr": "topk(15, sum by (country)(increase(cloudflare_zone_requests_country{zone=~\"$zone\"}[$__range])))",
+              "expr": "topk(15, sum by (country)(sum_over_time(cf_daily_country{zone=~\"$zone\"}[$__range])))",
               "instant": true,
               "format": "table",
               "refId": "A",
@@ -601,7 +601,7 @@ data:
           },
           "targets": [
             {
-              "expr": "sum by (zone)(increase(cloudflare_zone_requests_total{zone=~\"$zone\"}[$__range]))",
+              "expr": "sum by (zone)(sum_over_time(cf_daily_requests{zone=~\"$zone\"}[$__range]))",
               "instant": true,
               "format": "table",
               "refId": "A",
@@ -881,7 +881,7 @@ data:
               "uid": "${ds}"
             },
             "query": {
-              "query": "label_values(cloudflare_zone_requests_total, zone)",
+              "query": "label_values(cf_daily_requests, zone)",
               "refId": "z"
             },
             "refresh": 2,
