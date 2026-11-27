@@ -1,4 +1,0 @@
----
-# Kustomize entry point for all Flux-managed apps
-resources:
-  - namespaces.yaml
