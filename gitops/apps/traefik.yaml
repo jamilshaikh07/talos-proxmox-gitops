@@ -24,6 +24,15 @@ spec:
         deployment:
           replicas: 2
 
+        # One replica per node so a node reboot never takes every site down
+        topologySpreadConstraints:
+          - maxSkew: 1
+            topologyKey: kubernetes.io/hostname
+            whenUnsatisfiable: DoNotSchedule
+            labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: traefik
+
         # Service configuration - MetalLB LoadBalancer
         service:
           type: LoadBalancer
